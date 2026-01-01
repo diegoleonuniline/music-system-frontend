@@ -6,119 +6,139 @@
     <title>Eventos - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
-    <meta name="theme-color" content="#0d0d0d">
+    <meta name="theme-color" content="#ffffff" id="themeColor">
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header"><h2>🎵 Music System</h2></div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html"><span class="icon">📊</span> Dashboard</a>
-                <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
-                <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
-                <a href="events.html" class="active"><span class="icon">📅</span> Eventos</a>
-                <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
-                <a href="musicians.html"><span class="icon">👥</span> Músicos</a>
-                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar">U</div>
-                    <div class="user-details"><h4 id="userName">Usuario</h4><span id="userRole">Rol</span></div>
-                </div>
-                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
-            </div>
-        </aside>
-
-        <main class="main-content">
-            <div class="page-header">
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
                 <h1>Eventos</h1>
-                <div class="page-header-actions">
-                    <input type="month" id="filterMonth" onchange="loadEvents()" style="padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-family:inherit;">
-                    <button class="btn btn-primary" onclick="openModal()">+ Nuevo</button>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
                 </div>
             </div>
+        </header>
 
+        <main class="main">
+            <!-- Filtro mes -->
+            <div class="form-group">
+                <input type="month" class="form-input" id="filterMonth" onchange="loadData()" style="text-align:center">
+            </div>
+
+            <!-- Lista eventos -->
             <div class="card">
-                <!-- Lista para móvil -->
-                <div class="events-list" id="eventsList">
-                    <div class="loading">Cargando</div>
-                </div>
-
-                <!-- Calendario para desktop -->
-                <div class="calendar-container" id="calendarContainer">
-                    <div class="calendar-header" id="calendarHeader"></div>
-                    <div class="calendar-grid" id="calendarGrid"></div>
+                <div class="card-body no-padding" id="eventsList">
+                    <div class="loading"><div class="spinner"></div></div>
                 </div>
             </div>
         </main>
+
+        <button class="fab" onclick="openEventModal()">+</button>
+
+        <nav class="nav">
+            <div class="nav-items">
+                <a href="dashboard.html" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+                <a href="songs.html" class="nav-item"><span class="icon">🎵</span>Canciones</a>
+                <a href="setlists.html" class="nav-item"><span class="icon">📋</span>Set Lists</a>
+                <a href="events.html" class="nav-item active"><span class="icon">📅</span>Eventos</a>
+                <a href="settings.html" class="nav-item"><span class="icon">⚙️</span>Config</a>
+            </div>
+        </nav>
     </div>
 
     <!-- Modal Evento -->
     <div class="modal-overlay" id="eventModal">
-        <div class="modal" style="max-width: 560px;">
+        <div class="modal" style="max-height: 90vh;">
+            <div class="modal-handle"></div>
             <div class="modal-header">
-                <h3 id="modalTitle">Nuevo Evento</h3>
-                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3 id="eventModalTitle">Nuevo Evento</h3>
+                <button class="modal-close" onclick="closeModal('eventModal')">×</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="eventId">
                 <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" id="eventName" required placeholder="Nombre del evento">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-input" id="eventName" placeholder="Nombre del evento">
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Fecha *</label><input type="date" id="eventDate" required></div>
-                    <div class="form-group"><label>Ciudad</label><input type="text" id="eventCity" placeholder="Ciudad"></div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha *</label>
+                        <input type="date" class="form-input" id="eventDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ciudad</label>
+                        <input type="text" class="form-input" id="eventCity" placeholder="Ciudad">
+                    </div>
                 </div>
-                <div class="form-group"><label>Lugar</label><input type="text" id="eventVenue" placeholder="Nombre del lugar"></div>
-                <div class="form-group"><label>Dirección</label><input type="text" id="eventAddress" placeholder="Dirección"></div>
-                <div class="form-row">
-                    <div class="form-group"><label>Hora inicio</label><input type="time" id="eventStartTime"></div>
-                    <div class="form-group"><label>Hora fin</label><input type="time" id="eventEndTime"></div>
-                </div>
-                <div class="form-group"><label>Google Maps URL</label><input type="url" id="eventMapsUrl" placeholder="https://maps.google.com/..."></div>
-                <div class="form-row">
-                    <div class="form-group"><label>Uniforme</label><input type="text" id="eventUniform" placeholder="Ej: Negro formal"></div>
-                    <div class="form-group"><label>Set List</label><select id="eventSetlist"><option value="">Sin set list</option></select></div>
+                <div class="form-group">
+                    <label class="form-label">Lugar</label>
+                    <input type="text" class="form-input" id="eventVenue" placeholder="Nombre del lugar">
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Pago</label><input type="number" id="eventPayment" placeholder="0"></div>
-                    <div class="form-group"><label>Estado pago</label>
-                        <select id="eventPaymentStatus">
+                    <div class="form-group">
+                        <label class="form-label">Hora inicio</label>
+                        <input type="time" class="form-input" id="eventStart">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hora fin</label>
+                        <input type="time" class="form-input" id="eventEnd">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Set List</label>
+                    <select class="form-input" id="eventSetlist"></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Uniforme</label>
+                        <input type="text" class="form-input" id="eventUniform" placeholder="Ej: Negro">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pago</label>
+                        <input type="number" class="form-input" id="eventPayment" placeholder="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Estado</label>
+                        <select class="form-input" id="eventStatus">
+                            <option value="confirmed">Confirmado</option>
+                            <option value="tentative">Tentativo</option>
+                            <option value="cancelled">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Estado pago</label>
+                        <select class="form-input" id="eventPayStatus">
                             <option value="pending">Pendiente</option>
                             <option value="partial">Parcial</option>
                             <option value="paid">Pagado</option>
                         </select>
                     </div>
                 </div>
-                <div class="form-group"><label>Estado</label>
-                    <select id="eventStatus">
-                        <option value="confirmed">Confirmado</option>
-                        <option value="tentative">Tentativo</option>
-                        <option value="cancelled">Cancelado</option>
-                    </select>
+                <div class="form-group">
+                    <label class="form-label">Notas</label>
+                    <textarea class="form-input" id="eventNotes" rows="2" placeholder="Notas..."></textarea>
                 </div>
-                <div class="form-group"><label>Notas</label><textarea id="eventNotes" rows="2" placeholder="Notas..."></textarea></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-secondary" onclick="closeModal('eventModal')">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveEvent()">Guardar</button>
             </div>
         </div>
     </div>
 
     <!-- Modal Ver Evento -->
-    <div class="modal-overlay" id="viewModal">
+    <div class="modal-overlay" id="viewEventModal">
         <div class="modal">
+            <div class="modal-handle"></div>
             <div class="modal-header">
-                <h3 id="viewTitle">Evento</h3>
-                <button class="modal-close" onclick="closeViewModal()">×</button>
+                <h3 id="viewEventTitle">Evento</h3>
+                <button class="modal-close" onclick="closeModal('viewEventModal')">×</button>
             </div>
-            <div class="modal-body" id="viewContent"></div>
+            <div class="modal-body" id="viewEventContent"></div>
             <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeViewModal()">Cerrar</button>
-                <button class="btn btn-primary admin-only" id="btnEdit" onclick="editFromView()">Editar</button>
+                <button class="btn btn-secondary" onclick="closeModal('viewEventModal')">Cerrar</button>
             </div>
         </div>
     </div>

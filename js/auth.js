@@ -1,14 +1,16 @@
+initTheme();
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('loginError');
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const btn = document.getElementById('loginBtn');
     
-    errorDiv.style.display = 'none';
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span style="opacity:0.7">Iniciando sesión...</span>';
+    errorDiv.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Iniciando...';
     
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
@@ -19,19 +21,17 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         
         const data = await response.json();
         
-        if (!response.ok) {
-            throw new Error(data.error || 'Credenciales inválidas');
-        }
+        if (!response.ok) throw new Error(data.error || 'Credenciales inválidas');
         
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        window.location.href = 'pages/dashboard.html';
+        location.href = 'pages/dashboard.html';
         
     } catch (error) {
         errorDiv.textContent = error.message;
-        errorDiv.style.display = 'block';
+        errorDiv.classList.remove('hidden');
     } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Iniciar Sesión';
+        btn.disabled = false;
+        btn.textContent = 'Iniciar Sesión';
     }
 });

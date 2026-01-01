@@ -1,15 +1,8 @@
 {
-  "name": "music-system-frontend",
+  "name": "music-system-pro",
   "version": "3.0.0",
-  "description": "Frontend Music System",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": "18.x"
-  },
-  "dependencies": {
-    "express": "^4.18.2"
-  }
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": "18.x" },
+  "dependencies": { "express": "^4.18.2" }
 }

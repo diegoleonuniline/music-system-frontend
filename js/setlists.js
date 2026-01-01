@@ -1,236 +1,241 @@
 checkAuth();
+initApp();
 
-const user = getUser();
-document.getElementById('userName').textContent = user.first_name + ' ' + (user.last_name || '');
-document.getElementById('userRole').textContent = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
-document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) || 'U';
+let allSetlists = [], currentSetlist = null;
 
-let allSetlists = [];
-let allSongs = [];
-let currentSetlist = null;
-
-async function loadSetlists() {
+async function loadData() {
     try {
-        allSetlists = await apiGet('/setlists');
-        allSongs = await apiGet('/songs');
+        allSetlists = await apiGet('/setlists') || [];
+        await loadSongsCache();
         renderSetlists();
     } catch (error) {
-        console.error('Error:', error);
+        document.getElementById('setlistsList').innerHTML = '<div class="empty-state"><p>Error al cargar</p></div>';
     }
 }
 
 function renderSetlists() {
-    const container = document.getElementById('setlistsGrid');
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
-
+    const container = document.getElementById('setlistsList');
+    
     if (!allSetlists.length) {
         container.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
-                <div class="icon">📋</div>
-                <h3>Sin set lists</h3>
-                <p>Crea tu primer set list</p>
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-title">Sin set lists</div>
+                <p class="text-muted">Crea tu primer set list</p>
             </div>
         `;
         return;
     }
 
     container.innerHTML = allSetlists.map(s => `
-        <div class="setlist-card" onclick="viewSetlist(${s.id})">
-            <div class="icon">📋</div>
-            <h4>${s.name}</h4>
-            <div class="meta">
-                <span>${s.total_songs || 0} canciones</span>
-                <span>${formatDuration(s.total_duration_seconds)}</span>
+        <div class="setlist-item" onclick="viewSetlist(${s.id})">
+            <div class="setlist-icon">📋</div>
+            <div class="setlist-info">
+                <div class="setlist-title">${s.name}</div>
+                <div class="setlist-meta">${s.song_count || 0} canciones · ${s.total_duration ? formatDuration(s.total_duration) : '-'}</div>
             </div>
-            ${isAdmin ? `
-                <div class="actions" onclick="event.stopPropagation();">
-                    <button class="btn btn-ghost btn-sm" onclick="editSetlist(${s.id})">Editar</button>
-                    <button class="btn btn-ghost btn-sm" style="color: var(--danger);" onclick="deleteSetlist(${s.id})">Eliminar</button>
-                </div>
-            ` : ''}
+            <span style="color:var(--text-tertiary)">›</span>
         </div>
     `).join('');
 }
 
+// ===== VER SETLIST =====
 async function viewSetlist(id) {
-    try {
-        currentSetlist = await apiGet(`/setlists/${id}`);
-        document.getElementById('viewSetlistTitle').textContent = currentSetlist.name;
-        document.getElementById('viewTotalSongs').textContent = (currentSetlist.songs?.length || 0) + ' canciones';
-        document.getElementById('viewTotalDuration').textContent = formatDuration(currentSetlist.total_duration_seconds);
-        renderSetlistSongs();
-        document.getElementById('viewSetlistModal').classList.add('active');
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
+    currentSetlist = allSetlists.find(s => s.id === id);
+    if (!currentSetlist) return;
 
-function renderSetlistSongs() {
-    const container = document.getElementById('setlistSongs');
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
-
-    if (!currentSetlist.songs?.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">🎵</div>
-                <h3>Sin canciones</h3>
-                <p>Agrega canciones a este set list</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = currentSetlist.songs.map((s, index) => `
-        <div class="song-item">
-            <span style="font-weight: 600; color: var(--text-tertiary); width: 24px;">${s.position}</span>
-            <div class="song-info">
-                <h4>${s.name}</h4>
-                <p>${s.artist || 'Sin artista'}${s.musical_key ? ' · ' + s.musical_key : ''}</p>
-            </div>
-            <span class="badge badge-neutral">${formatDuration(s.duration_seconds)}</span>
-            ${isAdmin ? `
-                <div class="song-actions" style="opacity: 1;">
-                    ${index > 0 ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="moveSong(${s.id}, ${s.position - 1})">↑</button>` : ''}
-                    ${index < currentSetlist.songs.length - 1 ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="moveSong(${s.id}, ${s.position + 1})">↓</button>` : ''}
-                    <button class="btn btn-ghost btn-icon btn-sm" onclick="removeSongFromSetlist(${s.id})">×</button>
-                </div>
-            ` : ''}
+    document.getElementById('viewSetlistTitle').textContent = currentSetlist.name;
+    
+    // Cargar canciones del setlist
+    const songs = await apiGet(`/setlists/${id}/songs`) || [];
+    
+    document.getElementById('viewSetlistContent').innerHTML = `
+        <p class="text-muted" style="margin-bottom:16px">${currentSetlist.description || ''}</p>
+        
+        <!-- Quick add canciones -->
+        <div class="quick-add-trigger" onclick="openSongPickerForSetlist()">
+            <div class="icon">+</div>
+            <span>Agregar canciones</span>
         </div>
-    `).join('');
+        
+        ${songs.length ? `
+            <div style="margin-top:16px">
+                ${songs.map((s, i) => `
+                    <div class="song-item" style="padding:12px 0">
+                        <span style="width:24px;color:var(--text-tertiary);font-weight:600">${i + 1}</span>
+                        <div class="song-thumb" style="width:40px;height:40px;font-size:16px">🎵</div>
+                        <div class="song-info">
+                            <div class="song-title">${s.name}</div>
+                            <div class="song-artist">${s.artist || 'Sin artista'}</div>
+                        </div>
+                        <div class="song-badges">
+                            ${s.musical_key ? `<span class="badge badge-green">${s.musical_key}</span>` : ''}
+                        </div>
+                        <button class="btn btn-ghost btn-sm" onclick="removeSongFromSetlist(${s.id})">×</button>
+                    </div>
+                `).join('')}
+            </div>
+        ` : '<p class="text-muted text-center" style="margin-top:24px">Sin canciones aún</p>'}
+        
+        ${isAdmin() ? `
+            <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-default);display:flex;gap:8px">
+                <button class="btn btn-secondary btn-sm" onclick="editSetlist()">✎ Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteSetlist(${currentSetlist.id})">Eliminar</button>
+            </div>
+        ` : ''}
+    `;
+    
+    openModal('viewSetlistModal');
 }
 
-async function moveSong(songId, newPosition) {
-    const songs = currentSetlist.songs.map((s, i) => {
-        if (s.id === songId) {
-            return { id: s.id, position: newPosition };
-        }
-        if (s.position === newPosition) {
-            return { id: s.id, position: currentSetlist.songs.find(x => x.id === songId).position };
-        }
-        return { id: s.id, position: s.position };
-    });
+// ===== SONG PICKER =====
+let selectedSongsForSetlist = [];
 
-    await apiPut(`/setlists/${currentSetlist.id}/reorder`, { songs });
-    viewSetlist(currentSetlist.id);
+async function openSongPickerForSetlist() {
+    const currentSongs = await apiGet(`/setlists/${currentSetlist.id}/songs`) || [];
+    selectedSongsForSetlist = currentSongs.map(s => s.id);
+    
+    renderSongPicker();
+    openModal('songPickerModal');
+}
+
+function renderSongPicker() {
+    const songs = allSongsCache;
+    const search = document.getElementById('pickerSearch')?.value?.toLowerCase() || '';
+    
+    const filtered = songs.filter(s => 
+        s.name.toLowerCase().includes(search) || 
+        (s.artist || '').toLowerCase().includes(search)
+    );
+    
+    document.getElementById('songPickerList').innerHTML = filtered.map(s => `
+        <div class="song-picker-item ${selectedSongsForSetlist.includes(s.id) ? 'selected' : ''}" 
+             data-id="${s.id}" onclick="toggleSongInPicker(this, ${s.id})">
+            <div class="checkbox">${selectedSongsForSetlist.includes(s.id) ? '✓' : ''}</div>
+            <div class="song-thumb" style="width:40px;height:40px;font-size:16px">🎵</div>
+            <div class="song-info">
+                <div class="song-title">${s.name}</div>
+                <div class="song-artist">${s.artist || 'Sin artista'}</div>
+            </div>
+        </div>
+    `).join('') || '<p class="text-muted text-center">Sin canciones</p>';
+}
+
+function filterPicker() {
+    renderSongPicker();
+}
+
+function toggleSongInPicker(el, id) {
+    if (selectedSongsForSetlist.includes(id)) {
+        selectedSongsForSetlist = selectedSongsForSetlist.filter(x => x !== id);
+    } else {
+        selectedSongsForSetlist.push(id);
+    }
+    
+    el.classList.toggle('selected');
+    el.querySelector('.checkbox').textContent = el.classList.contains('selected') ? '✓' : '';
+}
+
+async function confirmSongSelection() {
+    try {
+        await apiPut(`/setlists/${currentSetlist.id}/songs`, { song_ids: selectedSongsForSetlist });
+        closeModal('songPickerModal');
+        viewSetlist(currentSetlist.id);
+        showToast('Canciones actualizadas');
+    } catch (e) {
+        showToast('Error al guardar');
+    }
 }
 
 async function removeSongFromSetlist(songId) {
-    if (confirm('¿Quitar esta canción del set list?')) {
-        await apiDelete(`/setlists/${currentSetlist.id}/songs/${songId}`);
-        viewSetlist(currentSetlist.id);
-        loadSetlists();
+    selectedSongsForSetlist = selectedSongsForSetlist.filter(id => id !== songId);
+    await apiPut(`/setlists/${currentSetlist.id}/songs`, { song_ids: selectedSongsForSetlist });
+    viewSetlist(currentSetlist.id);
+    showToast('Canción removida');
+}
+
+// ===== QUICK ADD SONG =====
+function openQuickAddFromPicker() {
+    closeModal('songPickerModal');
+    openModal('quickAddSongModal');
+}
+
+async function saveQuickSongAndSelect() {
+    const name = document.getElementById('quickSongName').value.trim();
+    const artist = document.getElementById('quickSongArtist').value.trim();
+    
+    if (!name) {
+        showToast('El nombre es obligatorio');
+        return;
+    }
+
+    try {
+        const newSong = await apiPost('/songs', { name, artist });
+        refreshSongsCache();
+        allSongsCache = await apiGet('/songs') || [];
+        
+        selectedSongsForSetlist.push(newSong.id);
+        
+        document.getElementById('quickSongName').value = '';
+        document.getElementById('quickSongArtist').value = '';
+        
+        closeModal('quickAddSongModal');
+        renderSongPicker();
+        openModal('songPickerModal');
+        
+        showToast('Canción creada');
+    } catch (e) {
+        showToast('Error al crear');
     }
 }
 
-function openAddSongModal() {
-    document.getElementById('searchSongInput').value = '';
-    filterAvailableSongs();
-    document.getElementById('addSongModal').classList.add('active');
-}
-
-function closeAddSongModal() {
-    document.getElementById('addSongModal').classList.remove('active');
-}
-
-function filterAvailableSongs() {
-    const search = document.getElementById('searchSongInput').value.toLowerCase();
-    const setlistSongIds = currentSetlist.songs?.map(s => s.song_id) || [];
-    
-    const available = allSongs.filter(s => 
-        !setlistSongIds.includes(s.id) &&
-        (s.name.toLowerCase().includes(search) || (s.artist || '').toLowerCase().includes(search))
-    );
-
-    const container = document.getElementById('availableSongs');
-    container.innerHTML = available.length ? available.map(s => `
-        <div class="song-item">
-            <div class="song-info">
-                <h4>${s.name}</h4>
-                <p>${s.artist || 'Sin artista'}</p>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="addSongToSetlist(${s.id})">Agregar</button>
-        </div>
-    `).join('') : '<div class="empty-state"><p>No hay canciones disponibles</p></div>';
-}
-
-async function addSongToSetlist(songId) {
-    await apiPost(`/setlists/${currentSetlist.id}/songs`, { song_id: songId });
-    viewSetlist(currentSetlist.id);
-    filterAvailableSongs();
-    loadSetlists();
-}
-
-function openStageMode() {
-    document.getElementById('stageModeTitle').textContent = currentSetlist.name;
-    
-    const content = document.getElementById('stageModeContent');
-    content.innerHTML = currentSetlist.songs?.map(s => `
-        <div class="stage-song">
-            <div class="stage-song-header">
-                <div>
-                    <span class="stage-song-number">${s.position}.</span>
-                    <span class="stage-song-title">${s.name}</span>
-                    <div class="stage-song-artist">${s.artist || ''}</div>
-                </div>
-                <div class="stage-song-badges">
-                    ${s.musical_key ? `<span class="stage-badge key">${s.musical_key}</span>` : ''}
-                    ${s.bpm ? `<span class="stage-badge bpm">${s.bpm} BPM</span>` : ''}
-                </div>
-            </div>
-            ${s.lyrics ? `<pre class="stage-lyrics">${s.lyrics}</pre>` : ''}
-        </div>
-    `).join('') || '<div class="empty-state" style="color: #fff;"><p>Sin canciones</p></div>';
-    
-    document.getElementById('stageModeModal').classList.add('active');
-}
-
-function closeStageMode() {
-    document.getElementById('stageModeModal').classList.remove('active');
-}
-
-function closeViewModal() {
-    document.getElementById('viewSetlistModal').classList.remove('active');
-}
-
-function openModal(setlist = null) {
-    document.getElementById('modalTitle').textContent = setlist ? 'Editar Set List' : 'Nuevo Set List';
+// ===== CRUD SETLIST =====
+function openSetlistModal(setlist = null) {
+    document.getElementById('setlistModalTitle').textContent = setlist ? 'Editar Set List' : 'Nuevo Set List';
     document.getElementById('setlistId').value = setlist?.id || '';
     document.getElementById('setlistName').value = setlist?.name || '';
-    document.getElementById('setlistDescription').value = setlist?.description || '';
-    document.getElementById('setlistModal').classList.add('active');
+    document.getElementById('setlistDesc').value = setlist?.description || '';
+    openModal('setlistModal');
 }
 
-function closeModal() {
-    document.getElementById('setlistModal').classList.remove('active');
-}
-
-function editSetlist(id) {
-    const setlist = allSetlists.find(s => s.id === id);
-    openModal(setlist);
+function editSetlist() {
+    closeModal('viewSetlistModal');
+    openSetlistModal(currentSetlist);
 }
 
 async function saveSetlist() {
     const id = document.getElementById('setlistId').value;
     const data = {
         name: document.getElementById('setlistName').value,
-        description: document.getElementById('setlistDescription').value
+        description: document.getElementById('setlistDesc').value
     };
 
-    if (id) {
-        await apiPut(`/setlists/${id}`, data);
-    } else {
-        await apiPost('/setlists', data);
+    if (!data.name) {
+        showToast('El nombre es obligatorio');
+        return;
     }
 
-    closeModal();
-    loadSetlists();
+    try {
+        if (id) {
+            await apiPut(`/setlists/${id}`, data);
+        } else {
+            await apiPost('/setlists', data);
+        }
+        closeModal('setlistModal');
+        loadData();
+        showToast(id ? 'Set list actualizado' : 'Set list creado');
+    } catch (e) {
+        showToast('Error al guardar');
+    }
 }
 
 async function deleteSetlist(id) {
     if (confirm('¿Eliminar este set list?')) {
         await apiDelete(`/setlists/${id}`);
-        loadSetlists();
+        closeModal('viewSetlistModal');
+        loadData();
+        showToast('Set list eliminado');
     }
 }
 
-loadSetlists();
+loadData();
