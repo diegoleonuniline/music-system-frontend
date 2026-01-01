@@ -362,9 +362,6 @@ body {
     color: var(--text);
     transition: border-color 0.2s;
     resize: vertical;
-    min-height: 100px;
-    white-space: pre-wrap;
-    line-height: 1.6;
 }
 
 .form-group input:focus,
