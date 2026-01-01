@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Músicos - Music System</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🎵 Music System</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><span class="icon">📊</span> Dashboard</a>
+                <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
+                <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
+                <a href="events.html"><span class="icon">📅</span> Eventos</a>
+                <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
+                <a href="musicians.html" class="active"><span class="icon">👥</span> Músicos</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <h4 id="userName">Usuario</h4>
+                        <span id="userRole">Rol</span>
+                    </div>
+                </div>
+                <button class="btn btn-danger btn-sm btn-block" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>👥 Músicos</h1>
+                <button class="btn btn-primary" id="btnAddMusician" onclick="openModal()">+ Nuevo Músico</button>
+            </div>
+
+            <div class="card" id="planInfo">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 id="planName">Plan</h3>
+                        <p id="planDescription"></p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 32px; font-weight: bold; color: var(--primary);">
+                            <span id="currentMusicians">0</span> / <span id="maxMusicians">0</span>
+                        </div>
+                        <small>músicos</small>
+                    </div>
+                </div>
+                <div style="margin-top: 16px; height: 8px; background: var(--light); border-radius: 4px; overflow: hidden;">
+                    <div id="planProgress" style="height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Lista de Músicos</h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Músico</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="musiciansList">
+                            <tr><td colspan="6">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo/Editar Músico -->
+    <div class="modal-overlay" id="musicianModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuevo Músico</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="musicianForm">
+                    <input type="hidden" id="musicianId">
+                    <div class="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" id="musicianFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellido</label>
+                        <input type="text" id="musicianLastName">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="musicianEmail" required>
+                    </div>
+                    <div class="form-group" id="passwordGroup">
+                        <label>Contraseña *</label>
+                        <input type="password" id="musicianPassword">
+                        <small style="color: var(--gray);">Mínimo 6 caracteres</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="musicianPhone">
+                    </div>
+                    <div class="form-group">
+                        <label>Rol</label>
+                        <select id="musicianRole">
+                            <option value="musician">Músico</option>
+                            <option value="group_admin">Administrador</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveMusician()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Contraseña -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Cambiar Contraseña</h3>
+                <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="passwordUserId">
+                <div class="form-group">
+                    <label>Nueva Contraseña *</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Contraseña *</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closePasswordModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="changePassword()">Cambiar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/musicians.js"></script>
+</body>
+</html>
