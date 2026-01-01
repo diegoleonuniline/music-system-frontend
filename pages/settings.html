@@ -97,6 +97,23 @@
                 </div>
                 <div id="genresList"></div>
             </div>
+
+            <!-- SUPER ADMIN ONLY -->
+            <div class="card" id="groupsSection" style="display: none;">
+                <div class="card-header">
+                    <h3>🏢 Grupos Musicales</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openGroupModal()">+ Nuevo Grupo</button>
+                </div>
+                <div id="groupsList"></div>
+            </div>
+
+            <div class="card" id="plansSection" style="display: none;">
+                <div class="card-header">
+                    <h3>💳 Planes</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openPlanModal()">+ Nuevo Plan</button>
+                </div>
+                <div id="plansList"></div>
+            </div>
         </main>
     </div>
 
@@ -168,6 +185,72 @@
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeGenreModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveGenre()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Grupo Musical -->
+    <div class="modal-overlay" id="groupModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="groupModalTitle">Nuevo Grupo Musical</h3>
+                <button class="modal-close" onclick="closeGroupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="groupId">
+                <div class="form-group"><label>Nombre del Grupo *</label><input type="text" id="groupName" required placeholder="Ej: Los Caimanes"></div>
+                <div class="form-group"><label>Plan</label>
+                    <select id="groupPlan">
+                        <option value="">Sin plan</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fecha Inicio</label><input type="date" id="groupStartDate"></div>
+                    <div class="form-group"><label>Fecha Fin</label><input type="date" id="groupEndDate"></div>
+                </div>
+                <div class="form-group"><label>Administrador del Grupo</label>
+                    <select id="groupAdmin">
+                        <option value="">Seleccionar administrador...</option>
+                    </select>
+                    <small style="color: var(--text-tertiary); font-size: 12px;">El administrador podrá gestionar canciones, eventos y músicos del grupo</small>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="groupActive" checked style="width: 18px; height: 18px;">
+                        <span>Grupo Activo</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeGroupModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveGroup()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Plan -->
+    <div class="modal-overlay" id="planModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="planModalTitle">Nuevo Plan</h3>
+                <button class="modal-close" onclick="closePlanModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="planId">
+                <div class="form-group"><label>Nombre del Plan *</label><input type="text" id="planName" required placeholder="Ej: Pro, Básico"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Precio $</label><input type="number" id="planPrice" step="0.01" placeholder="0.00"></div>
+                    <div class="form-group"><label>Máx. Usuarios</label><input type="number" id="planMaxUsers" placeholder="10"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Máx. Canciones</label><input type="number" id="planMaxSongs" placeholder="100"></div>
+                    <div class="form-group"><label>Máx. Eventos</label><input type="number" id="planMaxEvents" placeholder="50"></div>
+                </div>
+                <div class="form-group"><label>Descripción</label><textarea id="planDescription" rows="2" placeholder="Características del plan..."></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closePlanModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="savePlan()">Guardar</button>
             </div>
         </div>
     </div>

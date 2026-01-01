@@ -48,11 +48,31 @@
                 <button class="btn btn-primary" onclick="openAddModal()">+ Agregar</button>
             </div>
 
+            <!-- Stats -->
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--primary);" id="statTotal">0</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Total</div>
+                </div>
+                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--danger);" id="statPending">0</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Pendientes</div>
+                </div>
+                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--warning);" id="statLearning">0</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Aprendiendo</div>
+                </div>
+                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--success);" id="statReady">0</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Listas</div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">
                     <h3>🎸 Repertorio para practicar</h3>
                 </div>
-                <div id="repertoireList">
+                <div id="rehearsalsList">
                     <div class="loading">Cargando...</div>
                 </div>
             </div>
@@ -67,6 +87,7 @@
         <a href="rehearsals.html" class="active"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
+    <!-- Modal Buscar/Agregar -->
     <div class="modal-overlay" id="addModal">
         <div class="modal">
             <div class="modal-header">
@@ -75,9 +96,62 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <input type="text" id="searchSongInput" placeholder="Buscar canción..." onkeyup="filterSongs()">
+                    <input type="text" id="searchSongInput" placeholder="Buscar canción..." onkeyup="filterAvailableSongs()">
                 </div>
                 <div id="availableSongs" style="max-height: 350px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar/Detalles -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="editModalTitle">Editar Canción</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <div>
+                        <h4 id="editSongName" style="font-size: 16px;">Canción</h4>
+                        <p id="editSongArtist" style="color: var(--text-secondary); font-size: 13px;">Artista</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="editVideoBtn" style="margin-left: auto;">🎬 Video</button>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prioridad</label>
+                        <select id="editPriority">
+                            <option value="high">🔥 Alta</option>
+                            <option value="medium">⚡ Media</option>
+                            <option value="low">📌 Baja</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select id="editStatus">
+                            <option value="pending">Pendiente</option>
+                            <option value="learning">Aprendiendo</option>
+                            <option value="ready">Lista ✓</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>📅 Fecha Objetivo</label>
+                    <input type="date" id="editTargetDate">
+                    <small style="color: var(--text-tertiary);">¿Para cuándo necesitas tenerla lista?</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Notas</label>
+                    <textarea id="editNotes" rows="3" placeholder="Notas de práctica, secciones difíciles, etc..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeEditModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveEdit()">Guardar</button>
             </div>
         </div>
     </div>

@@ -5,6 +5,9 @@ const user = getUser();
 let musicians = [];
 let categories = [];
 let genres = [];
+let groups = [];
+let plans = [];
+let allUsers = []; // todos los usuarios para asignar como admin
 
 // Profile info
 document.getElementById('profileName').textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
@@ -27,6 +30,13 @@ if (isAdmin()) {
     loadData();
 }
 
+// Show super admin sections
+if (isSuperAdmin()) {
+    document.getElementById('groupsSection').style.display = 'block';
+    document.getElementById('plansSection').style.display = 'block';
+    loadSuperAdminData();
+}
+
 async function loadData() {
     try {
         [musicians, categories, genres] = await Promise.all([
@@ -40,6 +50,22 @@ async function loadData() {
         renderGenres();
     } catch (error) {
         console.error('Error:', error);
+    }
+}
+
+async function loadSuperAdminData() {
+    try {
+        [groups, plans, allUsers] = await Promise.all([
+            apiGet('/groups'),
+            apiGet('/plans'),
+            apiGet('/users/all').catch(() => apiGet('/users'))
+        ]);
+        
+        renderGroups();
+        renderPlans();
+        populateGroupSelects();
+    } catch (error) {
+        console.error('Error super admin:', error);
     }
 }
 
@@ -246,5 +272,197 @@ async function deleteGenre(id) {
         await apiDelete(`/genres/${id}`);
         loadData();
         showToast('Género eliminado');
+    }
+}
+
+// ========== SUPER ADMIN: GROUPS ==========
+function populateGroupSelects() {
+    // Plans dropdown
+    const planSelect = document.getElementById('groupPlan');
+    planSelect.innerHTML = '<option value="">Sin plan</option>' + 
+        plans.map(p => `<option value="${p.id}">${p.name} - $${p.price || 0}</option>`).join('');
+    
+    // Admin dropdown
+    const adminSelect = document.getElementById('groupAdmin');
+    adminSelect.innerHTML = '<option value="">Seleccionar administrador...</option>' + 
+        allUsers.map(u => `<option value="${u.id}">${u.first_name || ''} ${u.last_name || ''} (${u.email})</option>`).join('');
+}
+
+function renderGroups() {
+    const container = document.getElementById('groupsList');
+    
+    if (!groups?.length) {
+        container.innerHTML = '<div class="empty-state"><p>Sin grupos musicales</p></div>';
+        return;
+    }
+    
+    container.innerHTML = groups.map(g => {
+        const plan = plans.find(p => p.id === g.plan_id);
+        const admin = allUsers.find(u => u.id === g.admin_user_id);
+        return `
+        <div class="song-item">
+            <div class="song-thumb">🏢</div>
+            <div class="song-info">
+                <h4>${g.name}</h4>
+                <p>${plan ? plan.name : 'Sin plan'} · ${admin ? `Admin: ${admin.first_name}` : 'Sin admin'}</p>
+            </div>
+            <span class="badge ${g.is_active ? 'badge-success' : 'badge-danger'}">${g.is_active ? 'Activo' : 'Inactivo'}</span>
+            <div class="song-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editGroup(${g.id})">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="deleteGroup(${g.id})">🗑️</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function openGroupModal(group = null) {
+    document.getElementById('groupModalTitle').textContent = group ? 'Editar Grupo' : 'Nuevo Grupo Musical';
+    document.getElementById('groupId').value = group?.id || '';
+    document.getElementById('groupName').value = group?.name || '';
+    document.getElementById('groupPlan').value = group?.plan_id || '';
+    document.getElementById('groupStartDate').value = group?.subscription_start?.split('T')[0] || '';
+    document.getElementById('groupEndDate').value = group?.subscription_end?.split('T')[0] || '';
+    document.getElementById('groupAdmin').value = group?.admin_user_id || '';
+    document.getElementById('groupActive').checked = group?.is_active !== false;
+    document.getElementById('groupModal').classList.add('active');
+}
+
+function closeGroupModal() {
+    document.getElementById('groupModal').classList.remove('active');
+}
+
+function editGroup(id) {
+    const group = groups.find(g => g.id === id);
+    openGroupModal(group);
+}
+
+async function saveGroup() {
+    const id = document.getElementById('groupId').value;
+    const data = {
+        name: document.getElementById('groupName').value.trim(),
+        plan_id: document.getElementById('groupPlan').value || null,
+        subscription_start: document.getElementById('groupStartDate').value || null,
+        subscription_end: document.getElementById('groupEndDate').value || null,
+        admin_user_id: document.getElementById('groupAdmin').value || null,
+        is_active: document.getElementById('groupActive').checked
+    };
+    
+    if (!data.name) {
+        showToast('Ingresa el nombre del grupo');
+        return;
+    }
+    
+    try {
+        if (id) {
+            await apiPut(`/groups/${id}`, data);
+        } else {
+            await apiPost('/groups', data);
+        }
+        
+        closeGroupModal();
+        loadSuperAdminData();
+        showToast('Grupo guardado');
+    } catch (e) {
+        showToast('Error al guardar grupo');
+    }
+}
+
+async function deleteGroup(id) {
+    if (confirm('¿Eliminar este grupo musical? Esta acción no se puede deshacer.')) {
+        try {
+            await apiDelete(`/groups/${id}`);
+            loadSuperAdminData();
+            showToast('Grupo eliminado');
+        } catch (e) {
+            showToast('Error al eliminar');
+        }
+    }
+}
+
+// ========== SUPER ADMIN: PLANS ==========
+function renderPlans() {
+    const container = document.getElementById('plansList');
+    
+    if (!plans?.length) {
+        container.innerHTML = '<div class="empty-state"><p>Sin planes</p></div>';
+        return;
+    }
+    
+    container.innerHTML = plans.map(p => `
+        <div class="song-item">
+            <div class="song-thumb">💳</div>
+            <div class="song-info">
+                <h4>${p.name}</h4>
+                <p>$${p.price || 0} · ${p.max_users || '∞'} usuarios · ${p.max_songs || '∞'} canciones</p>
+            </div>
+            <div class="song-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editPlan(${p.id})">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="deletePlan(${p.id})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openPlanModal(plan = null) {
+    document.getElementById('planModalTitle').textContent = plan ? 'Editar Plan' : 'Nuevo Plan';
+    document.getElementById('planId').value = plan?.id || '';
+    document.getElementById('planName').value = plan?.name || '';
+    document.getElementById('planPrice').value = plan?.price || '';
+    document.getElementById('planMaxUsers').value = plan?.max_users || '';
+    document.getElementById('planMaxSongs').value = plan?.max_songs || '';
+    document.getElementById('planMaxEvents').value = plan?.max_events || '';
+    document.getElementById('planDescription').value = plan?.description || '';
+    document.getElementById('planModal').classList.add('active');
+}
+
+function closePlanModal() {
+    document.getElementById('planModal').classList.remove('active');
+}
+
+function editPlan(id) {
+    const plan = plans.find(p => p.id === id);
+    openPlanModal(plan);
+}
+
+async function savePlan() {
+    const id = document.getElementById('planId').value;
+    const data = {
+        name: document.getElementById('planName').value.trim(),
+        price: parseFloat(document.getElementById('planPrice').value) || 0,
+        max_users: parseInt(document.getElementById('planMaxUsers').value) || null,
+        max_songs: parseInt(document.getElementById('planMaxSongs').value) || null,
+        max_events: parseInt(document.getElementById('planMaxEvents').value) || null,
+        description: document.getElementById('planDescription').value.trim()
+    };
+    
+    if (!data.name) {
+        showToast('Ingresa el nombre del plan');
+        return;
+    }
+    
+    try {
+        if (id) {
+            await apiPut(`/plans/${id}`, data);
+        } else {
+            await apiPost('/plans', data);
+        }
+        
+        closePlanModal();
+        loadSuperAdminData();
+        showToast('Plan guardado');
+    } catch (e) {
+        showToast('Error al guardar plan');
+    }
+}
+
+async function deletePlan(id) {
+    if (confirm('¿Eliminar este plan?')) {
+        try {
+            await apiDelete(`/plans/${id}`);
+            loadSuperAdminData();
+            showToast('Plan eliminado');
+        } catch (e) {
+            showToast('Error al eliminar');
+        }
     }
 }
