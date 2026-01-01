@@ -9,6 +9,13 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+        <span class="logo">🐊</span>
+        <h1>Ensayos</h1>
+    </header>
+    <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -21,7 +28,7 @@
                 <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
                 <a href="events.html"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html" class="active"><span class="icon">🎸</span> Ensayos</a>
-                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -31,41 +38,21 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="page-header">
-                <h1>Ensayos</h1>
-                <button class="btn btn-primary" onclick="openRehearsalModal()">+ Nuevo</button>
+                <h1>Canciones para Ensayar</h1>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Agregar</button>
             </div>
 
-            <!-- Próximo Ensayo -->
-            <div class="card" id="nextRehearsalCard" style="display: none;">
-                <div class="card-header">
-                    <h3>🎯 Próximo Ensayo</h3>
-                </div>
-                <div class="card-body" id="nextRehearsalContent"></div>
-            </div>
-
-            <!-- Canciones para Repertorio -->
             <div class="card">
                 <div class="card-header">
-                    <h3>📝 Para Repertorio</h3>
-                    <button class="btn btn-ghost btn-sm" onclick="openAddRepertoireModal()">+ Agregar</button>
+                    <h3>🎸 Repertorio para practicar</h3>
                 </div>
                 <div id="repertoireList">
-                    <div class="loading">Cargando...</div>
-                </div>
-            </div>
-
-            <!-- Lista de Ensayos -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>📅 Historial</h3>
-                </div>
-                <div id="rehearsalsList">
                     <div class="loading">Cargando...</div>
                 </div>
             </div>
@@ -80,71 +67,17 @@
         <a href="rehearsals.html" class="active"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Nuevo Ensayo -->
-    <div class="modal-overlay" id="rehearsalModal">
+    <div class="modal-overlay" id="addModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="rehearsalModalTitle">Nuevo Ensayo</h3>
-                <button class="modal-close" onclick="closeRehearsalModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="rehearsalId">
-                <div class="form-group">
-                    <label>Título</label>
-                    <input type="text" id="rehearsalTitle" placeholder="Ensayo semanal">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Fecha *</label>
-                        <input type="date" id="rehearsalDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Hora</label>
-                        <input type="time" id="rehearsalTime">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Lugar</label>
-                    <input type="text" id="rehearsalLocation" placeholder="Sala de ensayo">
-                </div>
-                <div class="form-group">
-                    <label>Notas</label>
-                    <textarea id="rehearsalNotes" rows="3" placeholder="Objetivos del ensayo..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeRehearsalModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveRehearsal()">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Agregar a Repertorio -->
-    <div class="modal-overlay" id="addRepertoireModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Agregar a Repertorio</h3>
-                <button class="modal-close" onclick="closeAddRepertoireModal()">&times;</button>
+                <h3>Agregar canción para ensayar</h3>
+                <button class="modal-close" onclick="closeAddModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <input type="text" id="searchRepertoireSong" placeholder="Buscar canción..." onkeyup="filterRepertoireSongs()">
+                    <input type="text" id="searchSongInput" placeholder="Buscar canción..." onkeyup="filterSongs()">
                 </div>
-                <div id="availableRepertoireSongs" style="max-height: 300px; overflow-y: auto;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Ver Ensayo -->
-    <div class="modal-overlay" id="viewRehearsalModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="viewRehearsalTitle">Ensayo</h3>
-                <button class="modal-close" onclick="closeViewRehearsalModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="viewRehearsalContent"></div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeViewRehearsalModal()">Cerrar</button>
+                <div id="availableSongs" style="max-height: 350px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>

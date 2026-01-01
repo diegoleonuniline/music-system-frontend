@@ -9,6 +9,13 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+        <span class="logo">🐊</span>
+        <h1>Canciones</h1>
+    </header>
+    <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -21,7 +28,7 @@
                 <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
                 <a href="events.html"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
-                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -31,7 +38,7 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
@@ -43,24 +50,20 @@
 
             <div class="card">
                 <div class="search-filters">
-                    <input type="text" id="searchInput" placeholder="Buscar canciones..." onkeyup="filterSongs()">
+                    <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filterSongs()">
                     <select id="groupBy" onchange="renderSongs()">
-                        <option value="">Ordenar A-Z</option>
-                        <option value="artist">Por Artista</option>
-                        <option value="category">Por Categoría</option>
-                        <option value="genre">Por Género</option>
+                        <option value="">A-Z</option>
+                        <option value="artist">Artista</option>
+                        <option value="category">Categoría</option>
+                        <option value="genre">Género</option>
                     </select>
                     <div class="view-toggle">
                         <button class="active" onclick="setViewMode('list')">Lista</button>
                         <button onclick="setViewMode('table')">Tabla</button>
                     </div>
                 </div>
-
                 <div class="filter-chips" id="categoryChips"></div>
-
-                <div id="songsList">
-                    <div class="loading">Cargando...</div>
-                </div>
+                <div id="songsList"><div class="loading">Cargando...</div></div>
             </div>
         </main>
     </div>
@@ -73,7 +76,6 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Song -->
     <div class="modal-overlay" id="songModal">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
@@ -83,47 +85,20 @@
             <div class="modal-body">
                 <input type="hidden" id="songId">
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Nombre *</label>
-                        <input type="text" id="songName" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Artista</label>
-                        <input type="text" id="songArtist">
-                    </div>
+                    <div class="form-group"><label>Nombre *</label><input type="text" id="songName" required></div>
+                    <div class="form-group"><label>Artista</label><input type="text" id="songArtist"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Categoría</label>
-                        <select id="songCategory"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Género</label>
-                        <select id="songGenre"></select>
-                    </div>
+                    <div class="form-group"><label>Categoría</label><select id="songCategory"></select></div>
+                    <div class="form-group"><label>Género</label><select id="songGenre"></select></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Tonalidad</label>
-                        <input type="text" id="songKey" placeholder="Am, C, G...">
-                    </div>
-                    <div class="form-group">
-                        <label>BPM</label>
-                        <input type="number" id="songBpm" placeholder="120">
-                    </div>
-                    <div class="form-group">
-                        <label>Duración (seg)</label>
-                        <input type="number" id="songDuration" placeholder="180">
-                    </div>
+                    <div class="form-group"><label>Tono</label><input type="text" id="songKey" placeholder="Am, C..."></div>
+                    <div class="form-group"><label>BPM</label><input type="number" id="songBpm"></div>
+                    <div class="form-group"><label>Duración</label><input type="number" id="songDuration" placeholder="seg"></div>
                 </div>
-                <div class="form-group">
-                    <label>Video URL</label>
-                    <input type="url" id="songVideo" placeholder="https://youtube.com/...">
-                </div>
-                <div class="form-group">
-                    <label>Letra</label>
-                    <textarea id="songLyrics" rows="4" placeholder="Letra de la canción..."></textarea>
-                </div>
+                <div class="form-group"><label>Video URL</label><input type="url" id="songVideo"></div>
+                <div class="form-group"><label>Letra</label><textarea id="songLyrics" rows="3"></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeSongModal()">Cancelar</button>

@@ -197,6 +197,21 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 3000);
 }
 
+// Mobile Menu
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+}
+
+function closeMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+}
+
 function setupUserInfo() {
     const user = getUser();
     

@@ -4,6 +4,7 @@ setupUserInfo();
 let allSetlists = [];
 let allSongs = [];
 let currentSetlist = null;
+let viewMode = 'cards';
 
 async function loadSetlists() {
     try {
@@ -17,12 +18,20 @@ async function loadSetlists() {
     }
 }
 
+function setViewMode(mode) {
+    viewMode = mode;
+    document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(mode === 'cards' ? 'tarjeta' : 'tabla'));
+    });
+    renderSetlists();
+}
+
 function renderSetlists() {
-    const container = document.getElementById('setlistsGrid');
+    const container = document.getElementById('setlistsContainer');
 
     if (!allSetlists?.length) {
         container.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-state">
                 <div class="icon">📋</div>
                 <h3>Sin set lists</h3>
                 <p>Crea tu primer set list</p>
@@ -31,22 +40,55 @@ function renderSetlists() {
         return;
     }
 
-    container.innerHTML = allSetlists.map(s => `
-        <div class="setlist-card" onclick="viewSetlist(${s.id})">
-            <div class="icon">📋</div>
-            <h4>${s.name}</h4>
-            <div class="meta">
-                <span>${s.total_songs || 0} canciones</span>
-                <span>${formatDuration(s.total_duration_seconds)}</span>
+    if (viewMode === 'table') {
+        container.innerHTML = `
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Canciones</th>
+                            <th>Duración</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allSetlists.map(s => `
+                            <tr>
+                                <td><strong>${s.name}</strong></td>
+                                <td>${s.total_songs || 0}</td>
+                                <td>${formatDuration(s.total_duration_seconds)}</td>
+                                <td>
+                                    <button class="btn btn-ghost btn-sm" onclick="viewSetlist(${s.id})">Ver</button>
+                                    ${isAdmin() ? `
+                                        <button class="btn btn-ghost btn-sm" onclick="editSetlist(${s.id})">✏️</button>
+                                        <button class="btn btn-ghost btn-sm" onclick="deleteSetlist(${s.id})">🗑️</button>
+                                    ` : ''}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             </div>
-            ${isAdmin() ? `
-                <div class="actions" onclick="event.stopPropagation();">
-                    <button class="btn btn-ghost btn-sm" onclick="editSetlist(${s.id})">Editar</button>
-                    <button class="btn btn-ghost btn-sm" style="color: var(--danger);" onclick="deleteSetlist(${s.id})">Eliminar</button>
+        `;
+    } else {
+        container.innerHTML = `<div class="setlist-grid">${allSetlists.map(s => `
+            <div class="setlist-card" onclick="viewSetlist(${s.id})">
+                <div class="icon">📋</div>
+                <h4>${s.name}</h4>
+                <div class="meta">
+                    <span>${s.total_songs || 0} canciones</span>
+                    <span>${formatDuration(s.total_duration_seconds)}</span>
                 </div>
-            ` : ''}
-        </div>
-    `).join('');
+                ${isAdmin() ? `
+                    <div class="actions" onclick="event.stopPropagation();">
+                        <button class="btn btn-ghost btn-sm" onclick="editSetlist(${s.id})">Editar</button>
+                        <button class="btn btn-ghost btn-sm" style="color: var(--danger);" onclick="deleteSetlist(${s.id})">Eliminar</button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('')}</div>`;
+    }
 }
 
 async function viewSetlist(id) {

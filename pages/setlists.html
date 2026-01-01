@@ -9,6 +9,13 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+        <span class="logo">🐊</span>
+        <h1>Set Lists</h1>
+    </header>
+    <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -21,7 +28,7 @@
                 <a href="setlists.html" class="active"><span class="icon">📋</span> Set Lists</a>
                 <a href="events.html"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
-                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -31,7 +38,7 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
@@ -41,8 +48,14 @@
                 <button class="btn btn-primary" onclick="openSetlistModal()">+ Nuevo</button>
             </div>
 
-            <div class="setlist-grid" id="setlistsGrid">
-                <div class="loading">Cargando...</div>
+            <div class="card">
+                <div class="search-filters">
+                    <div class="view-toggle">
+                        <button class="active" onclick="setViewMode('cards')">Tarjetas</button>
+                        <button onclick="setViewMode('table')">Tabla</button>
+                    </div>
+                </div>
+                <div id="setlistsContainer"><div class="loading">Cargando...</div></div>
             </div>
         </main>
     </div>
@@ -55,7 +68,7 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Create/Edit Setlist -->
+    <!-- Modals -->
     <div class="modal-overlay" id="setlistModal">
         <div class="modal">
             <div class="modal-header">
@@ -64,14 +77,8 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="setlistId">
-                <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" id="setlistName" required>
-                </div>
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea id="setlistDescription" rows="3"></textarea>
-                </div>
+                <div class="form-group"><label>Nombre *</label><input type="text" id="setlistName" required></div>
+                <div class="form-group"><label>Descripción</label><textarea id="setlistDescription" rows="2"></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeSetlistModal()">Cancelar</button>
@@ -80,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Modal View Setlist -->
     <div class="modal-overlay" id="viewSetlistModal">
         <div class="modal" style="max-width: 700px;">
             <div class="modal-header">
@@ -88,7 +94,7 @@
                 <button class="modal-close" onclick="closeViewModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                     <div style="display: flex; gap: 8px;">
                         <span class="badge badge-primary" id="viewTotalSongs">0 canciones</span>
                         <span class="badge badge-neutral" id="viewTotalDuration">0:00</span>
@@ -103,7 +109,6 @@
         </div>
     </div>
 
-    <!-- Modal Add Song -->
     <div class="modal-overlay" id="addSongModal">
         <div class="modal">
             <div class="modal-header">
@@ -111,15 +116,12 @@
                 <button class="modal-close" onclick="closeAddSongModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <input type="text" id="searchSongInput" placeholder="Buscar canción..." onkeyup="filterAvailableSongs()">
-                </div>
+                <div class="form-group"><input type="text" id="searchSongInput" placeholder="Buscar..." onkeyup="filterAvailableSongs()"></div>
                 <div id="availableSongs" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Stage Mode -->
     <div class="modal-overlay" id="stageModeModal" style="background: #000; padding: 0;">
         <div class="stage-mode" style="width: 100%; height: 100%;">
             <div class="stage-header">

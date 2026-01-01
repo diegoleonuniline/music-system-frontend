@@ -9,6 +9,13 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+        <span class="logo">🐊</span>
+        <h1>Eventos</h1>
+    </header>
+    <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -21,7 +28,7 @@
                 <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
                 <a href="events.html" class="active"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
-                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -31,7 +38,7 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
@@ -57,10 +64,7 @@
                         <option value="cancelled">Cancelados</option>
                     </select>
                 </div>
-
-                <div id="eventsContainer">
-                    <div class="loading">Cargando...</div>
-                </div>
+                <div id="eventsContainer"><div class="loading">Cargando...</div></div>
             </div>
         </main>
     </div>
@@ -73,7 +77,6 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Event -->
     <div class="modal-overlay" id="eventModal">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
@@ -82,56 +85,28 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="eventId">
-                <div class="form-group">
-                    <label>Nombre del evento *</label>
-                    <input type="text" id="eventName" required>
-                </div>
+                <div class="form-group"><label>Nombre *</label><input type="text" id="eventName" required></div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Fecha *</label>
-                        <input type="date" id="eventDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Ciudad</label>
-                        <input type="text" id="eventCity">
-                    </div>
+                    <div class="form-group"><label>Fecha *</label><input type="date" id="eventDate" required></div>
+                    <div class="form-group"><label>Ciudad</label><input type="text" id="eventCity"></div>
                 </div>
-                <div class="form-group">
-                    <label>Lugar</label>
-                    <input type="text" id="eventVenue">
-                </div>
+                <div class="form-group"><label>Lugar</label><input type="text" id="eventVenue"></div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Hora inicio</label>
-                        <input type="time" id="eventStartTime">
-                    </div>
-                    <div class="form-group">
-                        <label>Hora fin</label>
-                        <input type="time" id="eventEndTime">
-                    </div>
+                    <div class="form-group"><label>Hora inicio</label><input type="time" id="eventStartTime"></div>
+                    <div class="form-group"><label>Hora fin</label><input type="time" id="eventEndTime"></div>
                 </div>
-                <div class="form-group">
-                    <label>Set List</label>
-                    <select id="eventSetlist"></select>
-                </div>
+                <div class="form-group"><label>Set List</label><select id="eventSetlist"></select></div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Estado</label>
+                    <div class="form-group"><label>Estado</label>
                         <select id="eventStatus">
                             <option value="confirmed">Confirmado</option>
                             <option value="tentative">Tentativo</option>
                             <option value="cancelled">Cancelado</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Pago</label>
-                        <input type="number" id="eventPayment" placeholder="0.00">
-                    </div>
+                    <div class="form-group"><label>Pago</label><input type="number" id="eventPayment" placeholder="0"></div>
                 </div>
-                <div class="form-group">
-                    <label>Notas</label>
-                    <textarea id="eventNotes" rows="2"></textarea>
-                </div>
+                <div class="form-group"><label>Notas</label><textarea id="eventNotes" rows="2"></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeEventModal()">Cancelar</button>
@@ -140,7 +115,6 @@
         </div>
     </div>
 
-    <!-- Modal View Event -->
     <div class="modal-overlay" id="viewEventModal">
         <div class="modal">
             <div class="modal-header">
@@ -148,9 +122,7 @@
                 <button class="modal-close" onclick="closeViewEventModal()">&times;</button>
             </div>
             <div class="modal-body" id="viewEventContent"></div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeViewEventModal()">Cerrar</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-ghost" onclick="closeViewEventModal()">Cerrar</button></div>
         </div>
     </div>
 

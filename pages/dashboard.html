@@ -9,6 +9,16 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+        <span class="logo">🐊</span>
+        <h1>Inicio</h1>
+    </header>
+    
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -21,7 +31,7 @@
                 <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
                 <a href="events.html"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
-                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile">
@@ -31,7 +41,7 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
