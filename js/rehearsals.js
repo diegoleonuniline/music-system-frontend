@@ -1,184 +1,291 @@
 checkAuth();
+setupUserInfo();
 
-const user = getUser();
-document.getElementById('userName').textContent = user.first_name + ' ' + (user.last_name || '');
-document.getElementById('userRole').textContent = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
-document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) || 'U';
-
-let allRehearsals = [];
 let allSongs = [];
+let rehearsals = JSON.parse(localStorage.getItem('rehearsals') || '[]');
+let repertoire = JSON.parse(localStorage.getItem('repertoire') || '[]');
 
 async function loadData() {
     try {
-        [allRehearsals, allSongs] = await Promise.all([
-            apiGet('/rehearsals'),
-            apiGet('/songs')
-        ]);
-        updateStats();
-        renderRehearsals();
-        renderReadyList();
+        allSongs = await apiGet('/songs') || [];
+        renderAll();
     } catch (error) {
         console.error('Error:', error);
     }
 }
 
-function updateStats() {
-    const pending = allRehearsals.filter(r => r.status !== 'ready');
-    document.getElementById('highCount').textContent = pending.filter(r => r.priority === 'high').length;
-    document.getElementById('mediumCount').textContent = pending.filter(r => r.priority === 'medium').length;
-    document.getElementById('lowCount').textContent = pending.filter(r => r.priority === 'low').length;
-    document.getElementById('readyCount').textContent = allRehearsals.filter(r => r.status === 'ready').length;
+function saveToStorage() {
+    localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
+    localStorage.setItem('repertoire', JSON.stringify(repertoire));
 }
 
-function renderRehearsals() {
-    const priorityFilter = document.getElementById('filterPriority').value;
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
+function renderAll() {
+    renderNextRehearsal();
+    renderRepertoire();
+    renderRehearsals();
+}
 
-    let filtered = allRehearsals.filter(r => r.status !== 'ready');
+// Próximo Ensayo
+function renderNextRehearsal() {
+    const today = new Date().toISOString().split('T')[0];
+    const upcoming = rehearsals
+        .filter(r => r.date >= today)
+        .sort((a, b) => a.date.localeCompare(b.date))[0];
 
-    if (priorityFilter) {
-        filtered = filtered.filter(r => r.priority === priorityFilter);
+    const card = document.getElementById('nextRehearsalCard');
+    const content = document.getElementById('nextRehearsalContent');
+
+    if (upcoming) {
+        card.style.display = 'block';
+        content.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h2 style="margin-bottom: 8px;">${upcoming.title || 'Ensayo'}</h2>
+                    <p style="color: var(--text-secondary);">
+                        📅 ${formatDate(upcoming.date)} ${upcoming.time ? '· 🕐 ' + upcoming.time : ''}
+                    </p>
+                    ${upcoming.location ? `<p style="color: var(--text-secondary);">📍 ${upcoming.location}</p>` : ''}
+                </div>
+                <span class="badge badge-primary">Próximo</span>
+            </div>
+            ${upcoming.notes ? `<p style="margin-top: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">${upcoming.notes}</p>` : ''}
+        `;
+    } else {
+        card.style.display = 'none';
     }
+}
 
-    const container = document.getElementById('rehearsalsList');
+// Canciones para Repertorio
+function renderRepertoire() {
+    const container = document.getElementById('repertoireList');
 
-    if (!filtered.length) {
+    if (!repertoire.length) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="icon">🎸</div>
-                <h3>Sin canciones por ensayar</h3>
-                <p>Agrega canciones para practicar</p>
+                <div class="icon">📝</div>
+                <h3>Sin canciones pendientes</h3>
+                <p>Agrega canciones que quieras aprender</p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = filtered.map(r => `
-        <div class="song-item priority-${r.priority}">
-            <span style="font-size: 16px;">${r.priority === 'high' ? '🔴' : r.priority === 'medium' ? '🟡' : '🟢'}</span>
-            <div class="song-info">
-                <h4>${r.song_name}</h4>
-                <p>${r.artist || 'Sin artista'}${r.notes ? ' · ' + r.notes : ''}</p>
-            </div>
-            <div class="song-meta">
-                <span class="badge ${r.status === 'pending' ? 'badge-neutral' : 'badge-primary'}">
-                    ${r.status === 'pending' ? 'Pendiente' : 'En progreso'}
+    container.innerHTML = repertoire.map(r => {
+        const song = allSongs.find(s => s.id === r.songId);
+        if (!song) return '';
+        
+        return `
+            <div class="song-item">
+                <div class="song-thumb" style="background: ${getPriorityColor(r.priority)};">
+                    ${r.priority === 'high' ? '🔥' : r.priority === 'medium' ? '⚡' : '📌'}
+                </div>
+                <div class="song-info">
+                    <h4>${song.name}</h4>
+                    <p>${song.artist || 'Sin artista'}</p>
+                </div>
+                <span class="badge ${r.status === 'learning' ? 'badge-warning' : r.status === 'ready' ? 'badge-success' : 'badge-neutral'}">
+                    ${r.status === 'learning' ? 'Aprendiendo' : r.status === 'ready' ? 'Lista' : 'Pendiente'}
                 </span>
-                ${r.target_date ? `<span class="badge badge-neutral">${formatDate(r.target_date)}</span>` : ''}
+                <div class="song-actions">
+                    <select onchange="updateRepertoireStatus(${r.songId}, this.value)" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);">
+                        <option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                        <option value="learning" ${r.status === 'learning' ? 'selected' : ''}>Aprendiendo</option>
+                        <option value="ready" ${r.status === 'ready' ? 'selected' : ''}>Lista</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" onclick="removeFromRepertoire(${r.songId})">✕</button>
+                </div>
             </div>
-            ${isAdmin ? `
-                <div class="song-actions" style="opacity: 1;">
-                    ${r.status === 'pending' ? `
-                        <button class="btn btn-ghost btn-sm" onclick="updateStatus(${r.id}, 'in_progress')">▶ Iniciar</button>
-                    ` : ''}
-                    <button class="btn btn-secondary btn-sm" onclick="moveToRepertoire(${r.id})">✅ Lista</button>
-                    <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteRehearsal(${r.id})">×</button>
+        `;
+    }).join('');
+}
+
+function getPriorityColor(priority) {
+    if (priority === 'high') return 'linear-gradient(135deg, #EF4444, #DC2626)';
+    if (priority === 'medium') return 'linear-gradient(135deg, #F59E0B, #D97706)';
+    return 'linear-gradient(135deg, #6B7280, #4B5563)';
+}
+
+function updateRepertoireStatus(songId, status) {
+    const item = repertoire.find(r => r.songId === songId);
+    if (item) {
+        item.status = status;
+        saveToStorage();
+        renderRepertoire();
+        showToast('Estado actualizado');
+    }
+}
+
+function removeFromRepertoire(songId) {
+    repertoire = repertoire.filter(r => r.songId !== songId);
+    saveToStorage();
+    renderRepertoire();
+    showToast('Canción quitada del repertorio');
+}
+
+function openAddRepertoireModal() {
+    document.getElementById('searchRepertoireSong').value = '';
+    filterRepertoireSongs();
+    document.getElementById('addRepertoireModal').classList.add('active');
+}
+
+function closeAddRepertoireModal() {
+    document.getElementById('addRepertoireModal').classList.remove('active');
+}
+
+function filterRepertoireSongs() {
+    const search = document.getElementById('searchRepertoireSong').value.toLowerCase();
+    const repertoireIds = repertoire.map(r => r.songId);
+    
+    const available = allSongs.filter(s =>
+        !repertoireIds.includes(s.id) &&
+        (s.name.toLowerCase().includes(search) || (s.artist || '').toLowerCase().includes(search))
+    );
+
+    const container = document.getElementById('availableRepertoireSongs');
+    container.innerHTML = available.length ? available.map(s => `
+        <div class="song-item">
+            <div class="song-info">
+                <h4>${s.name}</h4>
+                <p>${s.artist || 'Sin artista'}</p>
+            </div>
+            <select id="priority-${s.id}" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); margin-right: 8px;">
+                <option value="low">Baja</option>
+                <option value="medium">Media</option>
+                <option value="high">Alta</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="addToRepertoire(${s.id})">Agregar</button>
+        </div>
+    `).join('') : '<div class="empty-state"><p>No hay canciones disponibles</p></div>';
+}
+
+function addToRepertoire(songId) {
+    const priority = document.getElementById(`priority-${songId}`).value;
+    repertoire.push({
+        songId: songId,
+        priority: priority,
+        status: 'pending',
+        addedAt: new Date().toISOString()
+    });
+    saveToStorage();
+    renderRepertoire();
+    filterRepertoireSongs();
+    showToast('Canción agregada al repertorio');
+}
+
+// Ensayos
+function renderRehearsals() {
+    const container = document.getElementById('rehearsalsList');
+
+    if (!rehearsals.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🎸</div>
+                <h3>Sin ensayos</h3>
+                <p>Programa tu primer ensayo</p>
+            </div>
+        `;
+        return;
+    }
+
+    const sorted = [...rehearsals].sort((a, b) => b.date.localeCompare(a.date));
+    const today = new Date().toISOString().split('T')[0];
+
+    container.innerHTML = sorted.map(r => `
+        <div class="song-item" onclick="viewRehearsal('${r.id}')" style="cursor: pointer;">
+            <div class="song-thumb">${r.date >= today ? '📅' : '✅'}</div>
+            <div class="song-info">
+                <h4>${r.title || 'Ensayo'}</h4>
+                <p>${formatDate(r.date)} ${r.time ? '· ' + r.time : ''}</p>
+            </div>
+            <span class="badge ${r.date >= today ? 'badge-primary' : 'badge-neutral'}">
+                ${r.date >= today ? 'Programado' : 'Completado'}
+            </span>
+            ${isAdmin() ? `
+                <div class="song-actions" onclick="event.stopPropagation();">
+                    <button class="btn btn-ghost btn-sm" onclick="editRehearsal('${r.id}')">✏️</button>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteRehearsal('${r.id}')">🗑️</button>
                 </div>
             ` : ''}
         </div>
     `).join('');
 }
 
-function renderReadyList() {
-    const ready = allRehearsals.filter(r => r.status === 'ready');
-    const container = document.getElementById('readyList');
-
-    if (!ready.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>Las canciones listas aparecerán aquí</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = ready.slice(0, 10).map(r => `
-        <div class="song-item" style="opacity: 0.7;">
-            <span>✅</span>
-            <div class="song-info">
-                <h4>${r.song_name}</h4>
-                <p>${r.artist || 'Sin artista'} · Lista el ${formatDate(r.moved_to_repertoire_at)}</p>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function updateStatus(id, status) {
-    await apiPatch(`/rehearsals/${id}/status`, { status });
-    loadData();
-}
-
-async function moveToRepertoire(id) {
-    await apiPost(`/rehearsals/${id}/move-to-repertoire`);
-    loadData();
-}
-
-async function deleteRehearsal(id) {
-    if (confirm('¿Eliminar de ensayos?')) {
-        await apiDelete(`/rehearsals/${id}`);
-        loadData();
-    }
-}
-
-function openModal() {
-    document.getElementById('searchSongInput').value = '';
-    document.getElementById('selectedSongId').value = '';
-    document.getElementById('selectedSongInfo').style.display = 'none';
-    document.getElementById('rehearsalPriority').value = 'medium';
-    document.getElementById('rehearsalTargetDate').value = '';
-    document.getElementById('rehearsalNotes').value = '';
-    filterAvailableSongs();
+function openRehearsalModal(rehearsal = null) {
+    document.getElementById('rehearsalModalTitle').textContent = rehearsal ? 'Editar Ensayo' : 'Nuevo Ensayo';
+    document.getElementById('rehearsalId').value = rehearsal?.id || '';
+    document.getElementById('rehearsalTitle').value = rehearsal?.title || '';
+    document.getElementById('rehearsalDate').value = rehearsal?.date || '';
+    document.getElementById('rehearsalTime').value = rehearsal?.time || '';
+    document.getElementById('rehearsalLocation').value = rehearsal?.location || '';
+    document.getElementById('rehearsalNotes').value = rehearsal?.notes || '';
     document.getElementById('rehearsalModal').classList.add('active');
 }
 
-function closeModal() {
+function closeRehearsalModal() {
     document.getElementById('rehearsalModal').classList.remove('active');
 }
 
-function filterAvailableSongs() {
-    const search = document.getElementById('searchSongInput').value.toLowerCase();
-    const rehearsalSongIds = allRehearsals.filter(r => r.status !== 'ready').map(r => r.song_id);
-
-    const available = allSongs.filter(s =>
-        !rehearsalSongIds.includes(s.id) &&
-        (s.name.toLowerCase().includes(search) || (s.artist || '').toLowerCase().includes(search))
-    );
-
-    const container = document.getElementById('availableSongs');
-    container.innerHTML = available.length ? available.slice(0, 20).map(s => `
-        <div class="song-item" style="cursor: pointer;" onclick="selectSong(${s.id}, '${s.name.replace(/'/g, "\\'")}')">
-            <div class="song-info">
-                <h4>${s.name}</h4>
-                <p>${s.artist || 'Sin artista'}</p>
-            </div>
-        </div>
-    `).join('') : '<div class="empty-state"><p>Sin canciones disponibles</p></div>';
+function editRehearsal(id) {
+    const rehearsal = rehearsals.find(r => r.id === id);
+    openRehearsalModal(rehearsal);
 }
 
-function selectSong(id, name) {
-    document.getElementById('selectedSongId').value = id;
-    document.getElementById('selectedSongName').textContent = name;
-    document.getElementById('selectedSongInfo').style.display = 'block';
-}
-
-async function saveRehearsal() {
-    const songId = document.getElementById('selectedSongId').value;
-    
-    if (!songId) {
-        alert('Selecciona una canción');
-        return;
-    }
-
+function saveRehearsal() {
+    const id = document.getElementById('rehearsalId').value;
     const data = {
-        song_id: parseInt(songId),
-        priority: document.getElementById('rehearsalPriority').value,
-        target_date: document.getElementById('rehearsalTargetDate').value || null,
+        id: id || Date.now().toString(),
+        title: document.getElementById('rehearsalTitle').value || 'Ensayo',
+        date: document.getElementById('rehearsalDate').value,
+        time: document.getElementById('rehearsalTime').value,
+        location: document.getElementById('rehearsalLocation').value,
         notes: document.getElementById('rehearsalNotes').value
     };
 
-    await apiPost('/rehearsals', data);
-    closeModal();
-    loadData();
+    if (id) {
+        const index = rehearsals.findIndex(r => r.id === id);
+        if (index !== -1) rehearsals[index] = data;
+    } else {
+        rehearsals.push(data);
+    }
+
+    saveToStorage();
+    closeRehearsalModal();
+    renderAll();
+    showToast('Ensayo guardado');
+}
+
+function deleteRehearsal(id) {
+    if (confirm('¿Eliminar este ensayo?')) {
+        rehearsals = rehearsals.filter(r => r.id !== id);
+        saveToStorage();
+        renderAll();
+        showToast('Ensayo eliminado');
+    }
+}
+
+function viewRehearsal(id) {
+    const rehearsal = rehearsals.find(r => r.id === id);
+    if (!rehearsal) return;
+
+    document.getElementById('viewRehearsalTitle').textContent = rehearsal.title || 'Ensayo';
+    document.getElementById('viewRehearsalContent').innerHTML = `
+        <div style="display: grid; gap: 12px;">
+            <div><strong>📅 Fecha:</strong> ${formatDate(rehearsal.date)}</div>
+            ${rehearsal.time ? `<div><strong>🕐 Hora:</strong> ${rehearsal.time}</div>` : ''}
+            ${rehearsal.location ? `<div><strong>📍 Lugar:</strong> ${rehearsal.location}</div>` : ''}
+            ${rehearsal.notes ? `
+                <div style="margin-top: 12px;">
+                    <strong>📝 Notas:</strong>
+                    <p style="margin-top: 8px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">${rehearsal.notes}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    document.getElementById('viewRehearsalModal').classList.add('active');
+}
+
+function closeViewRehearsalModal() {
+    document.getElementById('viewRehearsalModal').classList.remove('active');
 }
 
 loadData();

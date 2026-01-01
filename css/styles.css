@@ -977,6 +977,12 @@ tr:hover td {
 
 /* Mobile Styles */
 @media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+    }
+    
     .sidebar {
         display: none;
     }
@@ -984,64 +990,264 @@ tr:hover td {
     .main-content {
         margin-left: 0;
         padding: 16px;
-        padding-bottom: 140px;
+        padding-bottom: 160px;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+    
+    .page-header {
+        flex-wrap: wrap;
+        gap: 12px;
     }
     
     .page-header h1 {
-        font-size: 24px;
+        font-size: 22px;
+        flex: 1;
+        min-width: 0;
     }
     
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
     }
     
     .stat-card {
-        padding: 16px;
+        padding: 14px 10px;
+    }
+    
+    .stat-card .icon {
+        font-size: 24px;
     }
     
     .stat-card .number {
-        font-size: 24px;
+        font-size: 22px;
+    }
+    
+    .stat-card .label {
+        font-size: 12px;
     }
     
     .form-row {
         grid-template-columns: 1fr;
     }
     
+    .card {
+        margin-bottom: 16px;
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        padding: 12px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .card-body {
+        padding: 14px;
+    }
+    
+    /* Search Filters Mobile */
     .search-filters {
         flex-direction: column;
+        gap: 10px;
     }
     
-    .search-filters input {
-        min-width: 100%;
+    .search-filters input,
+    .search-filters select {
+        width: 100%;
+        min-width: unset;
     }
     
-    .calendar-grid,
-    .week-grid {
+    .view-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .view-toggle button {
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+    
+    .filter-chips {
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .filter-chip {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    /* Song Items Mobile */
+    .song-item {
+        padding: 12px;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .song-thumb {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+    
+    .song-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .song-info h4 {
+        font-size: 14px;
+    }
+    
+    .song-info p {
+        font-size: 12px;
+    }
+    
+    .song-badges {
+        display: none;
+    }
+    
+    .song-actions {
+        flex-shrink: 0;
+    }
+    
+    .song-actions .btn {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+    
+    .favorite-btn {
+        font-size: 18px;
+        padding: 2px;
+    }
+    
+    /* Badges Mobile */
+    .badge {
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+    
+    /* Tables Mobile */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -14px;
+        padding: 0 14px;
+    }
+    
+    table {
+        min-width: 600px;
+        font-size: 13px;
+    }
+    
+    th, td {
+        padding: 10px 12px;
+    }
+    
+    /* Calendar Mobile */
+    .calendar-header {
+        display: none;
+    }
+    
+    .calendar-grid {
         grid-template-columns: 1fr;
+        gap: 8px;
     }
     
     .calendar-day {
         min-height: auto;
+        padding: 12px;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 12px;
     }
     
     .calendar-day .day-number {
-        min-width: 30px;
+        min-width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-tertiary);
+        border-radius: 50%;
+        font-weight: 600;
+    }
+    
+    .calendar-day.today .day-number {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .calendar-day .events-wrap {
+        flex: 1;
+    }
+    
+    .calendar-event {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    /* Week View Mobile */
+    .week-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
     }
     
     .week-day {
         display: flex;
+        flex-direction: row;
     }
     
     .week-day-header {
-        min-width: 80px;
+        min-width: 70px;
+        padding: 10px;
+    }
+    
+    .week-day-header .day-name {
+        font-size: 11px;
+    }
+    
+    .week-day-header .day-number {
+        font-size: 20px;
     }
     
     .week-day-content {
         flex: 1;
+        padding: 10px;
+        min-height: 60px;
+    }
+    
+    /* Setlist Grid Mobile */
+    .setlist-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .setlist-card {
+        padding: 16px;
+    }
+    
+    .setlist-card .icon {
+        font-size: 32px;
+    }
+    
+    .setlist-card h4 {
+        font-size: 16px;
+    }
+    
+    .setlist-card .meta {
+        font-size: 13px;
+        gap: 12px;
+    }
+    
+    .setlist-card .actions {
+        margin-top: 12px;
+        padding-top: 12px;
     }
     
     /* Mobile Bottom Nav */
@@ -1062,16 +1268,17 @@ tr:hover td {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 12px 8px;
+        padding: 10px 4px;
         color: var(--text-secondary);
         text-decoration: none;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 500;
+        min-width: 0;
     }
     
     .mobile-nav a .icon {
-        font-size: 24px;
-        margin-bottom: 4px;
+        font-size: 22px;
+        margin-bottom: 2px;
     }
     
     .mobile-nav a.active {
@@ -1080,36 +1287,7 @@ tr:hover td {
     
     /* Mobile User Profile */
     .mobile-user {
-        display: flex;
-        position: fixed;
-        bottom: 70px;
-        left: 0;
-        right: 0;
-        background: var(--bg-secondary);
-        border-top: 1px solid var(--border);
-        padding: 12px 16px;
-        align-items: center;
-        gap: 12px;
-        z-index: 99;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    }
-    
-    .mobile-user .user-avatar {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
-    }
-    
-    .mobile-user .user-info {
-        flex: 1;
-    }
-    
-    .mobile-user .user-info h4 {
-        font-size: 14px;
-    }
-    
-    .mobile-user .user-info span {
-        font-size: 12px;
+        display: none;
     }
     
     /* Modal Mobile */
@@ -1120,8 +1298,86 @@ tr:hover td {
     
     .modal {
         max-width: 100%;
-        border-radius: var(--radius) var(--radius) 0 0;
-        max-height: 85vh;
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+        max-height: 90vh;
+    }
+    
+    .modal-header {
+        padding: 16px;
+    }
+    
+    .modal-header h3 {
+        font-size: 17px;
+    }
+    
+    .modal-body {
+        padding: 16px;
+    }
+    
+    .modal-footer {
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+    
+    /* Stage Mode Mobile */
+    .stage-header {
+        padding: 16px;
+    }
+    
+    .stage-header h2 {
+        font-size: 18px;
+    }
+    
+    .stage-song {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .stage-song-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .stage-song-number {
+        font-size: 18px;
+    }
+    
+    .stage-song-title {
+        font-size: 20px;
+    }
+    
+    .stage-song-artist {
+        font-size: 14px;
+    }
+    
+    .stage-badge {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .stage-lyrics {
+        font-size: 15px;
+        line-height: 1.8;
+    }
+    
+    /* Empty State Mobile */
+    .empty-state {
+        padding: 40px 20px;
+    }
+    
+    .empty-state .icon {
+        font-size: 48px;
+    }
+    
+    .empty-state h3 {
+        font-size: 16px;
+    }
+    
+    /* Group Headers Mobile */
+    .group-header {
+        padding: 10px 14px;
+        font-size: 13px;
     }
 }
 

@@ -35,7 +35,7 @@ async function loadEvents() {
 function setView(view) {
     currentView = view;
     document.querySelectorAll('.view-toggle button').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(view));
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(view === 'month' ? 'mes' : view === 'week' ? 'semana' : view));
     });
     renderEvents();
 }
@@ -48,6 +48,8 @@ function renderEvents() {
 
     if (currentView === 'list') {
         renderListView(filtered, container);
+    } else if (currentView === 'table') {
+        renderTableView(filtered, container);
     } else if (currentView === 'month') {
         renderMonthView(filtered, container);
     } else {
@@ -56,6 +58,36 @@ function renderEvents() {
 }
 
 function renderListView(events, container) {
+    if (!events.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">📅</div>
+                <h3>Sin eventos</h3>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = events.map(e => `
+        <div class="song-item" onclick="viewEvent(${e.id})" style="cursor: pointer; ${e.status === 'cancelled' ? 'opacity: 0.5;' : ''}">
+            <div class="song-thumb">${e.status === 'confirmed' ? '✅' : e.status === 'tentative' ? '⏳' : '❌'}</div>
+            <div class="song-info">
+                <h4>${e.name}</h4>
+                <p>${formatDate(e.event_date)} · ${e.venue || 'Sin lugar'}</p>
+            </div>
+            <span class="badge ${e.status === 'confirmed' ? 'badge-success' : e.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
+                ${e.status === 'confirmed' ? 'Confirmado' : e.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
+            </span>
+            ${isAdmin() ? `
+                <div class="song-actions" onclick="event.stopPropagation();">
+                    <button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">✏️</button>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function renderTableView(events, container) {
     if (!events.length) {
         container.innerHTML = `
             <div class="empty-state">
@@ -76,6 +108,7 @@ function renderListView(events, container) {
                         <th>Lugar</th>
                         <th>Hora</th>
                         <th>Estado</th>
+                        <th>Pago</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -91,9 +124,10 @@ function renderListView(events, container) {
                                     ${e.status === 'confirmed' ? 'Confirmado' : e.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
                                 </span>
                             </td>
+                            <td>$${e.payment || 0}</td>
                             <td>
                                 <button class="btn btn-ghost btn-sm" onclick="viewEvent(${e.id})">Ver</button>
-                                ${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">Editar</button>` : ''}
+                                ${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">✏️</button>` : ''}
                             </td>
                         </tr>
                     `).join('')}

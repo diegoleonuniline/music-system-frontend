@@ -5,6 +5,7 @@ let allSongs = [];
 let categories = [];
 let genres = [];
 let selectedCategory = '';
+let viewMode = 'list';
 
 async function loadData() {
     try {
@@ -50,6 +51,14 @@ function filterSongs() {
     renderSongs();
 }
 
+function setViewMode(mode) {
+    viewMode = mode;
+    document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === mode);
+    });
+    renderSongs();
+}
+
 function renderSongs() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const groupBy = document.getElementById('groupBy').value;
@@ -69,6 +78,53 @@ function renderSongs() {
         return;
     }
 
+    // Vista Tabla
+    if (viewMode === 'table') {
+        container.innerHTML = `
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>⭐</th>
+                            <th>Nombre</th>
+                            <th>Artista</th>
+                            <th>Categoría</th>
+                            <th>Tono</th>
+                            <th>BPM</th>
+                            <th>Duración</th>
+                            ${isAdmin() ? '<th></th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(s => `
+                            <tr>
+                                <td>
+                                    <button class="favorite-btn ${s.is_favorite ? 'active' : ''}" onclick="toggleFavorite(${s.id}, ${!s.is_favorite})">
+                                        ${s.is_favorite ? '⭐' : '☆'}
+                                    </button>
+                                </td>
+                                <td><strong>${s.name}</strong></td>
+                                <td>${s.artist || '-'}</td>
+                                <td>${s.category_name || '-'}</td>
+                                <td>${s.musical_key ? `<span class="badge badge-success">${s.musical_key}</span>` : '-'}</td>
+                                <td>${s.bpm ? `<span class="badge badge-warning">${s.bpm}</span>` : '-'}</td>
+                                <td>${formatDuration(s.duration_seconds)}</td>
+                                ${isAdmin() ? `
+                                    <td>
+                                        <button class="btn btn-ghost btn-sm" onclick="editSong(${s.id})">✏️</button>
+                                        <button class="btn btn-ghost btn-sm" onclick="deleteSong(${s.id})">🗑️</button>
+                                    </td>
+                                ` : ''}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        return;
+    }
+
+    // Vista Lista (con o sin agrupación)
     if (groupBy) {
         const groups = {};
         filtered.forEach(s => {
