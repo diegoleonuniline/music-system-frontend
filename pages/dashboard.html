@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Music System</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🎵 Music System</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="active"><span class="icon">📊</span> Dashboard</a>
+                <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
+                <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
+                <a href="events.html"><span class="icon">📅</span> Eventos</a>
+                <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
+                <a href="musicians.html"><span class="icon">👥</span> Músicos</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <h4 id="userName">Usuario</h4>
+                        <span id="userRole">Rol</span>
+                    </div>
+                </div>
+                <button class="btn btn-danger btn-sm btn-block" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon">🎵</div>
+                    <div class="number" id="totalSongs">0</div>
+                    <div class="label">Canciones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">📋</div>
+                    <div class="number" id="totalSetlists">0</div>
+                    <div class="label">Set Lists</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">📅</div>
+                    <div class="number" id="totalEvents">0</div>
+                    <div class="label">Eventos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">👥</div>
+                    <div class="number" id="totalMusicians">0</div>
+                    <div class="label">Músicos</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>📅 Próximos Eventos</h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Evento</th>
+                                <th>Lugar</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="upcomingEvents">
+                            <tr><td colspan="4">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>⭐ Canciones Favoritas</h3>
+                </div>
+                <div id="favoriteSongs">Cargando...</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
