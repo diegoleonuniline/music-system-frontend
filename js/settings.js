@@ -8,6 +8,11 @@ document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) |
 const isSuperAdmin = user.role === 'super_admin';
 const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
 
+// Ocultar botones admin-only si no es admin
+if (!isAdmin) {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+}
+
 let categories = [];
 let genres = [];
 let groups = [];
@@ -23,10 +28,9 @@ async function loadData() {
         renderCategories();
         renderGenres();
 
-        // Solo Super Admin ve grupos y planes
         if (isSuperAdmin) {
-            document.getElementById('groupsSection').style.display = 'block';
-            document.getElementById('plansSection').style.display = 'block';
+            document.getElementById('groupsSection').classList.remove('hidden');
+            document.getElementById('plansSection').classList.remove('hidden');
             
             [groups, plans] = await Promise.all([
                 apiGet('/groups'),
@@ -36,7 +40,6 @@ async function loadData() {
             renderGroups();
             renderPlans();
             
-            // Llenar select de planes
             const planSelect = document.getElementById('groupPlan');
             planSelect.innerHTML = '<option value="">Sin plan</option>';
             plans.forEach(p => {
@@ -54,22 +57,18 @@ function renderCategories() {
     const container = document.getElementById('categoriesList');
     
     if (!categories.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>No hay categorías. Crea la primera.</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="empty-state"><p>No hay categorías</p></div>';
         return;
     }
 
     container.innerHTML = `
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <div class="tag-list">
             ${categories.map(c => `
-                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-radius: var(--radius); border-left: 4px solid ${c.color || '#3498db'};">
+                <div class="tag" style="border-left: 4px solid ${c.color || '#3498db'};">
                     <span>${c.name}</span>
                     ${isAdmin ? `
-                        <button class="btn btn-ghost btn-sm" onclick="editCategory(${c.id})" style="padding: 2px 6px;">✎</button>
-                        <button class="btn btn-ghost btn-sm" onclick="deleteCategory(${c.id})" style="padding: 2px 6px; color: var(--danger);">×</button>
+                        <button class="tag-delete" onclick="editCategory(${c.id})">✎</button>
+                        <button class="tag-delete" onclick="deleteCategory(${c.id})">×</button>
                     ` : ''}
                 </div>
             `).join('')}
@@ -124,22 +123,18 @@ function renderGenres() {
     const container = document.getElementById('genresList');
     
     if (!genres.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>No hay géneros. Crea el primero.</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="empty-state"><p>No hay géneros</p></div>';
         return;
     }
 
     container.innerHTML = `
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <div class="tag-list">
             ${genres.map(g => `
-                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-radius: var(--radius);">
+                <div class="tag">
                     <span>${g.name}</span>
                     ${isAdmin ? `
-                        <button class="btn btn-ghost btn-sm" onclick="editGenre(${g.id})" style="padding: 2px 6px;">✎</button>
-                        <button class="btn btn-ghost btn-sm" onclick="deleteGenre(${g.id})" style="padding: 2px 6px; color: var(--danger);">×</button>
+                        <button class="tag-delete" onclick="editGenre(${g.id})">✎</button>
+                        <button class="tag-delete" onclick="deleteGenre(${g.id})">×</button>
                     ` : ''}
                 </div>
             `).join('')}
@@ -165,9 +160,7 @@ function editGenre(id) {
 
 async function saveGenre() {
     const id = document.getElementById('genreId').value;
-    const data = {
-        name: document.getElementById('genreName').value
-    };
+    const data = { name: document.getElementById('genreName').value };
 
     if (id) {
         await apiPut(`/genres/${id}`, data);
@@ -186,13 +179,13 @@ async function deleteGenre(id) {
     }
 }
 
-// ============ GRUPOS (Super Admin) ============
+// ============ GRUPOS ============
 
 function renderGroups() {
     const container = document.getElementById('groupsList');
     
     if (!groups.length) {
-        container.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>No hay grupos</p></div></td></tr>';
+        container.innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>No hay grupos</p></div></td></tr>';
         return;
     }
 
@@ -201,10 +194,6 @@ function renderGroups() {
             <td><strong>${g.name}</strong></td>
             <td>${g.plan_name || '-'}</td>
             <td>${g.current_musicians || 0} / ${g.max_musicians || '∞'}</td>
-            <td>
-                ${g.plan_start_date ? formatDateLocal(g.plan_start_date) : '-'} 
-                ${g.plan_end_date ? ' - ' + formatDateLocal(g.plan_end_date) : ''}
-            </td>
             <td>
                 <span class="badge ${g.is_active ? 'badge-success' : 'badge-danger'}">
                     ${g.is_active ? 'Activo' : 'Inactivo'}
@@ -223,9 +212,8 @@ function openGroupModal(group = null) {
     document.getElementById('groupId').value = group?.id || '';
     document.getElementById('groupName').value = group?.name || '';
     document.getElementById('groupPlan').value = group?.plan_id || '';
-    document.getElementById('groupStartDate').value = group?.plan_start_date?.split('T')[0] || '';
-    document.getElementById('groupEndDate').value = group?.plan_end_date?.split('T')[0] || '';
-    document.getElementById('groupLogo').value = group?.logo_url || '';
+    document.getElementById('groupStartDate').value = getDateValue(group?.plan_start_date) || '';
+    document.getElementById('groupEndDate').value = getDateValue(group?.plan_end_date) || '';
     document.getElementById('groupModal').classList.add('active');
 }
 
@@ -244,8 +232,7 @@ async function saveGroup() {
         name: document.getElementById('groupName').value,
         plan_id: document.getElementById('groupPlan').value || null,
         plan_start_date: document.getElementById('groupStartDate').value || null,
-        plan_end_date: document.getElementById('groupEndDate').value || null,
-        logo_url: document.getElementById('groupLogo').value || null
+        plan_end_date: document.getElementById('groupEndDate').value || null
     };
 
     if (id) {
@@ -258,7 +245,7 @@ async function saveGroup() {
     loadData();
 }
 
-// ============ ASIGNAR ADMIN A GRUPO ============
+// ============ ASIGNAR ADMIN ============
 
 function openAssignAdminModal(groupId, groupName) {
     document.getElementById('assignGroupId').value = groupId;
@@ -279,7 +266,7 @@ async function saveGroupAdmin() {
     const password = document.getElementById('adminPassword').value;
     
     if (password.length < 6) {
-        alert('La contraseña debe tener al menos 6 caracteres');
+        alert('Contraseña mínimo 6 caracteres');
         return;
     }
 
@@ -298,7 +285,7 @@ async function saveGroupAdmin() {
             alert(result.error);
             return;
         }
-        alert('Administrador creado exitosamente');
+        alert('Admin creado');
         closeAssignAdminModal();
     } catch (error) {
         alert('Error: ' + error.message);
@@ -309,22 +296,13 @@ async function saveGroupAdmin() {
 
 function renderPlans() {
     const container = document.getElementById('plansList');
-    
     container.innerHTML = plans.map(p => `
         <tr>
             <td><strong>${p.name}</strong></td>
             <td>${p.max_musicians}</td>
             <td>$${p.price}</td>
-            <td>${p.description || '-'}</td>
         </tr>
     `).join('');
-}
-
-// Función para formatear fechas correctamente (sin problema de timezone)
-function formatDateLocal(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 loadData();

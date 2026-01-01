@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Configuración - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
@@ -20,7 +20,7 @@
                 <a href="events.html"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
                 <a href="musicians.html"><span class="icon">👥</span> Músicos</a>
-                <a href="settings.html" class="active"><span class="icon">⚙️</span> Configuración</a>
+                <a href="settings.html" class="active"><span class="icon">⚙️</span> Config</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-info">
@@ -39,11 +39,11 @@
                 <h1>Configuración</h1>
             </div>
 
-            <!-- Panel Super Admin - Grupos -->
-            <div class="card" id="groupsSection" style="display: none;">
+            <!-- Grupos (Solo Super Admin) -->
+            <div class="card hidden" id="groupsSection">
                 <div class="card-header">
                     <h3>🏢 Grupos Musicales</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openGroupModal()">+ Nuevo grupo</button>
+                    <button class="btn btn-primary btn-sm" onclick="openGroupModal()">+ Nuevo</button>
                 </div>
                 <div class="table-container">
                     <table>
@@ -52,14 +52,11 @@
                                 <th>Grupo</th>
                                 <th>Plan</th>
                                 <th>Músicos</th>
-                                <th>Vigencia</th>
                                 <th>Estado</th>
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody id="groupsList">
-                            <tr><td colspan="6"><div class="loading">Cargando</div></td></tr>
-                        </tbody>
+                        <tbody id="groupsList"></tbody>
                     </table>
                 </div>
             </div>
@@ -68,7 +65,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3>📁 Categorías</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva categoría</button>
+                    <button class="btn btn-primary btn-sm admin-only" onclick="openCategoryModal()">+ Nueva</button>
                 </div>
                 <div id="categoriesList">
                     <div class="loading">Cargando</div>
@@ -79,7 +76,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3>🎸 Géneros</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openGenreModal()">+ Nuevo género</button>
+                    <button class="btn btn-primary btn-sm admin-only" onclick="openGenreModal()">+ Nuevo</button>
                 </div>
                 <div id="genresList">
                     <div class="loading">Cargando</div>
@@ -87,7 +84,7 @@
             </div>
 
             <!-- Planes (Solo Super Admin) -->
-            <div class="card" id="plansSection" style="display: none;">
+            <div class="card hidden" id="plansSection">
                 <div class="card-header">
                     <h3>💳 Planes</h3>
                 </div>
@@ -98,7 +95,6 @@
                                 <th>Plan</th>
                                 <th>Máx. Músicos</th>
                                 <th>Precio</th>
-                                <th>Descripción</th>
                             </tr>
                         </thead>
                         <tbody id="plansList"></tbody>
@@ -119,7 +115,7 @@
                 <input type="hidden" id="groupId">
                 <div class="form-group">
                     <label>Nombre del grupo *</label>
-                    <input type="text" id="groupName" required placeholder="Nombre del grupo musical">
+                    <input type="text" id="groupName" required placeholder="Nombre del grupo">
                 </div>
                 <div class="form-group">
                     <label>Plan</label>
@@ -135,10 +131,6 @@
                         <input type="date" id="groupEndDate">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Logo URL</label>
-                    <input type="url" id="groupLogo" placeholder="https://...">
-                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeGroupModal()">Cancelar</button>
@@ -147,16 +139,16 @@
         </div>
     </div>
 
-    <!-- Modal Asignar Admin a Grupo -->
+    <!-- Modal Asignar Admin -->
     <div class="modal-overlay" id="assignAdminModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Asignar Administrador</h3>
+                <h3>Asignar Admin</h3>
                 <button class="modal-close" onclick="closeAssignAdminModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="assignGroupId">
-                <p style="margin-bottom: 16px; color: var(--text-secondary);">Crear un administrador para el grupo: <strong id="assignGroupName"></strong></p>
+                <p style="margin-bottom: 16px; color: var(--text-secondary);">Crear admin para: <strong id="assignGroupName"></strong></p>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nombre *</label>
@@ -178,7 +170,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeAssignAdminModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveGroupAdmin()">Crear Admin</button>
+                <button class="btn btn-primary" onclick="saveGroupAdmin()">Crear</button>
             </div>
         </div>
     </div>
@@ -194,11 +186,11 @@
                 <input type="hidden" id="categoryId">
                 <div class="form-group">
                     <label>Nombre *</label>
-                    <input type="text" id="categoryName" required placeholder="Nombre de la categoría">
+                    <input type="text" id="categoryName" required placeholder="Nombre">
                 </div>
                 <div class="form-group">
                     <label>Color</label>
-                    <input type="color" id="categoryColor" value="#3498db" style="height: 40px; padding: 4px;">
+                    <input type="color" id="categoryColor" value="#3498db" style="height: 44px; padding: 4px;">
                 </div>
             </div>
             <div class="modal-footer">
@@ -219,7 +211,7 @@
                 <input type="hidden" id="genreId">
                 <div class="form-group">
                     <label>Nombre *</label>
-                    <input type="text" id="genreName" required placeholder="Nombre del género">
+                    <input type="text" id="genreName" required placeholder="Nombre">
                 </div>
             </div>
             <div class="modal-footer">

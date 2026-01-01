@@ -5,12 +5,19 @@ document.getElementById('userName').textContent = user.first_name + ' ' + (user.
 document.getElementById('userRole').textContent = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
 document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) || 'U';
 
+const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
+
+// Ocultar botones admin-only si no es admin
+if (!isAdmin) {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+}
+
 let allSongs = [];
 let categories = [];
 let genres = [];
-let viewMode = 'list'; // 'list' o 'table'
+let viewMode = 'list';
 let currentSong = null;
-let lyricsFontSize = 24;
+let lyricsFontSize = 20;
 
 async function loadData() {
     try {
@@ -20,30 +27,32 @@ async function loadData() {
             apiGet('/genres')
         ]);
 
-        // Llenar filtros
-        const catSelect = document.getElementById('filterCategory');
-        const catSelectModal = document.getElementById('songCategory');
-        catSelect.innerHTML = '<option value="">Categoría</option>';
-        catSelectModal.innerHTML = '<option value="">Sin categoría</option>';
-        categories.forEach(c => {
-            catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            catSelectModal.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-        });
-
-        const genSelect = document.getElementById('filterGenre');
-        const genSelectModal = document.getElementById('songGenre');
-        genSelect.innerHTML = '<option value="">Género</option>';
-        genSelectModal.innerHTML = '<option value="">Sin género</option>';
-        genres.forEach(g => {
-            genSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
-            genSelectModal.innerHTML += `<option value="${g.id}">${g.name}</option>`;
-        });
-
+        populateFilters();
         renderSongs();
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('songsList').innerHTML = '<div class="error-message">Error al cargar canciones</div>';
     }
+}
+
+function populateFilters() {
+    const catSelect = document.getElementById('filterCategory');
+    const catSelectModal = document.getElementById('songCategory');
+    catSelect.innerHTML = '<option value="">Categoría</option>';
+    catSelectModal.innerHTML = '<option value="">Sin categoría</option>';
+    categories.forEach(c => {
+        catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        catSelectModal.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    });
+
+    const genSelect = document.getElementById('filterGenre');
+    const genSelectModal = document.getElementById('songGenre');
+    genSelect.innerHTML = '<option value="">Género</option>';
+    genSelectModal.innerHTML = '<option value="">Sin género</option>';
+    genres.forEach(g => {
+        genSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+        genSelectModal.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+    });
 }
 
 function toggleView() {
@@ -61,15 +70,13 @@ function renderSongs() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const catFilter = document.getElementById('filterCategory').value;
     const genFilter = document.getElementById('filterGenre').value;
-    const typeFilter = document.getElementById('filterType').value;
     const groupBy = document.getElementById('groupBy').value;
 
     let filtered = allSongs.filter(s => {
         const matchSearch = s.name.toLowerCase().includes(search) || (s.artist || '').toLowerCase().includes(search);
         const matchCat = !catFilter || s.category_id == catFilter;
         const matchGen = !genFilter || s.genre_id == genFilter;
-        const matchType = !typeFilter || s.song_type === typeFilter;
-        return matchSearch && matchCat && matchGen && matchType;
+        return matchSearch && matchCat && matchGen;
     });
 
     filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -81,7 +88,7 @@ function renderSongs() {
             <div class="empty-state">
                 <div class="icon">🎵</div>
                 <h3>No hay canciones</h3>
-                <p>${allSongs.length === 0 ? 'Agrega tu primera canción' : 'Prueba con otros filtros'}</p>
+                <p>${allSongs.length === 0 ? 'Agrega tu primera canción' : 'Prueba otros filtros'}</p>
             </div>
         `;
         return;
@@ -95,8 +102,6 @@ function renderSongs() {
 }
 
 function renderTableView(filtered, container, groupBy) {
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
-    
     let html = `
         <div class="table-container">
             <table>
@@ -106,9 +111,6 @@ function renderTableView(filtered, container, groupBy) {
                         <th>Nombre</th>
                         <th>Artista</th>
                         <th>Categoría</th>
-                        <th>Género</th>
-                        <th>Tipo</th>
-                        <th>Duración</th>
                         <th>Tonalidad</th>
                         <th>BPM</th>
                         <th></th>
@@ -120,31 +122,26 @@ function renderTableView(filtered, container, groupBy) {
     if (groupBy) {
         const groups = {};
         filtered.forEach(s => {
-            let key = '';
-            if (groupBy === 'artist') key = s.artist || 'Sin artista';
-            else if (groupBy === 'category') key = s.category_name || 'Sin categoría';
-            else if (groupBy === 'genre') key = s.genre_name || 'Sin género';
+            let key = groupBy === 'artist' ? (s.artist || 'Sin artista') :
+                      groupBy === 'category' ? (s.category_name || 'Sin categoría') :
+                      (s.genre_name || 'Sin género');
             if (!groups[key]) groups[key] = [];
             groups[key].push(s);
         });
 
         Object.keys(groups).sort().forEach(key => {
-            html += `<tr><td colspan="10" style="background: var(--bg-secondary); font-weight: 600; color: var(--text-secondary);">${key} (${groups[key].length})</td></tr>`;
-            groups[key].forEach(s => {
-                html += renderTableRow(s, isAdmin);
-            });
+            html += `<tr><td colspan="7" style="background: var(--bg-secondary); font-weight: 600; font-size: 12px;">${key} (${groups[key].length})</td></tr>`;
+            groups[key].forEach(s => html += renderTableRow(s));
         });
     } else {
-        filtered.forEach(s => {
-            html += renderTableRow(s, isAdmin);
-        });
+        filtered.forEach(s => html += renderTableRow(s));
     }
 
     html += '</tbody></table></div>';
     container.innerHTML = html;
 }
 
-function renderTableRow(s, isAdmin) {
+function renderTableRow(s) {
     return `
         <tr>
             <td>
@@ -154,21 +151,14 @@ function renderTableRow(s, isAdmin) {
             </td>
             <td><strong>${s.name}</strong></td>
             <td>${s.artist || '-'}</td>
-            <td>${s.category_name ? `<span class="badge badge-primary">${s.category_name}</span>` : '-'}</td>
-            <td>${s.genre_name || '-'}</td>
-            <td><span class="badge badge-neutral">${s.song_type || '-'}</span></td>
-            <td>${formatDuration(s.duration_seconds)}</td>
+            <td>${s.category_name || '-'}</td>
             <td>${s.musical_key ? `<span class="badge badge-success">${s.musical_key}</span>` : '-'}</td>
             <td>${s.bpm ? `<span class="badge badge-warning">${s.bpm}</span>` : '-'}</td>
             <td>
                 <div style="display: flex; gap: 4px;">
-                    <button class="btn btn-ghost btn-sm" onclick="viewSong(${s.id})" title="Ver">👁</button>
-                    ${s.lyrics ? `<button class="btn btn-ghost btn-sm" onclick="viewLyrics(${s.id})" title="Letra">📜</button>` : ''}
-                    ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-ghost btn-sm" title="Video">▶</a>` : ''}
-                    ${isAdmin ? `
-                        <button class="btn btn-ghost btn-sm" onclick="editSong(${s.id})" title="Editar">✎</button>
-                        <button class="btn btn-ghost btn-sm" onclick="deleteSong(${s.id})" title="Eliminar">×</button>
-                    ` : ''}
+                    <button class="btn btn-ghost btn-sm" onclick="viewSong(${s.id})">👁</button>
+                    ${s.lyrics ? `<button class="btn btn-ghost btn-sm" onclick="viewLyrics(${s.id})">📜</button>` : ''}
+                    ${isAdmin ? `<button class="btn btn-ghost btn-sm" onclick="editSong(${s.id})">✎</button>` : ''}
                 </div>
             </td>
         </tr>
@@ -176,15 +166,12 @@ function renderTableRow(s, isAdmin) {
 }
 
 function renderListView(filtered, container, groupBy) {
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
-
     if (groupBy) {
         const groups = {};
         filtered.forEach(s => {
-            let key = '';
-            if (groupBy === 'artist') key = s.artist || 'Sin artista';
-            else if (groupBy === 'category') key = s.category_name || 'Sin categoría';
-            else if (groupBy === 'genre') key = s.genre_name || 'Sin género';
+            let key = groupBy === 'artist' ? (s.artist || 'Sin artista') :
+                      groupBy === 'category' ? (s.category_name || 'Sin categoría') :
+                      (s.genre_name || 'Sin género');
             if (!groups[key]) groups[key] = [];
             groups[key].push(s);
         });
@@ -192,17 +179,15 @@ function renderListView(filtered, container, groupBy) {
         let html = '';
         Object.keys(groups).sort().forEach(key => {
             html += `<div class="group-header">${key} · ${groups[key].length}</div>`;
-            groups[key].forEach(s => {
-                html += renderSongItem(s, isAdmin);
-            });
+            groups[key].forEach(s => html += renderSongItem(s));
         });
         container.innerHTML = html;
     } else {
-        container.innerHTML = filtered.map(s => renderSongItem(s, isAdmin)).join('');
+        container.innerHTML = filtered.map(s => renderSongItem(s)).join('');
     }
 }
 
-function renderSongItem(s, isAdmin) {
+function renderSongItem(s) {
     return `
         <div class="song-item">
             <button class="favorite-btn ${s.is_favorite ? 'active' : ''}" onclick="toggleFavorite(${s.id}, ${!s.is_favorite})">
@@ -213,22 +198,19 @@ function renderSongItem(s, isAdmin) {
                 <p>${s.artist || 'Sin artista'}${s.category_name ? ' · ' + s.category_name : ''}</p>
             </div>
             <div class="song-meta">
-                ${s.duration_seconds ? `<span class="badge badge-neutral">${formatDuration(s.duration_seconds)}</span>` : ''}
                 ${s.musical_key ? `<span class="badge badge-success">${s.musical_key}</span>` : ''}
-                ${s.bpm ? `<span class="badge badge-warning">${s.bpm} bpm</span>` : ''}
+                ${s.bpm ? `<span class="badge badge-warning">${s.bpm}</span>` : ''}
             </div>
             <div class="song-actions">
-                <button class="btn btn-ghost btn-icon btn-sm" onclick="viewSong(${s.id})" title="Ver">👁</button>
-                ${s.lyrics ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="viewLyrics(${s.id})" title="Letra">📜</button>` : ''}
-                ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-ghost btn-icon btn-sm" title="Video">▶</a>` : ''}
-                ${isAdmin ? `
-                    <button class="btn btn-ghost btn-icon btn-sm" onclick="editSong(${s.id})" title="Editar">✎</button>
-                    <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteSong(${s.id})" title="Eliminar">×</button>
-                ` : ''}
+                <button class="btn btn-ghost btn-icon btn-sm" onclick="viewSong(${s.id})">👁</button>
+                ${s.lyrics ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="viewLyrics(${s.id})">📜</button>` : ''}
+                ${isAdmin ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="editSong(${s.id})">✎</button>` : ''}
             </div>
         </div>
     `;
 }
+
+// ============ VER CANCIÓN ============
 
 function viewSong(id) {
     currentSong = allSongs.find(s => s.id === id);
@@ -238,13 +220,11 @@ function viewSong(id) {
     document.getElementById('btnLyrics').style.display = currentSong.lyrics ? 'inline-flex' : 'none';
     
     document.getElementById('viewSongContent').innerHTML = `
-        <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
             ${currentSong.is_favorite ? '<span class="badge badge-warning">⭐ Favorita</span>' : ''}
             ${currentSong.song_type ? `<span class="badge badge-neutral">${currentSong.song_type}</span>` : ''}
-            ${currentSong.lyrics_type ? `<span class="badge badge-neutral">${currentSong.lyrics_type}</span>` : ''}
         </div>
-        
-        <div style="display: grid; gap: 12px;">
+        <div style="display: grid; gap: 10px; font-size: 14px;">
             <div><strong>🎤 Artista:</strong> ${currentSong.artist || '-'}</div>
             <div><strong>📁 Categoría:</strong> ${currentSong.category_name || '-'}</div>
             <div><strong>🎸 Género:</strong> ${currentSong.genre_name || '-'}</div>
@@ -262,6 +242,8 @@ function viewSong(id) {
 function closeViewModal() {
     document.getElementById('viewSongModal').classList.remove('active');
 }
+
+// ============ VER LETRA ============
 
 function viewLyrics(id) {
     currentSong = allSongs.find(s => s.id === id);
@@ -293,12 +275,74 @@ function changeFontSize(delta) {
     document.getElementById('lyricsText').style.fontSize = lyricsFontSize + 'px';
 }
 
+// ============ FAVORITOS ============
+
 async function toggleFavorite(id, isFavorite) {
     await apiPatch(`/songs/${id}/favorite`, { is_favorite: isFavorite });
     const song = allSongs.find(s => s.id === id);
     if (song) song.is_favorite = isFavorite;
     renderSongs();
 }
+
+// ============ CREAR CATEGORÍA INLINE ============
+
+function showNewCategory() {
+    document.getElementById('categoryInline').classList.add('hidden');
+    document.getElementById('newCategoryForm').classList.remove('hidden');
+    document.getElementById('newCategoryName').focus();
+}
+
+function hideNewCategory() {
+    document.getElementById('categoryInline').classList.remove('hidden');
+    document.getElementById('newCategoryForm').classList.add('hidden');
+    document.getElementById('newCategoryName').value = '';
+}
+
+async function createCategory() {
+    const name = document.getElementById('newCategoryName').value.trim();
+    if (!name) return;
+
+    try {
+        const result = await apiPost('/categories', { name });
+        categories.push(result);
+        populateFilters();
+        document.getElementById('songCategory').value = result.id;
+        hideNewCategory();
+    } catch (error) {
+        alert('Error al crear categoría');
+    }
+}
+
+// ============ CREAR GÉNERO INLINE ============
+
+function showNewGenre() {
+    document.getElementById('genreInline').classList.add('hidden');
+    document.getElementById('newGenreForm').classList.remove('hidden');
+    document.getElementById('newGenreName').focus();
+}
+
+function hideNewGenre() {
+    document.getElementById('genreInline').classList.remove('hidden');
+    document.getElementById('newGenreForm').classList.add('hidden');
+    document.getElementById('newGenreName').value = '';
+}
+
+async function createGenre() {
+    const name = document.getElementById('newGenreName').value.trim();
+    if (!name) return;
+
+    try {
+        const result = await apiPost('/genres', { name });
+        genres.push(result);
+        populateFilters();
+        document.getElementById('songGenre').value = result.id;
+        hideNewGenre();
+    } catch (error) {
+        alert('Error al crear género');
+    }
+}
+
+// ============ MODAL CANCIÓN ============
 
 function openModal(song = null) {
     document.getElementById('modalTitle').textContent = song ? 'Editar Canción' : 'Nueva Canción';
@@ -315,6 +359,10 @@ function openModal(song = null) {
     document.getElementById('songKey').value = song?.musical_key || '';
     document.getElementById('songLyrics').value = song?.lyrics || '';
     document.getElementById('songNotes').value = song?.notes || '';
+    
+    hideNewCategory();
+    hideNewGenre();
+    
     document.getElementById('songModal').classList.add('active');
 }
 
