@@ -127,7 +127,7 @@ function renderMonthView(events, container) {
 
     for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${year}-${monthNum}-${String(day).padStart(2, '0')}`;
-        const dayEvents = events.filter(e => e.event_date.startsWith(dateStr));
+        const dayEvents = events.filter(e => getDateValue(e.event_date) === dateStr);
         const isToday = dateStr === todayStr;
 
         html += `
@@ -164,7 +164,7 @@ function renderWeekView(events, container) {
         <div class="week-grid">
             ${days.map((d, i) => {
                 const dateStr = d.toISOString().split('T')[0];
-                const dayEvents = events.filter(e => e.event_date.startsWith(dateStr));
+                const dayEvents = events.filter(e => getDateValue(e.event_date) === dateStr);
                 const isToday = dateStr === todayStr;
 
                 return `
@@ -227,7 +227,7 @@ function openModal(event = null) {
     document.getElementById('modalTitle').textContent = event ? 'Editar Evento' : 'Nuevo Evento';
     document.getElementById('eventId').value = event?.id || '';
     document.getElementById('eventName').value = event?.name || '';
-    document.getElementById('eventDate').value = event?.event_date?.split('T')[0] || '';
+    document.getElementById('eventDate').value = getDateValue(event?.event_date) || '';
     document.getElementById('eventCity').value = event?.city || '';
     document.getElementById('eventVenue').value = event?.venue || '';
     document.getElementById('eventAddress').value = event?.address || '';

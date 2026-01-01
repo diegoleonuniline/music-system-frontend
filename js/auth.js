@@ -6,11 +6,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const errorDiv = document.getElementById('loginError');
     const submitBtn = e.target.querySelector('button[type="submit"]');
     
-    // Reset error
     errorDiv.style.display = 'none';
     errorDiv.textContent = '';
     
-    // Loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'Iniciando sesión...';
     

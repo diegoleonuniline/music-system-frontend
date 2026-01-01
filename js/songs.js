@@ -8,6 +8,9 @@ document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) |
 let allSongs = [];
 let categories = [];
 let genres = [];
+let viewMode = 'list'; // 'list' o 'table'
+let currentSong = null;
+let lyricsFontSize = 24;
 
 async function loadData() {
     try {
@@ -43,6 +46,13 @@ async function loadData() {
     }
 }
 
+function toggleView() {
+    viewMode = viewMode === 'list' ? 'table' : 'list';
+    document.getElementById('viewIcon').textContent = viewMode === 'list' ? '☰' : '▤';
+    document.getElementById('viewText').textContent = viewMode === 'list' ? 'Tabla' : 'Lista';
+    renderSongs();
+}
+
 function filterSongs() {
     renderSongs();
 }
@@ -62,7 +72,6 @@ function renderSongs() {
         return matchSearch && matchCat && matchGen && matchType;
     });
 
-    // Ordenar A-Z
     filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     const container = document.getElementById('songsList');
@@ -78,6 +87,36 @@ function renderSongs() {
         return;
     }
 
+    if (viewMode === 'table') {
+        renderTableView(filtered, container, groupBy);
+    } else {
+        renderListView(filtered, container, groupBy);
+    }
+}
+
+function renderTableView(filtered, container, groupBy) {
+    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
+    
+    let html = `
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">⭐</th>
+                        <th>Nombre</th>
+                        <th>Artista</th>
+                        <th>Categoría</th>
+                        <th>Género</th>
+                        <th>Tipo</th>
+                        <th>Duración</th>
+                        <th>Tonalidad</th>
+                        <th>BPM</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
     if (groupBy) {
         const groups = {};
         filtered.forEach(s => {
@@ -85,7 +124,67 @@ function renderSongs() {
             if (groupBy === 'artist') key = s.artist || 'Sin artista';
             else if (groupBy === 'category') key = s.category_name || 'Sin categoría';
             else if (groupBy === 'genre') key = s.genre_name || 'Sin género';
-            
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(s);
+        });
+
+        Object.keys(groups).sort().forEach(key => {
+            html += `<tr><td colspan="10" style="background: var(--bg-secondary); font-weight: 600; color: var(--text-secondary);">${key} (${groups[key].length})</td></tr>`;
+            groups[key].forEach(s => {
+                html += renderTableRow(s, isAdmin);
+            });
+        });
+    } else {
+        filtered.forEach(s => {
+            html += renderTableRow(s, isAdmin);
+        });
+    }
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+function renderTableRow(s, isAdmin) {
+    return `
+        <tr>
+            <td>
+                <button class="favorite-btn ${s.is_favorite ? 'active' : ''}" onclick="toggleFavorite(${s.id}, ${!s.is_favorite})">
+                    ${s.is_favorite ? '★' : '☆'}
+                </button>
+            </td>
+            <td><strong>${s.name}</strong></td>
+            <td>${s.artist || '-'}</td>
+            <td>${s.category_name ? `<span class="badge badge-primary">${s.category_name}</span>` : '-'}</td>
+            <td>${s.genre_name || '-'}</td>
+            <td><span class="badge badge-neutral">${s.song_type || '-'}</span></td>
+            <td>${formatDuration(s.duration_seconds)}</td>
+            <td>${s.musical_key ? `<span class="badge badge-success">${s.musical_key}</span>` : '-'}</td>
+            <td>${s.bpm ? `<span class="badge badge-warning">${s.bpm}</span>` : '-'}</td>
+            <td>
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-ghost btn-sm" onclick="viewSong(${s.id})" title="Ver">👁</button>
+                    ${s.lyrics ? `<button class="btn btn-ghost btn-sm" onclick="viewLyrics(${s.id})" title="Letra">📜</button>` : ''}
+                    ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-ghost btn-sm" title="Video">▶</a>` : ''}
+                    ${isAdmin ? `
+                        <button class="btn btn-ghost btn-sm" onclick="editSong(${s.id})" title="Editar">✎</button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteSong(${s.id})" title="Eliminar">×</button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function renderListView(filtered, container, groupBy) {
+    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
+
+    if (groupBy) {
+        const groups = {};
+        filtered.forEach(s => {
+            let key = '';
+            if (groupBy === 'artist') key = s.artist || 'Sin artista';
+            else if (groupBy === 'category') key = s.category_name || 'Sin categoría';
+            else if (groupBy === 'genre') key = s.genre_name || 'Sin género';
             if (!groups[key]) groups[key] = [];
             groups[key].push(s);
         });
@@ -94,23 +193,22 @@ function renderSongs() {
         Object.keys(groups).sort().forEach(key => {
             html += `<div class="group-header">${key} · ${groups[key].length}</div>`;
             groups[key].forEach(s => {
-                html += renderSongItem(s);
+                html += renderSongItem(s, isAdmin);
             });
         });
         container.innerHTML = html;
     } else {
-        container.innerHTML = filtered.map(s => renderSongItem(s)).join('');
+        container.innerHTML = filtered.map(s => renderSongItem(s, isAdmin)).join('');
     }
 }
 
-function renderSongItem(s) {
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
+function renderSongItem(s, isAdmin) {
     return `
         <div class="song-item">
             <button class="favorite-btn ${s.is_favorite ? 'active' : ''}" onclick="toggleFavorite(${s.id}, ${!s.is_favorite})">
                 ${s.is_favorite ? '★' : '☆'}
             </button>
-            <div class="song-info">
+            <div class="song-info" style="cursor: pointer;" onclick="viewSong(${s.id})">
                 <h4>${s.name}</h4>
                 <p>${s.artist || 'Sin artista'}${s.category_name ? ' · ' + s.category_name : ''}</p>
             </div>
@@ -120,7 +218,9 @@ function renderSongItem(s) {
                 ${s.bpm ? `<span class="badge badge-warning">${s.bpm} bpm</span>` : ''}
             </div>
             <div class="song-actions">
-                ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-ghost btn-icon btn-sm" title="Ver video">▶</a>` : ''}
+                <button class="btn btn-ghost btn-icon btn-sm" onclick="viewSong(${s.id})" title="Ver">👁</button>
+                ${s.lyrics ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="viewLyrics(${s.id})" title="Letra">📜</button>` : ''}
+                ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-ghost btn-icon btn-sm" title="Video">▶</a>` : ''}
                 ${isAdmin ? `
                     <button class="btn btn-ghost btn-icon btn-sm" onclick="editSong(${s.id})" title="Editar">✎</button>
                     <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteSong(${s.id})" title="Eliminar">×</button>
@@ -128,6 +228,69 @@ function renderSongItem(s) {
             </div>
         </div>
     `;
+}
+
+function viewSong(id) {
+    currentSong = allSongs.find(s => s.id === id);
+    if (!currentSong) return;
+
+    document.getElementById('viewSongTitle').textContent = currentSong.name;
+    document.getElementById('btnLyrics').style.display = currentSong.lyrics ? 'inline-flex' : 'none';
+    
+    document.getElementById('viewSongContent').innerHTML = `
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+            ${currentSong.is_favorite ? '<span class="badge badge-warning">⭐ Favorita</span>' : ''}
+            ${currentSong.song_type ? `<span class="badge badge-neutral">${currentSong.song_type}</span>` : ''}
+            ${currentSong.lyrics_type ? `<span class="badge badge-neutral">${currentSong.lyrics_type}</span>` : ''}
+        </div>
+        
+        <div style="display: grid; gap: 12px;">
+            <div><strong>🎤 Artista:</strong> ${currentSong.artist || '-'}</div>
+            <div><strong>📁 Categoría:</strong> ${currentSong.category_name || '-'}</div>
+            <div><strong>🎸 Género:</strong> ${currentSong.genre_name || '-'}</div>
+            <div><strong>⏱️ Duración:</strong> ${formatDuration(currentSong.duration_seconds)}</div>
+            <div><strong>🎵 Tonalidad:</strong> ${currentSong.musical_key || '-'}</div>
+            <div><strong>💓 BPM:</strong> ${currentSong.bpm || '-'}</div>
+            ${currentSong.video_url ? `<div><a href="${currentSong.video_url}" target="_blank" class="btn btn-ghost btn-sm">▶️ Ver Video</a></div>` : ''}
+            ${currentSong.notes ? `<div><strong>📝 Notas:</strong> ${currentSong.notes}</div>` : ''}
+        </div>
+    `;
+    
+    document.getElementById('viewSongModal').classList.add('active');
+}
+
+function closeViewModal() {
+    document.getElementById('viewSongModal').classList.remove('active');
+}
+
+function viewLyrics(id) {
+    currentSong = allSongs.find(s => s.id === id);
+    openLyricsMode();
+}
+
+function openLyricsMode() {
+    if (!currentSong) return;
+    
+    document.getElementById('lyricsSongTitle').textContent = currentSong.name;
+    document.getElementById('lyricsSongArtist').textContent = currentSong.artist || '';
+    document.getElementById('lyricsSongKey').textContent = currentSong.musical_key || '';
+    document.getElementById('lyricsSongKey').style.display = currentSong.musical_key ? 'inline-flex' : 'none';
+    document.getElementById('lyricsSongBpm').textContent = currentSong.bpm ? currentSong.bpm + ' BPM' : '';
+    document.getElementById('lyricsSongBpm').style.display = currentSong.bpm ? 'inline-flex' : 'none';
+    document.getElementById('lyricsText').textContent = currentSong.lyrics || 'Sin letra disponible';
+    document.getElementById('lyricsText').style.fontSize = lyricsFontSize + 'px';
+    
+    closeViewModal();
+    document.getElementById('lyricsModal').classList.add('active');
+}
+
+function closeLyricsMode() {
+    document.getElementById('lyricsModal').classList.remove('active');
+}
+
+function changeFontSize(delta) {
+    lyricsFontSize = Math.max(14, Math.min(48, lyricsFontSize + delta));
+    document.getElementById('lyricsText').style.fontSize = lyricsFontSize + 'px';
 }
 
 async function toggleFavorite(id, isFavorite) {

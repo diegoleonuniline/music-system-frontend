@@ -14,15 +14,13 @@ async function loadDashboard() {
             apiGet('/users')
         ]);
 
-        // Animación de números
         animateNumber('totalSongs', songs?.length || 0);
         animateNumber('totalSetlists', setlists?.length || 0);
         animateNumber('totalEvents', events?.length || 0);
         animateNumber('totalMusicians', users?.filter(u => u.role === 'musician').length || 0);
 
-        // Próximos eventos
         const today = new Date().toISOString().split('T')[0];
-        const upcoming = events?.filter(e => e.event_date >= today).slice(0, 5) || [];
+        const upcoming = events?.filter(e => getDateValue(e.event_date) >= today).slice(0, 5) || [];
         
         const eventsContainer = document.getElementById('upcomingEvents');
         if (upcoming.length) {
@@ -47,7 +45,6 @@ async function loadDashboard() {
             `;
         }
 
-        // Favoritas
         const favorites = songs?.filter(s => s.is_favorite).slice(0, 5) || [];
         const favContainer = document.getElementById('favoriteSongs');
         
@@ -79,7 +76,6 @@ async function loadDashboard() {
 function animateNumber(elementId, target) {
     const element = document.getElementById(elementId);
     const duration = 500;
-    const start = 0;
     const startTime = performance.now();
     
     function update(currentTime) {

@@ -20,6 +20,7 @@
                 <a href="events.html"><span class="icon">📅</span> Eventos</a>
                 <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
                 <a href="musicians.html"><span class="icon">👥</span> Músicos</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-info">
@@ -36,7 +37,12 @@
         <main class="main-content">
             <div class="page-header">
                 <h1>Canciones</h1>
-                <button class="btn btn-primary" onclick="openModal()">+ Nueva canción</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-ghost" onclick="toggleView()">
+                        <span id="viewIcon">☰</span> <span id="viewText">Tabla</span>
+                    </button>
+                    <button class="btn btn-primary" onclick="openModal()">+ Nueva canción</button>
+                </div>
             </div>
 
             <div class="card">
@@ -157,6 +163,43 @@
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveSong()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Canción -->
+    <div class="modal-overlay" id="viewSongModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="viewSongTitle">Canción</h3>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="viewSongContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeViewModal()">Cerrar</button>
+                <button class="btn btn-primary" onclick="openLyricsMode()" id="btnLyrics">📜 Ver Letra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Letra Grande (Vocalista) -->
+    <div class="modal-overlay" id="lyricsModal" style="background: #0a0a0a; padding: 0;">
+        <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+            <div style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background: #111; border-bottom: 1px solid #222;">
+                <div>
+                    <h2 style="color: #fff; font-size: 20px;" id="lyricsSongTitle">Canción</h2>
+                    <p style="color: #888; font-size: 14px;" id="lyricsSongArtist">Artista</p>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span class="badge badge-success" id="lyricsSongKey" style="font-size: 16px;"></span>
+                    <span class="badge badge-warning" id="lyricsSongBpm" style="font-size: 16px;"></span>
+                    <button class="btn btn-sm" onclick="changeFontSize(-2)">A-</button>
+                    <button class="btn btn-sm" onclick="changeFontSize(2)">A+</button>
+                    <button class="btn btn-danger btn-sm" onclick="closeLyricsMode()">✕ Cerrar</button>
+                </div>
+            </div>
+            <div id="lyricsContent" style="flex: 1; overflow-y: auto; padding: 32px; display: flex; justify-content: center;">
+                <pre style="color: #eee; font-size: 24px; line-height: 1.8; font-family: inherit; white-space: pre-wrap; max-width: 800px;" id="lyricsText"></pre>
             </div>
         </div>
     </div>
