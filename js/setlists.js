@@ -106,8 +106,9 @@ async function viewSetlist(id) {
 
 function renderSetlistSongs() {
     const container = document.getElementById('setlistSongs');
+    const songs = currentSetlist.songs || [];
 
-    if (!currentSetlist.songs?.length) {
+    if (!songs.length) {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="icon">🎵</div>
@@ -117,21 +118,40 @@ function renderSetlistSongs() {
         return;
     }
 
-    container.innerHTML = currentSetlist.songs.map((s, index) => `
+    container.innerHTML = songs.map((s, idx) => `
         <div class="song-item">
-            <span style="font-weight: 600; color: var(--text-tertiary); width: 24px;">${s.position}</span>
+            <div class="song-order-controls">
+                <button class="btn btn-ghost btn-sm" onclick="moveSong(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>⬆️</button>
+                <button class="btn btn-ghost btn-sm" onclick="moveSong(${idx}, 1)" ${idx === songs.length - 1 ? 'disabled' : ''}>⬇️</button>
+            </div>
+            <span style="font-weight: 600; color: var(--text-tertiary); min-width: 24px;">${idx + 1}</span>
             <div class="song-info">
                 <h4>${s.name}</h4>
                 <p>${s.artist || 'Sin artista'}${s.musical_key ? ' · ' + s.musical_key : ''}</p>
             </div>
             <span class="badge badge-neutral">${formatDuration(s.duration_seconds)}</span>
-            ${isAdmin() ? `
-                <div class="song-actions">
-                    <button class="btn btn-ghost btn-sm" onclick="removeSongFromSetlist(${s.id})">✕</button>
-                </div>
-            ` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="removeSongFromSetlist(${s.id})" style="color: var(--danger);">✕</button>
         </div>
     `).join('');
+}
+
+async function moveSong(idx, direction) {
+    const songs = currentSetlist.songs;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= songs.length) return;
+
+    [songs[idx], songs[newIdx]] = [songs[newIdx], songs[idx]];
+
+    try {
+        const order = songs.map((s, i) => ({ song_id: s.song_id || s.id, position: i + 1 }));
+        await apiPut(`/setlists/${currentSetlist.id}/songs/reorder`, { songs: order });
+        songs.forEach((s, i) => s.position = i + 1);
+        renderSetlistSongs();
+        showToast('Orden actualizado');
+    } catch (error) {
+        [songs[idx], songs[newIdx]] = [songs[newIdx], songs[idx]];
+        showToast('Error al mover');
+    }
 }
 
 // RUTA CORRECTA: POST /setlists/:id/songs
@@ -190,6 +210,7 @@ function filterAvailableSongs() {
 
 function openStageMode() {
     document.getElementById('stageModeTitle').textContent = currentSetlist.name;
+    initStageTheme();
     renderStageMode();
     document.getElementById('stageModeModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -198,6 +219,7 @@ function openStageMode() {
 function renderStageMode() {
     const songs = currentSetlist.songs || [];
     const container = document.getElementById('stageModeContent');
+    const stageTheme = localStorage.getItem('stageTheme') || 'dark';
 
     if (!songs.length) {
         container.innerHTML = '<div class="empty-state" style="color:#fff;"><div class="icon">🎵</div><h3>Sin canciones</h3></div>';
@@ -234,6 +256,22 @@ function renderStageMode() {
             <button class="btn btn-primary" onclick="openAddSongFromStage()">+ Agregar canción</button>
         </div>
     `;
+}
+
+function toggleStageTheme() {
+    const modal = document.getElementById('stageModeModal');
+    const current = localStorage.getItem('stageTheme') || 'dark';
+    const newTheme = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('stageTheme', newTheme);
+    modal.classList.toggle('stage-light', newTheme === 'light');
+    document.getElementById('stageThemeBtn').textContent = newTheme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
+}
+
+function initStageTheme() {
+    const theme = localStorage.getItem('stageTheme') || 'dark';
+    const modal = document.getElementById('stageModeModal');
+    modal.classList.toggle('stage-light', theme === 'light');
+    document.getElementById('stageThemeBtn').textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
 }
 
 function toggleLyrics(idx) {

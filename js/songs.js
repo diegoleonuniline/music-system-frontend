@@ -24,18 +24,73 @@ async function loadData() {
             `).join('')}
         `;
 
-        // Fill selects in modal
-        const catSelect = document.getElementById('songCategory');
-        catSelect.innerHTML = '<option value="">Sin categoría</option>' +
-            (categories || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-        const genSelect = document.getElementById('songGenre');
-        genSelect.innerHTML = '<option value="">Sin género</option>' +
-            (genres || []).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        // Fill selects in modal with inline create option
+        populateSelects();
 
         renderSongs();
     } catch (error) {
         console.error('Error:', error);
+    }
+}
+
+function populateSelects() {
+    const catSelect = document.getElementById('songCategory');
+    const genSelect = document.getElementById('songGenre');
+    
+    const currentCat = catSelect.value;
+    const currentGen = genSelect.value;
+
+    catSelect.innerHTML = '<option value="">Sin categoría</option>' +
+        (categories || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('') +
+        '<option value="__new__">+ Nueva categoría...</option>';
+
+    genSelect.innerHTML = '<option value="">Sin género</option>' +
+        (genres || []).map(g => `<option value="${g.id}">${g.name}</option>`).join('') +
+        '<option value="__new__">+ Nuevo género...</option>';
+    
+    if (currentCat && currentCat !== '__new__') catSelect.value = currentCat;
+    if (currentGen && currentGen !== '__new__') genSelect.value = currentGen;
+}
+
+async function handleCategoryChange() {
+    const select = document.getElementById('songCategory');
+    if (select.value === '__new__') {
+        const name = prompt('Nombre de la nueva categoría:');
+        if (name && name.trim()) {
+            try {
+                const newCat = await apiPost('/categories', { name: name.trim() });
+                categories.push(newCat);
+                populateSelects();
+                select.value = newCat.id;
+                showToast('Categoría creada');
+            } catch (e) {
+                showToast('Error al crear');
+                select.value = '';
+            }
+        } else {
+            select.value = '';
+        }
+    }
+}
+
+async function handleGenreChange() {
+    const select = document.getElementById('songGenre');
+    if (select.value === '__new__') {
+        const name = prompt('Nombre del nuevo género:');
+        if (name && name.trim()) {
+            try {
+                const newGen = await apiPost('/genres', { name: name.trim() });
+                genres.push(newGen);
+                populateSelects();
+                select.value = newGen.id;
+                showToast('Género creado');
+            } catch (e) {
+                showToast('Error al crear');
+                select.value = '';
+            }
+        } else {
+            select.value = '';
+        }
     }
 }
 

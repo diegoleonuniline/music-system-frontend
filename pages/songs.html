@@ -89,8 +89,8 @@
                     <div class="form-group"><label>Artista</label><input type="text" id="songArtist"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Categoría</label><select id="songCategory"></select></div>
-                    <div class="form-group"><label>Género</label><select id="songGenre"></select></div>
+                    <div class="form-group"><label>Categoría</label><select id="songCategory" onchange="handleCategoryChange()"></select></div>
+                    <div class="form-group"><label>Género</label><select id="songGenre" onchange="handleGenreChange()"></select></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Tono</label><input type="text" id="songKey" placeholder="Am, C..."></div>
@@ -98,7 +98,10 @@
                     <div class="form-group"><label>Duración</label><input type="number" id="songDuration" placeholder="seg"></div>
                 </div>
                 <div class="form-group"><label>Video URL</label><input type="url" id="songVideo"></div>
-                <div class="form-group"><label>Letra</label><textarea id="songLyrics" rows="3"></textarea></div>
+                <div class="form-group">
+                    <label>Letra</label>
+                    <textarea id="songLyrics" rows="10" style="white-space: pre-wrap; font-family: inherit; line-height: 1.6;" placeholder="Pega la letra aquí..."></textarea>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeSongModal()">Cancelar</button>

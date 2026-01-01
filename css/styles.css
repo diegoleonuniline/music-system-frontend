@@ -361,6 +361,10 @@ body {
     background: var(--bg);
     color: var(--text);
     transition: border-color 0.2s;
+    resize: vertical;
+    min-height: 100px;
+    white-space: pre-wrap;
+    line-height: 1.6;
 }
 
 .form-group input:focus,
@@ -472,6 +476,22 @@ body {
 
 .song-item:last-child {
     border-bottom: none;
+}
+
+.song-order-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.song-order-controls .btn {
+    padding: 2px 6px;
+    font-size: 12px;
+    min-width: unset;
+}
+
+.song-order-controls .btn:disabled {
+    opacity: 0.3;
 }
 
 .song-thumb {
@@ -978,6 +998,70 @@ tr:hover td {
     white-space: pre-wrap;
     font-family: inherit;
     margin: 0;
+}
+
+/* Stage Mode Light Theme */
+.stage-light .stage-mode,
+#stageModeModal.stage-light {
+    background: #f5f5f5 !important;
+}
+
+.stage-light .stage-header {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+.stage-light .stage-header h2 {
+    color: #111;
+}
+
+.stage-light .stage-song {
+    background: #fff;
+    border-left-color: var(--primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stage-light .stage-song-number {
+    color: var(--primary);
+}
+
+.stage-light .stage-song-title {
+    color: #111;
+}
+
+.stage-light .stage-song-artist {
+    color: #666;
+}
+
+.stage-light .stage-badge {
+    background: rgba(0,0,0,0.08);
+    color: #333;
+}
+
+.stage-light .stage-controls {
+    border-top-color: #eee;
+}
+
+.stage-light .stage-btn {
+    background: rgba(0,0,0,0.05);
+    color: #333;
+}
+
+.stage-light .stage-btn:hover:not(:disabled) {
+    background: rgba(0,0,0,0.1);
+}
+
+.stage-light .stage-btn.danger {
+    color: #DC2626;
+}
+
+.stage-light .stage-lyrics {
+    background: #f9f9f9;
+    border-left: 4px solid var(--primary);
+}
+
+.stage-light .stage-lyrics pre {
+    color: #222;
 }
 
 /* Empty State */

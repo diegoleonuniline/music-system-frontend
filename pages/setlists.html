@@ -126,7 +126,10 @@
         <div class="stage-mode" style="width: 100%; height: 100%;">
             <div class="stage-header">
                 <h2 id="stageModeTitle">Set List</h2>
-                <button class="btn btn-danger btn-sm" onclick="closeStageMode()">✕ Salir</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-ghost btn-sm" id="stageThemeBtn" onclick="toggleStageTheme()">☀️ Claro</button>
+                    <button class="btn btn-danger btn-sm" onclick="closeStageMode()">✕ Salir</button>
+                </div>
             </div>
             <div class="stage-content" id="stageModeContent"></div>
         </div>
