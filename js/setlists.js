@@ -190,30 +190,104 @@ function filterAvailableSongs() {
 
 function openStageMode() {
     document.getElementById('stageModeTitle').textContent = currentSetlist.name;
+    renderStageMode();
+    document.getElementById('stageModeModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
 
-    const content = document.getElementById('stageModeContent');
-    content.innerHTML = currentSetlist.songs?.map(s => `
-        <div class="stage-song">
+function renderStageMode() {
+    const songs = currentSetlist.songs || [];
+    const container = document.getElementById('stageModeContent');
+
+    if (!songs.length) {
+        container.innerHTML = '<div class="empty-state" style="color:#fff;"><div class="icon">🎵</div><h3>Sin canciones</h3></div>';
+        return;
+    }
+
+    container.innerHTML = songs.map((s, idx) => `
+        <div class="stage-song" id="stage-song-${idx}">
             <div class="stage-song-header">
-                <div>
-                    <span class="stage-song-number">${s.position}.</span>
-                    <span class="stage-song-title">${s.name}</span>
-                    <div class="stage-song-artist">${s.artist || ''}</div>
+                <div class="stage-song-left">
+                    <span class="stage-song-number">${idx + 1}.</span>
+                    <div>
+                        <div class="stage-song-title">${s.name}</div>
+                        <div class="stage-song-artist">${s.artist || ''}</div>
+                    </div>
                 </div>
                 <div class="stage-song-badges">
-                    ${s.musical_key ? `<span class="stage-badge key">${s.musical_key}</span>` : ''}
-                    ${s.bpm ? `<span class="stage-badge bpm">${s.bpm} BPM</span>` : ''}
+                    ${s.musical_key ? `<span class="stage-badge">${s.musical_key}</span>` : ''}
+                    ${s.bpm ? `<span class="stage-badge">${s.bpm} BPM</span>` : ''}
                 </div>
             </div>
-            ${s.lyrics ? `<pre class="stage-lyrics">${s.lyrics}</pre>` : ''}
+            <div class="stage-controls">
+                <button class="stage-btn" onclick="moveSongStage(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>⬆️ Subir</button>
+                <button class="stage-btn" onclick="moveSongStage(${idx}, 1)" ${idx === songs.length - 1 ? 'disabled' : ''}>⬇️ Bajar</button>
+                ${s.lyrics ? `<button class="stage-btn" onclick="toggleLyrics(${idx})">📄 Letra</button>` : ''}
+                <button class="stage-btn danger" onclick="removeSongStage(${idx})">✕ Quitar</button>
+            </div>
+            <div class="stage-lyrics" id="lyrics-${idx}" style="display: none;">
+                <pre>${s.lyrics || ''}</pre>
+            </div>
         </div>
-    `).join('') || '<div class="empty-state" style="color: #fff;"><p>Sin canciones</p></div>';
+    `).join('') + `
+        <div style="text-align: center; padding: 20px;">
+            <button class="btn btn-primary" onclick="openAddSongFromStage()">+ Agregar canción</button>
+        </div>
+    `;
+}
 
-    document.getElementById('stageModeModal').classList.add('active');
+function toggleLyrics(idx) {
+    const el = document.getElementById(`lyrics-${idx}`);
+    const isHidden = el.style.display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+    
+    if (isHidden) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+async function moveSongStage(idx, direction) {
+    const songs = currentSetlist.songs;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= songs.length) return;
+
+    [songs[idx], songs[newIdx]] = [songs[newIdx], songs[idx]];
+
+    try {
+        const order = songs.map((s, i) => ({ song_id: s.song_id || s.id, position: i + 1 }));
+        await apiPut(`/setlists/${currentSetlist.id}/songs/reorder`, { songs: order });
+        songs.forEach((s, i) => s.position = i + 1);
+        renderStageMode();
+        showToast('Orden actualizado');
+    } catch (error) {
+        [songs[idx], songs[newIdx]] = [songs[newIdx], songs[idx]];
+        showToast('Error al mover');
+    }
+}
+
+async function removeSongStage(idx) {
+    const song = currentSetlist.songs[idx];
+    if (!confirm(`¿Quitar "${song.name}"?`)) return;
+
+    try {
+        await apiDelete(`/setlists/${currentSetlist.id}/songs/${song.id}`);
+        currentSetlist.songs.splice(idx, 1);
+        renderStageMode();
+        loadSetlists();
+        showToast('Canción quitada');
+    } catch (error) {
+        showToast('Error al quitar');
+    }
+}
+
+function openAddSongFromStage() {
+    closeStageMode();
+    setTimeout(() => openAddSongModal(), 100);
 }
 
 function closeStageMode() {
     document.getElementById('stageModeModal').classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function closeViewModal() {
