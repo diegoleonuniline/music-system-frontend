@@ -1,13 +1,21 @@
-// ===== AUTH =====
-function getToken() { return localStorage.getItem('token'); }
-function getUser() { return JSON.parse(localStorage.getItem('user') || '{}'); }
-function isAdmin() { const u = getUser(); return u.role === 'super_admin' || u.role === 'group_admin'; }
-function isSuperAdmin() { return getUser().role === 'super_admin'; }
+// Auth helpers
+function getToken() {
+    return localStorage.getItem('token');
+}
+
+function getUser() {
+    return JSON.parse(localStorage.getItem('user') || '{}');
+}
+
+function isAdmin() {
+    const user = getUser();
+    return user.role === 'super_admin' || user.role === 'group_admin';
+}
 
 function checkAuth() {
-    if (!getToken()) { window.location.href = '../index.html'; return false; }
-    initTheme();
-    return true;
+    if (!getToken()) {
+        window.location.href = '../index.html';
+    }
 }
 
 function logout() {
@@ -16,273 +24,203 @@ function logout() {
     window.location.href = '../index.html';
 }
 
-// ===== THEME =====
+// Theme
 function initTheme() {
     const saved = localStorage.getItem('theme') || 'light';
-    setTheme(saved);
-}
-
-function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    const meta = document.getElementById('themeColor');
-    if (meta) meta.content = theme === 'dark' ? '#000000' : '#ffffff';
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    document.documentElement.setAttribute('data-theme', saved);
 }
 
 function toggleTheme() {
-    const current = localStorage.getItem('theme') || 'light';
-    setTheme(current === 'light' ? 'dark' : 'light');
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
 }
 
-// ===== API CALLS =====
-async function api(endpoint, options = {}) {
+initTheme();
+
+// API calls
+async function apiGet(endpoint) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getToken()}`,
-                ...options.headers
-            }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         if (response.status === 401) { logout(); return null; }
-        if (response.status === 204) return null;
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Error');
-        return data;
+        return await response.json();
     } catch (error) {
         console.error('API Error:', error);
-        throw error;
+        return null;
     }
 }
 
-const apiGet = (endpoint) => api(endpoint);
-const apiPost = (endpoint, data) => api(endpoint, { method: 'POST', body: JSON.stringify(data) });
-const apiPut = (endpoint, data) => api(endpoint, { method: 'PUT', body: JSON.stringify(data) });
-const apiDelete = (endpoint) => api(endpoint, { method: 'DELETE' });
-
-// ===== UTILS =====
-function formatDate(dateStr) {
-    if (!dateStr) return '-';
-    const d = new Date(dateStr + 'T12:00:00');
-    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+async function apiPost(endpoint, data) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.status === 401) { logout(); return null; }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        return null;
+    }
 }
 
-function formatDateShort(dateStr) {
-    if (!dateStr) return { day: '-', month: '-' };
-    const d = new Date(dateStr + 'T12:00:00');
-    return {
-        day: d.getDate(),
-        month: d.toLocaleDateString('es-MX', { month: 'short' }).toUpperCase()
-    };
+async function apiPut(endpoint, data) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.status === 401) { logout(); return null; }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        return null;
+    }
 }
 
-function getDateValue(dateStr) {
-    if (!dateStr) return '';
-    return dateStr.split('T')[0];
+async function apiPatch(endpoint, data) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.status === 401) { logout(); return null; }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        return null;
+    }
+}
+
+async function apiDelete(endpoint) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        if (response.status === 401) { logout(); return null; }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        return null;
+    }
+}
+
+// Date formatting - CORREGIDO para evitar Invalid Date
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        // Handle ISO string with timezone
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        
+        // Adjust for timezone offset to get correct local date
+        const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+        
+        return utcDate.toLocaleDateString('es-MX', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    } catch (e) {
+        return '-';
+    }
+}
+
+function formatDateShort(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        
+        return date.toLocaleDateString('es-MX', {
+            day: 'numeric',
+            month: 'short'
+        });
+    } catch (e) {
+        return '-';
+    }
+}
+
+function getDateValue(dateString) {
+    if (!dateString) return '';
+    try {
+        // Extract just the date part YYYY-MM-DD
+        if (dateString.includes('T')) {
+            return dateString.split('T')[0];
+        }
+        // If already in YYYY-MM-DD format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString;
+        }
+        // Try to parse and format
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0];
+    } catch (e) {
+        return '';
+    }
 }
 
 function formatDuration(seconds) {
-    if (!seconds) return '-';
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+    if (!seconds) return '--:--';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function formatTime(timeStr) {
-    if (!timeStr) return '';
-    const [h, m] = timeStr.split(':');
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-    return `${hour12}:${m} ${ampm}`;
-}
-
-// ===== UI HELPERS =====
+// UI helpers
 function showToast(message) {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
+    
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
+    
     setTimeout(() => toast.remove(), 3000);
 }
 
-function animateNumber(el, target, duration = 600) {
-    if (typeof el === 'string') el = document.getElementById(el);
-    if (!el) return;
-    const start = performance.now();
-    const update = (now) => {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        el.textContent = Math.floor(eased * target);
-        if (progress < 1) requestAnimationFrame(update);
-    };
-    requestAnimationFrame(update);
-}
-
-function openModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal-overlay.active').forEach(m => {
-        m.classList.remove('active');
-    });
-    document.body.style.overflow = '';
-}
-
-// ===== USER INFO =====
 function setupUserInfo() {
     const user = getUser();
-    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
-    const initial = (user.first_name || 'U').charAt(0).toUpperCase();
-    const roleText = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
     
-    // Desktop nav profile
-    const navName = document.getElementById('navUserName');
-    const navRole = document.getElementById('navUserRole');
-    const navAvatar = document.getElementById('navUserAvatar');
-    if (navName) navName.textContent = name;
-    if (navRole) navRole.textContent = roleText;
-    if (navAvatar) navAvatar.textContent = initial;
+    // Desktop sidebar
+    const userName = document.getElementById('userName');
+    const userRole = document.getElementById('userRole');
+    const userAvatar = document.getElementById('userAvatar');
     
-    // Mobile header avatar
-    const headerAvatar = document.getElementById('headerUserAvatar');
-    if (headerAvatar) headerAvatar.textContent = initial;
+    if (userName) userName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
+    if (userRole) {
+        const roles = { super_admin: 'Super Admin', group_admin: 'Admin', musician: 'Músico' };
+        userRole.textContent = roles[user.role] || 'Usuario';
+    }
+    if (userAvatar) userAvatar.textContent = (user.first_name || 'U').charAt(0).toUpperCase();
     
-    // Admin only elements
-    if (!isAdmin()) {
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-    }
-    if (!isSuperAdmin()) {
-        document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'none');
-    }
-}
-
-// ===== SONG PICKER (Global) =====
-let allSongsCache = [];
-let selectedSongsForPicker = [];
-let songPickerCallback = null;
-
-async function loadSongsCache(force = false) {
-    if (allSongsCache.length === 0 || force) {
-        allSongsCache = await apiGet('/songs') || [];
-    }
-    return allSongsCache;
-}
-
-function refreshSongsCache() { allSongsCache = []; }
-
-async function openSongPicker(selectedIds = [], callback = null) {
-    selectedSongsForPicker = [...selectedIds];
-    songPickerCallback = callback;
-    await loadSongsCache();
-    renderSongPicker();
-    openModal('songPickerModal');
-}
-
-function renderSongPicker(filter = '') {
-    const container = document.getElementById('songPickerList');
-    if (!container) return;
+    // Mobile
+    const mobileUserName = document.getElementById('mobileUserName');
+    const mobileUserRole = document.getElementById('mobileUserRole');
+    const mobileUserAvatar = document.getElementById('mobileUserAvatar');
     
-    let songs = allSongsCache;
-    if (filter) {
-        const f = filter.toLowerCase();
-        songs = songs.filter(s => 
-            s.name?.toLowerCase().includes(f) || 
-            s.artist?.toLowerCase().includes(f)
-        );
+    if (mobileUserName) mobileUserName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
+    if (mobileUserRole) {
+        const roles = { super_admin: 'Super Admin', group_admin: 'Admin', musician: 'Músico' };
+        mobileUserRole.textContent = roles[user.role] || 'Usuario';
     }
-    
-    if (!songs.length) {
-        container.innerHTML = '<div class="empty-state"><p class="text-muted">No hay canciones</p></div>';
-        return;
-    }
-    
-    container.innerHTML = songs.map(s => `
-        <div class="song-picker-item ${selectedSongsForPicker.includes(s.id) ? 'selected' : ''}" onclick="toggleSongPicker(${s.id})">
-            <div class="checkbox">${selectedSongsForPicker.includes(s.id) ? '✓' : ''}</div>
-            <div class="song-info">
-                <div class="song-title">${s.name}</div>
-                <div class="song-artist">${s.artist || 'Sin artista'}</div>
-            </div>
-            ${s.musical_key ? `<span class="badge badge-green">${s.musical_key}</span>` : ''}
-        </div>
-    `).join('');
+    if (mobileUserAvatar) mobileUserAvatar.textContent = (user.first_name || 'U').charAt(0).toUpperCase();
 }
-
-function toggleSongPicker(id) {
-    const idx = selectedSongsForPicker.indexOf(id);
-    if (idx === -1) {
-        selectedSongsForPicker.push(id);
-    } else {
-        selectedSongsForPicker.splice(idx, 1);
-    }
-    renderSongPicker(document.getElementById('songPickerSearch')?.value || '');
-}
-
-function filterSongPicker() {
-    const val = document.getElementById('songPickerSearch')?.value || '';
-    renderSongPicker(val);
-}
-
-function confirmSongPicker() {
-    if (songPickerCallback) {
-        songPickerCallback(selectedSongsForPicker);
-    }
-    closeModal('songPickerModal');
-}
-
-// ===== QUICK ADD SONG =====
-async function openQuickAddSong(callback = null) {
-    window.quickAddCallback = callback;
-    document.getElementById('quickSongName').value = '';
-    document.getElementById('quickSongArtist').value = '';
-    openModal('quickAddSongModal');
-    document.getElementById('quickSongName').focus();
-}
-
-async function saveQuickSong() {
-    const name = document.getElementById('quickSongName').value.trim();
-    const artist = document.getElementById('quickSongArtist').value.trim();
-    
-    if (!name) {
-        showToast('Ingresa el nombre');
-        return;
-    }
-    
-    try {
-        const newSong = await apiPost('/songs', { name, artist });
-        refreshSongsCache();
-        await loadSongsCache(true);
-        closeModal('quickAddSongModal');
-        showToast('Canción creada');
-        
-        if (window.quickAddCallback) {
-            window.quickAddCallback(newSong);
-        }
-    } catch (e) {
-        showToast('Error al crear');
-    }
-}
-
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-});

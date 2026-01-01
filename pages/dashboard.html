@@ -3,123 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" id="themeColor" content="#ffffff">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Dashboard - Music System Pro</title>
+    <meta name="theme-color" content="#4F46E5">
+    <title>Dashboard - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
-    <div class="app">
-        <!-- Header Mobile -->
-        <header class="header">
-            <div class="header-content">
-                <div class="app-logo">
-                    <div class="app-logo-icon">🎵</div>
-                    <span>Music Pro</span>
-                </div>
-                <div class="header-actions">
-                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
-                </div>
+    <div class="app-container">
+        <!-- Desktop Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo">🐊</span>
+                <h2>Caimán</h2>
             </div>
-        </header>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="active"><span class="icon">📊</span> Inicio</a>
+                <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
+                <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
+                <a href="events.html"><span class="icon">📅</span> Eventos</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <h4 id="userName">Usuario</h4>
+                        <span id="userRole">Rol</span>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+            </div>
+        </aside>
 
         <!-- Main Content -->
-        <main class="main">
-            <h1 style="font-size: 28px; font-weight: 700; margin-bottom: var(--space-xl);">Dashboard</h1>
-            
-            <!-- Stats -->
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-icon songs">🎵</div>
-                    <div>
-                        <div class="stat-value" id="totalSongs">-</div>
-                        <div class="stat-label">Canciones</div>
-                    </div>
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Inicio</h1>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon">🎵</div>
+                    <div class="number" id="totalSongs">0</div>
+                    <div class="label">Canciones</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-icon setlists">📋</div>
-                    <div>
-                        <div class="stat-value" id="totalSetlists">-</div>
-                        <div class="stat-label">Set Lists</div>
-                    </div>
+                <div class="stat-card">
+                    <div class="icon">📋</div>
+                    <div class="number" id="totalSetlists">0</div>
+                    <div class="label">Set Lists</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-icon events">📅</div>
-                    <div>
-                        <div class="stat-value" id="totalEvents">-</div>
-                        <div class="stat-label">Eventos</div>
-                    </div>
+                <div class="stat-card">
+                    <div class="icon">📅</div>
+                    <div class="number" id="totalEvents">0</div>
+                    <div class="label">Eventos</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-icon musicians">👥</div>
-                    <div>
-                        <div class="stat-value" id="totalMusicians">-</div>
-                        <div class="stat-label">Músicos</div>
-                    </div>
+                <div class="stat-card">
+                    <div class="icon">👥</div>
+                    <div class="number" id="totalMusicians">0</div>
+                    <div class="label">Músicos</div>
                 </div>
             </div>
 
-            <!-- Próximos Eventos -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">📅 Próximos Eventos</span>
+                    <h3>📅 Próximos Eventos</h3>
                     <a href="events.html" class="btn btn-ghost btn-sm">Ver todos</a>
                 </div>
-                <div class="card-body no-padding" id="upcomingEvents">
-                    <div class="loading"><div class="spinner"></div>Cargando...</div>
+                <div id="upcomingEvents">
+                    <div class="loading">Cargando...</div>
                 </div>
             </div>
 
-            <!-- Favoritas -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">⭐ Canciones Favoritas</span>
+                    <h3>⭐ Favoritas</h3>
                     <a href="songs.html" class="btn btn-ghost btn-sm">Ver todas</a>
                 </div>
-                <div class="card-body no-padding" id="favoriteSongs">
-                    <div class="loading"><div class="spinner"></div>Cargando...</div>
+                <div id="favoriteSongs">
+                    <div class="loading">Cargando...</div>
                 </div>
             </div>
         </main>
+    </div>
 
-        <!-- Nav Bottom -->
-        <nav class="nav">
-            <div class="nav-logo">
-                <div class="nav-logo-icon">🎵</div>
-                Music Pro
-            </div>
-            <div class="nav-items">
-                <a href="dashboard.html" class="nav-item active">
-                    <span class="icon">📊</span>
-                    <span>Inicio</span>
-                </a>
-                <a href="songs.html" class="nav-item">
-                    <span class="icon">🎵</span>
-                    <span>Canciones</span>
-                </a>
-                <a href="setlists.html" class="nav-item">
-                    <span class="icon">📋</span>
-                    <span>Set Lists</span>
-                </a>
-                <a href="events.html" class="nav-item">
-                    <span class="icon">📅</span>
-                    <span>Eventos</span>
-                </a>
-                <a href="settings.html" class="nav-item">
-                    <span class="icon">⚙️</span>
-                    <span>Config</span>
-                </a>
-            </div>
-            <div class="nav-profile">
-                <div class="nav-profile-avatar" id="navUserAvatar">U</div>
-                <div class="nav-profile-info">
-                    <div class="nav-profile-name" id="navUserName">Usuario</div>
-                    <div class="nav-profile-role" id="navUserRole">Músico</div>
-                </div>
-                <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
-            </div>
-        </nav>
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+        <a href="dashboard.html" class="active"><span class="icon">📊</span>Inicio</a>
+        <a href="songs.html"><span class="icon">🎵</span>Canciones</a>
+        <a href="setlists.html"><span class="icon">📋</span>Set Lists</a>
+        <a href="events.html"><span class="icon">📅</span>Eventos</a>
+        <a href="settings.html"><span class="icon">⚙️</span>Config</a>
+    </nav>
+
+    <!-- Mobile User Profile -->
+    <div class="mobile-user">
+        <div class="user-avatar" id="mobileUserAvatar">U</div>
+        <div class="user-info">
+            <h4 id="mobileUserName">Usuario</h4>
+            <span id="mobileUserRole">Rol</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
     </div>
 
     <script src="../js/config.js"></script>

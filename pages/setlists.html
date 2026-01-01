@@ -3,74 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" id="themeColor" content="#ffffff">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Set Lists - Music System Pro</title>
+    <meta name="theme-color" content="#4F46E5">
+    <title>Set Lists - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
-    <div class="app">
-        <header class="header">
-            <div class="header-content">
-                <h1>Set Lists</h1>
-                <div class="header-actions">
-                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
-                </div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo">🐊</span>
+                <h2>Caimán</h2>
             </div>
-        </header>
-
-        <main class="main">
-            <div class="card">
-                <div class="card-body no-padding" id="setlistsList">
-                    <div class="loading"><div class="spinner"></div>Cargando...</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><span class="icon">📊</span> Inicio</a>
+                <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
+                <a href="setlists.html" class="active"><span class="icon">📋</span> Set Lists</a>
+                <a href="events.html"><span class="icon">📅</span> Eventos</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Config</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <h4 id="userName">Usuario</h4>
+                        <span id="userRole">Rol</span>
+                    </div>
                 </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Salir</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Set Lists</h1>
+                <button class="btn btn-primary" onclick="openSetlistModal()">+ Nuevo</button>
+            </div>
+
+            <div class="setlist-grid" id="setlistsGrid">
+                <div class="loading">Cargando...</div>
             </div>
         </main>
-
-        <button class="fab admin-only" onclick="openSetlistModal()">+</button>
-
-        <nav class="nav">
-            <div class="nav-logo"><div class="nav-logo-icon">🎵</div>Music Pro</div>
-            <div class="nav-items">
-                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>Inicio</span></a>
-                <a href="songs.html" class="nav-item"><span class="icon">🎵</span><span>Canciones</span></a>
-                <a href="setlists.html" class="nav-item active"><span class="icon">📋</span><span>Set Lists</span></a>
-                <a href="events.html" class="nav-item"><span class="icon">📅</span><span>Eventos</span></a>
-                <a href="settings.html" class="nav-item"><span class="icon">⚙️</span><span>Config</span></a>
-            </div>
-            <div class="nav-profile">
-                <div class="nav-profile-avatar" id="navUserAvatar">U</div>
-                <div class="nav-profile-info">
-                    <div class="nav-profile-name" id="navUserName">Usuario</div>
-                    <div class="nav-profile-role" id="navUserRole">Músico</div>
-                </div>
-                <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
-            </div>
-        </nav>
     </div>
 
-    <!-- Modal Setlist CRUD -->
+    <nav class="mobile-nav">
+        <a href="dashboard.html"><span class="icon">📊</span>Inicio</a>
+        <a href="songs.html"><span class="icon">🎵</span>Canciones</a>
+        <a href="setlists.html" class="active"><span class="icon">📋</span>Set Lists</a>
+        <a href="events.html"><span class="icon">📅</span>Eventos</a>
+        <a href="settings.html"><span class="icon">⚙️</span>Config</a>
+    </nav>
+
+    <div class="mobile-user">
+        <div class="user-avatar" id="mobileUserAvatar">U</div>
+        <div class="user-info">
+            <h4 id="mobileUserName">Usuario</h4>
+            <span id="mobileUserRole">Rol</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
+    </div>
+
+    <!-- Modal Create/Edit Setlist -->
     <div class="modal-overlay" id="setlistModal">
         <div class="modal">
-            <div class="modal-handle"></div>
             <div class="modal-header">
                 <h3 id="setlistModalTitle">Nuevo Set List</h3>
-                <button class="modal-close" onclick="closeModal('setlistModal')">✕</button>
+                <button class="modal-close" onclick="closeSetlistModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="setlistId">
                 <div class="form-group">
-                    <label class="form-label">Nombre *</label>
-                    <input type="text" class="form-input" id="setlistName" placeholder="Nombre del set list">
+                    <label>Nombre *</label>
+                    <input type="text" id="setlistName" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Descripción</label>
-                    <textarea class="form-input" id="setlistDesc" rows="3" placeholder="Descripción opcional..."></textarea>
+                    <label>Descripción</label>
+                    <textarea id="setlistDescription" rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('setlistModal')">Cancelar</button>
+                <button class="btn btn-ghost" onclick="closeSetlistModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveSetlist()">Guardar</button>
             </div>
         </div>
@@ -78,76 +90,46 @@
 
     <!-- Modal View Setlist -->
     <div class="modal-overlay" id="viewSetlistModal">
-        <div class="modal" style="max-height: 90vh;">
-            <div class="modal-handle"></div>
+        <div class="modal" style="max-width: 700px;">
             <div class="modal-header">
                 <h3 id="viewSetlistTitle">Set List</h3>
-                <button class="modal-close" onclick="closeModal('viewSetlistModal')">✕</button>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
             </div>
-            <div class="modal-body" id="viewSetlistContent"></div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('viewSetlistModal')">Cerrar</button>
-                <button class="btn btn-primary" onclick="openStageMode()">🎤 Escenario</button>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; gap: 8px;">
+                        <span class="badge badge-primary" id="viewTotalSongs">0 canciones</span>
+                        <span class="badge badge-neutral" id="viewTotalDuration">0:00</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-ghost btn-sm" onclick="openAddSongModal()">+ Agregar</button>
+                        <button class="btn btn-primary btn-sm" onclick="openStageMode()">🎤 Escenario</button>
+                    </div>
+                </div>
+                <div id="setlistSongs"></div>
             </div>
         </div>
     </div>
 
-    <!-- Song Picker Modal -->
-    <div class="modal-overlay" id="songPickerModal">
-        <div class="modal" style="max-height: 90vh;">
-            <div class="modal-handle"></div>
+    <!-- Modal Add Song -->
+    <div class="modal-overlay" id="addSongModal">
+        <div class="modal">
             <div class="modal-header">
-                <h3>Seleccionar Canciones</h3>
-                <button class="modal-close" onclick="closeModal('songPickerModal')">✕</button>
-            </div>
-            <div class="modal-body">
-                <!-- Quick Add -->
-                <div class="quick-add-trigger" onclick="openQuickAddFromPicker()">
-                    <div class="icon">+</div>
-                    <span>Crear canción nueva</span>
-                </div>
-                
-                <div class="search-box" style="margin-bottom: var(--space-md);">
-                    <span class="icon">🔍</span>
-                    <input type="text" class="form-input" id="songPickerSearch" placeholder="Buscar canciones..." oninput="filterSongPicker()">
-                </div>
-                <div class="song-picker" id="songPickerList"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('songPickerModal')">Cancelar</button>
-                <button class="btn btn-primary" onclick="confirmSongSelection()">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Add Song Modal -->
-    <div class="modal-overlay" id="quickAddSongModal">
-        <div class="modal" style="max-height: 350px;">
-            <div class="modal-handle"></div>
-            <div class="modal-header">
-                <h3>Nueva Canción Rápida</h3>
-                <button class="modal-close" onclick="closeModal('quickAddSongModal')">✕</button>
+                <h3>Agregar Canción</h3>
+                <button class="modal-close" onclick="closeAddSongModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Nombre *</label>
-                    <input type="text" class="form-input" id="quickSongName" placeholder="Nombre de la canción">
+                    <input type="text" id="searchSongInput" placeholder="Buscar canción..." onkeyup="filterAvailableSongs()">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Artista</label>
-                    <input type="text" class="form-input" id="quickSongArtist" placeholder="Artista">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('quickAddSongModal')">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveQuickSongFromPicker()">Crear y Agregar</button>
+                <div id="availableSongs" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
 
     <!-- Stage Mode -->
     <div class="modal-overlay" id="stageModeModal" style="background: #000; padding: 0;">
-        <div class="stage-mode">
+        <div class="stage-mode" style="width: 100%; height: 100%;">
             <div class="stage-header">
                 <h2 id="stageModeTitle">Set List</h2>
                 <button class="btn btn-danger btn-sm" onclick="closeStageMode()">✕ Salir</button>
