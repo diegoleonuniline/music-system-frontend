@@ -8,7 +8,6 @@ document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) |
 let allEvents = [];
 let allSetlists = [];
 
-// Inicializar mes actual
 const today = new Date();
 document.getElementById('filterMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
@@ -24,7 +23,6 @@ async function loadEvents() {
             apiGet('/setlists')
         ]);
 
-        // Llenar select de setlists
         const setlistSelect = document.getElementById('eventSetlist');
         setlistSelect.innerHTML = '<option value="">Sin set list</option>';
         allSetlists.forEach(s => {
@@ -61,7 +59,13 @@ function renderListView(events, container) {
     const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
 
     if (!events.length) {
-        container.innerHTML = '<p>No hay eventos este mes</p>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">📅</div>
+                <h3>Sin eventos</h3>
+                <p>No hay eventos este mes</p>
+            </div>
+        `;
         return;
     }
 
@@ -75,7 +79,7 @@ function renderListView(events, container) {
                         <th>Lugar</th>
                         <th>Horario</th>
                         <th>Estado</th>
-                        <th>Acciones</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,18 +87,17 @@ function renderListView(events, container) {
                         <tr style="${e.status === 'cancelled' ? 'opacity: 0.5;' : ''}">
                             <td><strong>${formatDate(e.event_date)}</strong></td>
                             <td>${e.name}</td>
-                            <td>${e.venue || '-'}<br><small>${e.city || ''}</small></td>
-                            <td>${e.start_time || '-'} - ${e.end_time || '-'}</td>
+                            <td>${e.venue || '-'}<br><small style="color: var(--text-tertiary);">${e.city || ''}</small></td>
+                            <td>${e.start_time || '-'} ${e.end_time ? '- ' + e.end_time : ''}</td>
                             <td>
                                 <span class="badge ${e.status === 'confirmed' ? 'badge-success' : e.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
                                     ${e.status === 'confirmed' ? 'Confirmado' : e.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm" onclick="viewEvent(${e.id})">👁️</button>
+                                <button class="btn btn-ghost btn-sm" onclick="viewEvent(${e.id})">Ver</button>
                                 ${isAdmin ? `
-                                    <button class="btn btn-sm" onclick="editEvent(${e.id})">✏️</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteEvent(${e.id})">🗑️</button>
+                                    <button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">Editar</button>
                                 ` : ''}
                             </td>
                         </tr>
@@ -112,33 +115,28 @@ function renderMonthView(events, container) {
     const lastDay = new Date(year, monthNum, 0);
     const startDay = firstDay.getDay();
     const totalDays = lastDay.getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
 
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-    let html = `
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
-            ${dayNames.map(d => `<div style="text-align: center; font-weight: bold; padding: 10px; background: var(--light);">${d}</div>`).join('')}
-    `;
+    let html = `<div class="calendar-header">${dayNames.map(d => `<div>${d}</div>`).join('')}</div><div class="calendar-grid">`;
 
-    // Días vacíos al inicio
     for (let i = 0; i < startDay; i++) {
-        html += '<div style="padding: 10px;"></div>';
+        html += '<div class="calendar-day" style="opacity: 0.3;"></div>';
     }
 
-    // Días del mes
     for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${year}-${monthNum}-${String(day).padStart(2, '0')}`;
         const dayEvents = events.filter(e => e.event_date.startsWith(dateStr));
-        const isToday = dateStr === new Date().toISOString().split('T')[0];
+        const isToday = dateStr === todayStr;
 
         html += `
-            <div style="min-height: 80px; padding: 8px; border: 1px solid var(--light); ${isToday ? 'background: rgba(99, 102, 241, 0.1);' : ''}">
-                <div style="font-weight: bold; ${isToday ? 'color: var(--primary);' : ''}">${day}</div>
-                ${dayEvents.map(e => `
-                    <div onclick="viewEvent(${e.id})" style="cursor: pointer; font-size: 11px; padding: 2px 4px; margin-top: 4px; border-radius: 4px; background: ${e.status === 'confirmed' ? 'var(--secondary)' : e.status === 'tentative' ? 'var(--warning)' : 'var(--danger)'}; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${e.name}
-                    </div>
+            <div class="calendar-day ${isToday ? 'today' : ''}">
+                <div class="day-number">${day}</div>
+                ${dayEvents.slice(0, 2).map(e => `
+                    <div class="calendar-event ${e.status}" onclick="viewEvent(${e.id})">${e.name}</div>
                 `).join('')}
+                ${dayEvents.length > 2 ? `<small style="color: var(--text-tertiary);">+${dayEvents.length - 2} más</small>` : ''}
             </div>
         `;
     }
@@ -151,6 +149,7 @@ function renderWeekView(events, container) {
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
+    const todayStr = today.toISOString().split('T')[0];
 
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -159,28 +158,28 @@ function renderWeekView(events, container) {
         days.push(d);
     }
 
-    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
     container.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+        <div class="week-grid">
             ${days.map((d, i) => {
                 const dateStr = d.toISOString().split('T')[0];
                 const dayEvents = events.filter(e => e.event_date.startsWith(dateStr));
-                const isToday = dateStr === today.toISOString().split('T')[0];
+                const isToday = dateStr === todayStr;
 
                 return `
-                    <div style="border: 1px solid var(--light); border-radius: 8px; overflow: hidden; ${isToday ? 'border-color: var(--primary);' : ''}">
-                        <div style="padding: 10px; background: ${isToday ? 'var(--primary)' : 'var(--light)'}; color: ${isToday ? '#fff' : 'var(--dark)'}; text-align: center;">
-                            <div style="font-size: 12px;">${dayNames[i]}</div>
-                            <div style="font-size: 20px; font-weight: bold;">${d.getDate()}</div>
+                    <div class="week-day ${isToday ? 'today' : ''}">
+                        <div class="week-day-header">
+                            <div class="day-name">${dayNames[i]}</div>
+                            <div class="day-number">${d.getDate()}</div>
                         </div>
-                        <div style="padding: 8px; min-height: 100px;">
+                        <div class="week-day-content">
                             ${dayEvents.length ? dayEvents.map(e => `
-                                <div onclick="viewEvent(${e.id})" style="cursor: pointer; padding: 8px; margin-bottom: 4px; background: rgba(99, 102, 241, 0.1); border-radius: 4px;">
-                                    <div style="font-weight: bold; font-size: 12px;">${e.name}</div>
-                                    <div style="font-size: 11px; color: var(--gray);">${e.start_time || ''}</div>
+                                <div class="calendar-event ${e.status}" onclick="viewEvent(${e.id})" style="margin-bottom: 8px;">
+                                    <strong>${e.name}</strong><br>
+                                    <small>${e.start_time || ''}</small>
                                 </div>
-                            `).join('') : '<div style="color: var(--gray); font-size: 12px;">Sin eventos</div>'}
+                            `).join('') : '<small style="color: var(--text-tertiary);">Sin eventos</small>'}
                         </div>
                     </div>
                 `;
@@ -195,24 +194,27 @@ function viewEvent(id) {
 
     document.getElementById('viewEventTitle').textContent = event.name;
     document.getElementById('viewEventContent').innerHTML = `
-        <div style="margin-bottom: 16px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
             <span class="badge ${event.status === 'confirmed' ? 'badge-success' : event.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
                 ${event.status === 'confirmed' ? 'Confirmado' : event.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
             </span>
-            <span class="badge ${event.payment_status === 'paid' ? 'badge-success' : event.payment_status === 'partial' ? 'badge-warning' : 'badge-danger'}">
+            <span class="badge ${event.payment_status === 'paid' ? 'badge-success' : event.payment_status === 'partial' ? 'badge-warning' : 'badge-neutral'}">
                 ${event.payment_status === 'paid' ? 'Pagado' : event.payment_status === 'partial' ? 'Pago parcial' : 'Pago pendiente'}
             </span>
         </div>
-        <p><strong>📅 Fecha:</strong> ${formatDate(event.event_date)}</p>
-        <p><strong>🕐 Horario:</strong> ${event.start_time || '-'} - ${event.end_time || '-'}</p>
-        <p><strong>📍 Lugar:</strong> ${event.venue || '-'}</p>
-        <p><strong>🏙️ Ciudad:</strong> ${event.city || '-'}</p>
-        <p><strong>📫 Dirección:</strong> ${event.address || '-'}</p>
-        ${event.google_maps_url ? `<p><a href="${event.google_maps_url}" target="_blank" class="btn btn-sm btn-primary">🗺️ Ver en Google Maps</a></p>` : ''}
-        <p><strong>👔 Uniforme:</strong> ${event.uniform || '-'}</p>
-        <p><strong>📋 Set List:</strong> ${event.setlist_name || 'No asignado'}</p>
-        <p><strong>💰 Pago:</strong> $${event.payment || 0}</p>
-        ${event.notes ? `<p><strong>📝 Notas:</strong> ${event.notes}</p>` : ''}
+        
+        <div style="display: grid; gap: 12px;">
+            <div><strong>📅 Fecha:</strong> ${formatDate(event.event_date)}</div>
+            <div><strong>🕐 Horario:</strong> ${event.start_time || '-'} ${event.end_time ? '- ' + event.end_time : ''}</div>
+            <div><strong>📍 Lugar:</strong> ${event.venue || '-'}</div>
+            <div><strong>🏙️ Ciudad:</strong> ${event.city || '-'}</div>
+            ${event.address ? `<div><strong>📫 Dirección:</strong> ${event.address}</div>` : ''}
+            ${event.google_maps_url ? `<div><a href="${event.google_maps_url}" target="_blank" class="btn btn-ghost btn-sm">🗺️ Ver en Google Maps</a></div>` : ''}
+            <div><strong>👔 Uniforme:</strong> ${event.uniform || '-'}</div>
+            <div><strong>📋 Set List:</strong> ${event.setlist_name || 'No asignado'}</div>
+            <div><strong>💰 Pago:</strong> $${event.payment || 0}</div>
+            ${event.notes ? `<div><strong>📝 Notas:</strong> ${event.notes}</div>` : ''}
+        </div>
     `;
     document.getElementById('viewEventModal').classList.add('active');
 }

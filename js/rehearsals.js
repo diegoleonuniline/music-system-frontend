@@ -32,7 +32,6 @@ function updateStats() {
 
 function renderRehearsals() {
     const priorityFilter = document.getElementById('filterPriority').value;
-    const statusFilter = document.getElementById('filterRehStatus').value;
     const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
 
     let filtered = allRehearsals.filter(r => r.status !== 'ready');
@@ -40,40 +39,40 @@ function renderRehearsals() {
     if (priorityFilter) {
         filtered = filtered.filter(r => r.priority === priorityFilter);
     }
-    if (statusFilter) {
-        filtered = filtered.filter(r => r.status === statusFilter);
-    }
 
     const container = document.getElementById('rehearsalsList');
 
     if (!filtered.length) {
-        container.innerHTML = '<p>No hay canciones por ensayar</p>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🎸</div>
+                <h3>Sin canciones por ensayar</h3>
+                <p>Agrega canciones para practicar</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = filtered.map(r => `
-        <div class="song-item" style="border-left: 4px solid ${r.priority === 'high' ? 'var(--danger)' : r.priority === 'medium' ? 'var(--warning)' : 'var(--secondary)'};">
-            <div style="width: 30px; text-align: center;">
-                ${r.priority === 'high' ? '🔴' : r.priority === 'medium' ? '🟡' : '🟢'}
-            </div>
+        <div class="song-item priority-${r.priority}">
+            <span style="font-size: 16px;">${r.priority === 'high' ? '🔴' : r.priority === 'medium' ? '🟡' : '🟢'}</span>
             <div class="song-info">
                 <h4>${r.song_name}</h4>
-                <p>${r.artist || 'Sin artista'}</p>
-                ${r.notes ? `<small style="color: var(--gray);">📝 ${r.notes}</small>` : ''}
+                <p>${r.artist || 'Sin artista'}${r.notes ? ' · ' + r.notes : ''}</p>
             </div>
-            <div>
-                <span class="badge ${r.status === 'pending' ? 'badge-warning' : 'badge-primary'}">
+            <div class="song-meta">
+                <span class="badge ${r.status === 'pending' ? 'badge-neutral' : 'badge-primary'}">
                     ${r.status === 'pending' ? 'Pendiente' : 'En progreso'}
                 </span>
-                ${r.target_date ? `<br><small>📅 ${formatDate(r.target_date)}</small>` : ''}
+                ${r.target_date ? `<span class="badge badge-neutral">${formatDate(r.target_date)}</span>` : ''}
             </div>
             ${isAdmin ? `
-                <div class="song-actions">
+                <div class="song-actions" style="opacity: 1;">
                     ${r.status === 'pending' ? `
-                        <button class="btn btn-sm btn-primary" onclick="updateStatus(${r.id}, 'in_progress')" title="Marcar en progreso">▶️</button>
+                        <button class="btn btn-ghost btn-sm" onclick="updateStatus(${r.id}, 'in_progress')">▶ Iniciar</button>
                     ` : ''}
-                    <button class="btn btn-sm btn-secondary" onclick="moveToRepertoire(${r.id})" title="Pasar a repertorio">✅</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteRehearsal(${r.id})" title="Eliminar">🗑️</button>
+                    <button class="btn btn-secondary btn-sm" onclick="moveToRepertoire(${r.id})">✅ Lista</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteRehearsal(${r.id})">×</button>
                 </div>
             ` : ''}
         </div>
@@ -85,19 +84,20 @@ function renderReadyList() {
     const container = document.getElementById('readyList');
 
     if (!ready.length) {
-        container.innerHTML = '<p>No hay canciones listas aún</p>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Las canciones listas aparecerán aquí</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = ready.slice(0, 10).map(r => `
         <div class="song-item" style="opacity: 0.7;">
-            <div style="width: 30px; text-align: center;">✅</div>
+            <span>✅</span>
             <div class="song-info">
                 <h4>${r.song_name}</h4>
-                <p>${r.artist || 'Sin artista'}</p>
-            </div>
-            <div>
-                <small style="color: var(--gray);">Listo el ${formatDate(r.moved_to_repertoire_at)}</small>
+                <p>${r.artist || 'Sin artista'} · Lista el ${formatDate(r.moved_to_repertoire_at)}</p>
             </div>
         </div>
     `).join('');
@@ -109,14 +109,12 @@ async function updateStatus(id, status) {
 }
 
 async function moveToRepertoire(id) {
-    if (confirm('¿Marcar esta canción como lista y pasarla a repertorio?')) {
-        await apiPost(`/rehearsals/${id}/move-to-repertoire`);
-        loadData();
-    }
+    await apiPost(`/rehearsals/${id}/move-to-repertoire`);
+    loadData();
 }
 
 async function deleteRehearsal(id) {
-    if (confirm('¿Eliminar de la lista de ensayos?')) {
+    if (confirm('¿Eliminar de ensayos?')) {
         await apiDelete(`/rehearsals/${id}`);
         loadData();
     }
@@ -154,7 +152,7 @@ function filterAvailableSongs() {
                 <p>${s.artist || 'Sin artista'}</p>
             </div>
         </div>
-    `).join('') : '<p>No hay canciones disponibles</p>';
+    `).join('') : '<div class="empty-state"><p>Sin canciones disponibles</p></div>';
 }
 
 function selectSong(id, name) {

@@ -19,82 +19,107 @@ function checkAuth() {
 }
 
 async function apiGet(endpoint) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-        headers: {
-            'Authorization': `Bearer ${getToken()}`
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        if (response.status === 401) {
+            logout();
+            return;
         }
-    });
-    if (response.status === 401) {
-        logout();
-        return;
+        return response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        return [];
     }
-    return response.json();
 }
 
 async function apiPost(endpoint, data) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getToken()}`
-        },
-        body: JSON.stringify(data)
-    });
-    if (response.status === 401) {
-        logout();
-        return;
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.status === 401) {
+            logout();
+            return;
+        }
+        return response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
     }
-    return response.json();
 }
 
 async function apiPut(endpoint, data) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getToken()}`
-        },
-        body: JSON.stringify(data)
-    });
-    if (response.status === 401) {
-        logout();
-        return;
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.status === 401) {
+            logout();
+            return;
+        }
+        return response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
     }
-    return response.json();
 }
 
 async function apiPatch(endpoint, data) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getToken()}`
-        },
-        body: JSON.stringify(data)
-    });
-    if (response.status === 401) {
-        logout();
-        return;
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.status === 401) {
+            logout();
+            return;
+        }
+        return response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
     }
-    return response.json();
 }
 
 async function apiDelete(endpoint) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${getToken()}`
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        if (response.status === 401) {
+            logout();
+            return;
         }
-    });
-    if (response.status === 401) {
-        logout();
-        return;
+        return response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
     }
-    return response.json();
 }
 
 function formatDuration(seconds) {
-    if (!seconds) return '--:--';
+    if (!seconds) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -103,5 +128,5 @@ function formatDuration(seconds) {
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }

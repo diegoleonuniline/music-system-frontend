@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canciones - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
 </head>
 <body>
     <div class="app-container">
@@ -28,49 +29,49 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-danger btn-sm btn-block" onclick="logout()">Cerrar Sesión</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="page-header">
-                <h1>🎵 Canciones</h1>
-                <button class="btn btn-primary" onclick="openModal()">+ Nueva Canción</button>
+                <h1>Canciones</h1>
+                <button class="btn btn-primary" onclick="openModal()">+ Nueva canción</button>
             </div>
 
             <div class="card">
                 <div class="search-filters">
-                    <input type="text" id="searchInput" placeholder="Buscar canción o artista..." onkeyup="filterSongs()">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o artista..." onkeyup="filterSongs()">
                     <select id="filterCategory" onchange="filterSongs()">
-                        <option value="">Todas las categorías</option>
+                        <option value="">Categoría</option>
                     </select>
                     <select id="filterGenre" onchange="filterSongs()">
-                        <option value="">Todos los géneros</option>
+                        <option value="">Género</option>
                     </select>
                     <select id="filterType" onchange="filterSongs()">
-                        <option value="">Todos los tipos</option>
+                        <option value="">Tipo</option>
                         <option value="cover">Cover</option>
                         <option value="original">Original</option>
                         <option value="medley">Medley</option>
-                        <option value="mashup">Mashup</option>
                     </select>
                     <select id="groupBy" onchange="renderSongs()">
-                        <option value="">Sin agrupar</option>
-                        <option value="artist">Por Artista</option>
-                        <option value="category">Por Categoría</option>
-                        <option value="genre">Por Género</option>
-                        <option value="song_type">Por Tipo</option>
+                        <option value="">Ordenar A-Z</option>
+                        <option value="artist">Agrupar por Artista</option>
+                        <option value="category">Agrupar por Categoría</option>
+                        <option value="genre">Agrupar por Género</option>
                     </select>
                 </div>
 
-                <div id="songsList">Cargando...</div>
+                <div id="songsList">
+                    <div class="loading">Cargando</div>
+                </div>
             </div>
         </main>
     </div>
 
     <!-- Modal Nueva/Editar Canción -->
     <div class="modal-overlay" id="songModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
                 <h3 id="modalTitle">Nueva Canción</h3>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -78,60 +79,75 @@
             <div class="modal-body">
                 <form id="songForm">
                     <input type="hidden" id="songId">
-                    <div class="form-group">
-                        <label>Nombre de la canción *</label>
-                        <input type="text" id="songName" required>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" id="songName" required placeholder="Nombre de la canción">
+                        </div>
+                        <div class="form-group">
+                            <label>Artista</label>
+                            <input type="text" id="songArtist" placeholder="Artista original">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Artista</label>
-                        <input type="text" id="songArtist">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <select id="songCategory"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Género</label>
+                            <select id="songGenre"></select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Categoría</label>
-                        <select id="songCategory"></select>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="songType">
+                                <option value="cover">Cover</option>
+                                <option value="original">Original</option>
+                                <option value="medley">Medley</option>
+                                <option value="mashup">Mashup</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Idioma</label>
+                            <select id="songLyricsType">
+                                <option value="spanish">Español</option>
+                                <option value="english">Inglés</option>
+                                <option value="instrumental">Instrumental</option>
+                                <option value="other">Otro</option>
+                            </select>
+                        </div>
                     </div>
+                    
                     <div class="form-group">
-                        <label>Género</label>
-                        <select id="songGenre"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Tipo</label>
-                        <select id="songType">
-                            <option value="cover">Cover</option>
-                            <option value="original">Original</option>
-                            <option value="medley">Medley</option>
-                            <option value="mashup">Mashup</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Tipo de letra</label>
-                        <select id="songLyricsType">
-                            <option value="spanish">Español</option>
-                            <option value="english">Inglés</option>
-                            <option value="instrumental">Instrumental</option>
-                            <option value="other">Otro</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>URL de Video (YouTube)</label>
+                        <label>URL de Video</label>
                         <input type="url" id="songVideo" placeholder="https://youtube.com/watch?v=...">
                     </div>
-                    <div class="form-group">
-                        <label>Duración (segundos)</label>
-                        <input type="number" id="songDuration" placeholder="180">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Duración (seg)</label>
+                            <input type="number" id="songDuration" placeholder="180">
+                        </div>
+                        <div class="form-group">
+                            <label>BPM</label>
+                            <input type="number" id="songBpm" placeholder="120">
+                        </div>
+                        <div class="form-group">
+                            <label>Tonalidad</label>
+                            <input type="text" id="songKey" placeholder="Am">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>BPM</label>
-                        <input type="number" id="songBpm" placeholder="120">
-                    </div>
-                    <div class="form-group">
-                        <label>Tonalidad</label>
-                        <input type="text" id="songKey" placeholder="Am, C, G...">
-                    </div>
+                    
                     <div class="form-group">
                         <label>Letra</label>
                         <textarea id="songLyrics" rows="4" placeholder="Letra de la canción..."></textarea>
                     </div>
+                    
                     <div class="form-group">
                         <label>Notas</label>
                         <textarea id="songNotes" rows="2" placeholder="Notas adicionales..."></textarea>
@@ -139,7 +155,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveSong()">Guardar</button>
             </div>
         </div>

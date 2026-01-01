@@ -20,7 +20,7 @@ async function loadData() {
         // Llenar filtros
         const catSelect = document.getElementById('filterCategory');
         const catSelectModal = document.getElementById('songCategory');
-        catSelect.innerHTML = '<option value="">Todas las categorías</option>';
+        catSelect.innerHTML = '<option value="">Categoría</option>';
         catSelectModal.innerHTML = '<option value="">Sin categoría</option>';
         categories.forEach(c => {
             catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
@@ -29,7 +29,7 @@ async function loadData() {
 
         const genSelect = document.getElementById('filterGenre');
         const genSelectModal = document.getElementById('songGenre');
-        genSelect.innerHTML = '<option value="">Todos los géneros</option>';
+        genSelect.innerHTML = '<option value="">Género</option>';
         genSelectModal.innerHTML = '<option value="">Sin género</option>';
         genres.forEach(g => {
             genSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
@@ -39,6 +39,7 @@ async function loadData() {
         renderSongs();
     } catch (error) {
         console.error('Error:', error);
+        document.getElementById('songsList').innerHTML = '<div class="error-message">Error al cargar canciones</div>';
     }
 }
 
@@ -67,7 +68,13 @@ function renderSongs() {
     const container = document.getElementById('songsList');
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p>No hay canciones</p>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🎵</div>
+                <h3>No hay canciones</h3>
+                <p>${allSongs.length === 0 ? 'Agrega tu primera canción' : 'Prueba con otros filtros'}</p>
+            </div>
+        `;
         return;
     }
 
@@ -78,7 +85,6 @@ function renderSongs() {
             if (groupBy === 'artist') key = s.artist || 'Sin artista';
             else if (groupBy === 'category') key = s.category_name || 'Sin categoría';
             else if (groupBy === 'genre') key = s.genre_name || 'Sin género';
-            else if (groupBy === 'song_type') key = s.song_type || 'Sin tipo';
             
             if (!groups[key]) groups[key] = [];
             groups[key].push(s);
@@ -86,7 +92,7 @@ function renderSongs() {
 
         let html = '';
         Object.keys(groups).sort().forEach(key => {
-            html += `<h3 style="margin: 20px 0 10px; color: var(--primary);">${key} (${groups[key].length})</h3>`;
+            html += `<div class="group-header">${key} · ${groups[key].length}</div>`;
             groups[key].forEach(s => {
                 html += renderSongItem(s);
             });
@@ -102,22 +108,22 @@ function renderSongItem(s) {
     return `
         <div class="song-item">
             <button class="favorite-btn ${s.is_favorite ? 'active' : ''}" onclick="toggleFavorite(${s.id}, ${!s.is_favorite})">
-                ${s.is_favorite ? '⭐' : '☆'}
+                ${s.is_favorite ? '★' : '☆'}
             </button>
             <div class="song-info">
                 <h4>${s.name}</h4>
-                <p>${s.artist || 'Sin artista'} ${s.category_name ? '• ' + s.category_name : ''} ${s.genre_name ? '• ' + s.genre_name : ''}</p>
+                <p>${s.artist || 'Sin artista'}${s.category_name ? ' · ' + s.category_name : ''}</p>
             </div>
-            <div>
-                ${s.duration_seconds ? '<span class="badge badge-primary">' + formatDuration(s.duration_seconds) + '</span>' : ''}
-                ${s.musical_key ? '<span class="badge badge-success">' + s.musical_key + '</span>' : ''}
-                ${s.bpm ? '<span class="badge badge-warning">' + s.bpm + ' BPM</span>' : ''}
+            <div class="song-meta">
+                ${s.duration_seconds ? `<span class="badge badge-neutral">${formatDuration(s.duration_seconds)}</span>` : ''}
+                ${s.musical_key ? `<span class="badge badge-success">${s.musical_key}</span>` : ''}
+                ${s.bpm ? `<span class="badge badge-warning">${s.bpm} bpm</span>` : ''}
             </div>
             <div class="song-actions">
-                ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-sm">▶️</a>` : ''}
+                ${s.video_url ? `<a href="${s.video_url}" target="_blank" class="btn btn-ghost btn-icon btn-sm" title="Ver video">▶</a>` : ''}
                 ${isAdmin ? `
-                    <button class="btn btn-sm" onclick="editSong(${s.id})">✏️</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteSong(${s.id})">🗑️</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" onclick="editSong(${s.id})" title="Editar">✎</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteSong(${s.id})" title="Eliminar">×</button>
                 ` : ''}
             </div>
         </div>
@@ -175,14 +181,17 @@ async function saveSong() {
         notes: document.getElementById('songNotes').value
     };
 
-    if (id) {
-        await apiPut(`/songs/${id}`, data);
-    } else {
-        await apiPost('/songs', data);
+    try {
+        if (id) {
+            await apiPut(`/songs/${id}`, data);
+        } else {
+            await apiPost('/songs', data);
+        }
+        closeModal();
+        loadData();
+    } catch (error) {
+        alert('Error al guardar: ' + error.message);
     }
-
-    closeModal();
-    loadData();
 }
 
 async function deleteSong(id) {

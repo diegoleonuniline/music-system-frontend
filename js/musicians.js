@@ -7,7 +7,6 @@ document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) |
 
 const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
 
-// Ocultar botón si no es admin
 if (!isAdmin) {
     document.getElementById('btnAddMusician').style.display = 'none';
 }
@@ -40,17 +39,19 @@ function renderPlanInfo() {
     const max = groupInfo.max_musicians || 999;
     const percentage = Math.min((current / max) * 100, 100);
 
-    document.getElementById('planName').textContent = `Plan: ${groupInfo.plan_name || 'Sin plan'}`;
+    document.getElementById('planName').textContent = groupInfo.plan_name || 'Sin plan';
     document.getElementById('planDescription').textContent = groupInfo.name;
     document.getElementById('currentMusicians').textContent = current;
     document.getElementById('maxMusicians').textContent = max;
-    document.getElementById('planProgress').style.width = `${percentage}%`;
+    
+    const progressBar = document.getElementById('planProgress');
+    progressBar.style.width = `${percentage}%`;
 
-    // Cambiar color si está lleno
     if (current >= max) {
-        document.getElementById('planProgress').style.background = 'var(--danger)';
-        document.getElementById('btnAddMusician').disabled = true;
-        document.getElementById('btnAddMusician').textContent = 'Límite alcanzado';
+        progressBar.classList.add('danger');
+        const btn = document.getElementById('btnAddMusician');
+        btn.disabled = true;
+        btn.textContent = 'Límite alcanzado';
     }
 }
 
@@ -58,27 +59,27 @@ function renderMusicians() {
     const container = document.getElementById('musiciansList');
 
     if (!allUsers.length) {
-        container.innerHTML = '<tr><td colspan="6">No hay músicos registrados</td></tr>';
+        container.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Sin músicos</p></div></td></tr>';
         return;
     }
 
     container.innerHTML = allUsers.map(u => `
         <tr style="${!u.is_active ? 'opacity: 0.5;' : ''}">
             <td>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div class="user-avatar" style="width: 36px; height: 36px; font-size: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="user-avatar" style="width: 32px; height: 32px; font-size: 13px;">
                         ${u.first_name?.charAt(0) || 'U'}
                     </div>
                     <div>
                         <strong>${u.first_name} ${u.last_name || ''}</strong>
-                        ${u.id === user.id ? '<span class="badge badge-primary" style="margin-left: 8px;">Tú</span>' : ''}
+                        ${u.id === user.id ? '<span class="badge badge-primary" style="margin-left: 6px;">Tú</span>' : ''}
                     </div>
                 </div>
             </td>
             <td>${u.email}</td>
             <td>${u.phone || '-'}</td>
             <td>
-                <span class="badge ${u.role === 'super_admin' ? 'badge-danger' : u.role === 'group_admin' ? 'badge-warning' : 'badge-primary'}">
+                <span class="badge ${u.role === 'super_admin' ? 'badge-danger' : u.role === 'group_admin' ? 'badge-warning' : 'badge-neutral'}">
                     ${u.role === 'super_admin' ? 'Super Admin' : u.role === 'group_admin' ? 'Admin' : 'Músico'}
                 </span>
             </td>
@@ -88,17 +89,16 @@ function renderMusicians() {
                 </span>
             </td>
             <td>
-                ${isAdmin && u.id !== user.id ? `
-                    <button class="btn btn-sm" onclick="editMusician(${u.id})" title="Editar">✏️</button>
-                    <button class="btn btn-sm" onclick="openPasswordModal(${u.id})" title="Cambiar contraseña">🔑</button>
-                    ${u.is_active ? `
-                        <button class="btn btn-sm btn-danger" onclick="toggleActive(${u.id}, false)" title="Desactivar">🚫</button>
-                    ` : `
-                        <button class="btn btn-sm btn-secondary" onclick="toggleActive(${u.id}, true)" title="Activar">✅</button>
-                    `}
-                ` : u.id === user.id ? `
-                    <button class="btn btn-sm" onclick="editMusician(${u.id})" title="Editar mi perfil">✏️</button>
-                    <button class="btn btn-sm" onclick="openPasswordModal(${u.id})" title="Cambiar mi contraseña">🔑</button>
+                ${isAdmin || u.id === user.id ? `
+                    <button class="btn btn-ghost btn-sm" onclick="editMusician(${u.id})">Editar</button>
+                    <button class="btn btn-ghost btn-sm" onclick="openPasswordModal(${u.id})">🔑</button>
+                    ${isAdmin && u.id !== user.id ? `
+                        ${u.is_active ? `
+                            <button class="btn btn-ghost btn-sm" style="color: var(--danger);" onclick="toggleActive(${u.id}, false)">Desactivar</button>
+                        ` : `
+                            <button class="btn btn-ghost btn-sm" style="color: var(--success);" onclick="toggleActive(${u.id}, true)">Activar</button>
+                        `}
+                    ` : ''}
                 ` : ''}
             </td>
         </tr>
@@ -116,11 +116,9 @@ function openModal(musician = null) {
     document.getElementById('musicianPhone').value = musician?.phone || '';
     document.getElementById('musicianRole').value = musician?.role || 'musician';
 
-    // Ocultar campo contraseña en edición
     document.getElementById('passwordGroup').style.display = isEditing ? 'none' : 'block';
     document.getElementById('musicianPassword').required = !isEditing;
 
-    // Solo super_admin puede crear admins
     if (user.role !== 'super_admin') {
         document.getElementById('musicianRole').disabled = true;
     }
@@ -177,11 +175,8 @@ async function saveMusician() {
 }
 
 async function toggleActive(id, isActive) {
-    const action = isActive ? 'activar' : 'desactivar';
-    if (confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} este músico?`)) {
-        await apiPut(`/users/${id}`, { is_active: isActive });
-        loadData();
-    }
+    await apiPut(`/users/${id}`, { is_active: isActive });
+    loadData();
 }
 
 function openPasswordModal(id) {
@@ -201,7 +196,7 @@ async function changePassword() {
     const confirmPassword = document.getElementById('confirmPassword').value;
 
     if (newPassword.length < 6) {
-        alert('La contraseña debe tener al menos 6 caracteres');
+        alert('Mínimo 6 caracteres');
         return;
     }
 

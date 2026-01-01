@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
 </head>
 <body>
     <div class="app-container">
@@ -28,7 +29,7 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-danger btn-sm btn-block" onclick="logout()">Cerrar Sesión</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
@@ -40,52 +41,46 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="icon">🎵</div>
-                    <div class="number" id="totalSongs">0</div>
+                    <div class="number" id="totalSongs">-</div>
                     <div class="label">Canciones</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">📋</div>
-                    <div class="number" id="totalSetlists">0</div>
+                    <div class="number" id="totalSetlists">-</div>
                     <div class="label">Set Lists</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">📅</div>
-                    <div class="number" id="totalEvents">0</div>
+                    <div class="number" id="totalEvents">-</div>
                     <div class="label">Eventos</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">👥</div>
-                    <div class="number" id="totalMusicians">0</div>
+                    <div class="number" id="totalMusicians">-</div>
                     <div class="label">Músicos</div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3>📅 Próximos Eventos</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📅 Próximos Eventos</h3>
+                        <a href="events.html" class="btn btn-ghost btn-sm">Ver todos</a>
+                    </div>
+                    <div id="upcomingEvents">
+                        <div class="loading">Cargando</div>
+                    </div>
                 </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Evento</th>
-                                <th>Lugar</th>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody id="upcomingEvents">
-                            <tr><td colspan="4">Cargando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3>⭐ Canciones Favoritas</h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⭐ Favoritas</h3>
+                        <a href="songs.html" class="btn btn-ghost btn-sm">Ver todas</a>
+                    </div>
+                    <div id="favoriteSongs">
+                        <div class="loading">Cargando</div>
+                    </div>
                 </div>
-                <div id="favoriteSongs">Cargando...</div>
             </div>
         </main>
     </div>

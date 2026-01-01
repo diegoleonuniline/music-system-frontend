@@ -24,22 +24,28 @@ function renderSetlists() {
     const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
 
     if (!allSetlists.length) {
-        container.innerHTML = '<p>No hay set lists creados</p>';
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="icon">📋</div>
+                <h3>Sin set lists</h3>
+                <p>Crea tu primer set list</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = allSetlists.map(s => `
-        <div class="stat-card" style="cursor: pointer;" onclick="viewSetlist(${s.id})">
+        <div class="setlist-card" onclick="viewSetlist(${s.id})">
             <div class="icon">📋</div>
-            <div class="number">${s.total_songs || 0}</div>
-            <div class="label">${s.name}</div>
-            <div style="margin-top: 10px; font-size: 12px; color: var(--gray);">
-                ${formatDuration(s.total_duration_seconds)} total
+            <h4>${s.name}</h4>
+            <div class="meta">
+                <span>${s.total_songs || 0} canciones</span>
+                <span>${formatDuration(s.total_duration_seconds)}</span>
             </div>
             ${isAdmin ? `
-                <div style="margin-top: 10px;">
-                    <button class="btn btn-sm" onclick="event.stopPropagation(); editSetlist(${s.id})">✏️</button>
-                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteSetlist(${s.id})">🗑️</button>
+                <div class="actions" onclick="event.stopPropagation();">
+                    <button class="btn btn-ghost btn-sm" onclick="editSetlist(${s.id})">Editar</button>
+                    <button class="btn btn-ghost btn-sm" style="color: var(--danger);" onclick="deleteSetlist(${s.id})">Eliminar</button>
                 </div>
             ` : ''}
         </div>
@@ -50,9 +56,8 @@ async function viewSetlist(id) {
     try {
         currentSetlist = await apiGet(`/setlists/${id}`);
         document.getElementById('viewSetlistTitle').textContent = currentSetlist.name;
-        document.getElementById('viewTotalSongs').textContent = currentSetlist.songs?.length + ' canciones';
+        document.getElementById('viewTotalSongs').textContent = (currentSetlist.songs?.length || 0) + ' canciones';
         document.getElementById('viewTotalDuration').textContent = formatDuration(currentSetlist.total_duration_seconds);
-        
         renderSetlistSongs();
         document.getElementById('viewSetlistModal').classList.add('active');
     } catch (error) {
@@ -65,25 +70,29 @@ function renderSetlistSongs() {
     const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
 
     if (!currentSetlist.songs?.length) {
-        container.innerHTML = '<p>No hay canciones en este set list</p>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🎵</div>
+                <h3>Sin canciones</h3>
+                <p>Agrega canciones a este set list</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = currentSetlist.songs.map((s, index) => `
-        <div class="song-item" style="background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'};">
-            <span style="font-weight: bold; color: var(--primary); width: 30px;">${s.position}</span>
+        <div class="song-item">
+            <span style="font-weight: 600; color: var(--text-tertiary); width: 24px;">${s.position}</span>
             <div class="song-info">
                 <h4>${s.name}</h4>
-                <p>${s.artist || 'Sin artista'} ${s.musical_key ? '• ' + s.musical_key : ''}</p>
+                <p>${s.artist || 'Sin artista'}${s.musical_key ? ' · ' + s.musical_key : ''}</p>
             </div>
-            <div>
-                <span class="badge badge-primary">${formatDuration(s.duration_seconds)}</span>
-            </div>
+            <span class="badge badge-neutral">${formatDuration(s.duration_seconds)}</span>
             ${isAdmin ? `
-                <div class="song-actions">
-                    ${index > 0 ? `<button class="btn btn-sm" onclick="moveSong(${s.id}, ${s.position - 1})">⬆️</button>` : ''}
-                    ${index < currentSetlist.songs.length - 1 ? `<button class="btn btn-sm" onclick="moveSong(${s.id}, ${s.position + 1})">⬇️</button>` : ''}
-                    <button class="btn btn-sm btn-danger" onclick="removeSongFromSetlist(${s.id})">✕</button>
+                <div class="song-actions" style="opacity: 1;">
+                    ${index > 0 ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="moveSong(${s.id}, ${s.position - 1})">↑</button>` : ''}
+                    ${index < currentSetlist.songs.length - 1 ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="moveSong(${s.id}, ${s.position + 1})">↓</button>` : ''}
+                    <button class="btn btn-ghost btn-icon btn-sm" onclick="removeSongFromSetlist(${s.id})">×</button>
                 </div>
             ` : ''}
         </div>
@@ -139,9 +148,9 @@ function filterAvailableSongs() {
                 <h4>${s.name}</h4>
                 <p>${s.artist || 'Sin artista'}</p>
             </div>
-            <button class="btn btn-sm btn-primary" onclick="addSongToSetlist(${s.id})">+ Agregar</button>
+            <button class="btn btn-primary btn-sm" onclick="addSongToSetlist(${s.id})">Agregar</button>
         </div>
-    `).join('') : '<p>No hay canciones disponibles</p>';
+    `).join('') : '<div class="empty-state"><p>No hay canciones disponibles</p></div>';
 }
 
 async function addSongToSetlist(songId) {
@@ -155,22 +164,22 @@ function openStageMode() {
     document.getElementById('stageModeTitle').textContent = currentSetlist.name;
     
     const content = document.getElementById('stageModeContent');
-    content.innerHTML = currentSetlist.songs?.map((s, i) => `
-        <div style="background: #222; border-radius: 12px; padding: 24px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+    content.innerHTML = currentSetlist.songs?.map(s => `
+        <div class="stage-song">
+            <div class="stage-song-header">
                 <div>
-                    <span style="color: var(--primary); font-size: 24px; font-weight: bold;">${s.position}.</span>
-                    <span style="color: #fff; font-size: 28px; font-weight: bold; margin-left: 12px;">${s.name}</span>
+                    <span class="stage-song-number">${s.position}.</span>
+                    <span class="stage-song-title">${s.name}</span>
+                    <div class="stage-song-artist">${s.artist || ''}</div>
                 </div>
-                <div>
-                    ${s.musical_key ? `<span style="background: var(--secondary); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 18px;">${s.musical_key}</span>` : ''}
-                    ${s.bpm ? `<span style="background: var(--warning); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 18px; margin-left: 8px;">${s.bpm} BPM</span>` : ''}
+                <div class="stage-song-badges">
+                    ${s.musical_key ? `<span class="stage-badge key">${s.musical_key}</span>` : ''}
+                    ${s.bpm ? `<span class="stage-badge bpm">${s.bpm} BPM</span>` : ''}
                 </div>
             </div>
-            <div style="color: #aaa; font-size: 18px; margin-top: 8px;">${s.artist || ''}</div>
-            ${s.lyrics ? `<pre style="color: #ddd; font-size: 16px; margin-top: 16px; white-space: pre-wrap; font-family: inherit; line-height: 1.8;">${s.lyrics}</pre>` : ''}
+            ${s.lyrics ? `<pre class="stage-lyrics">${s.lyrics}</pre>` : ''}
         </div>
-    `).join('') || '<p style="color: #fff;">No hay canciones</p>';
+    `).join('') || '<div class="empty-state" style="color: #fff;"><p>Sin canciones</p></div>';
     
     document.getElementById('stageModeModal').classList.add('active');
 }

@@ -4,8 +4,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('loginError');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     
+    // Reset error
+    errorDiv.style.display = 'none';
     errorDiv.textContent = '';
+    
+    // Loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Iniciando sesión...';
     
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
@@ -19,7 +26,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (!response.ok) {
-            throw new Error(data.error || 'Error al iniciar sesión');
+            throw new Error(data.error || 'Credenciales inválidas');
         }
         
         localStorage.setItem('token', data.token);
@@ -29,5 +36,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         
     } catch (error) {
         errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Iniciar Sesión';
     }
 });

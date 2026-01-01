@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ensayos - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
 </head>
 <body>
     <div class="app-container">
@@ -28,31 +29,31 @@
                         <span id="userRole">Rol</span>
                     </div>
                 </div>
-                <button class="btn btn-danger btn-sm btn-block" onclick="logout()">Cerrar Sesión</button>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="page-header">
-                <h1>🎸 Ensayos</h1>
-                <button class="btn btn-primary" onclick="openModal()">+ Agregar a Ensayos</button>
+                <h1>Ensayos</h1>
+                <button class="btn btn-primary" onclick="openModal()">+ Agregar canción</button>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="icon">🔴</div>
                     <div class="number" id="highCount">0</div>
-                    <div class="label">Prioridad Alta</div>
+                    <div class="label">Alta prioridad</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">🟡</div>
                     <div class="number" id="mediumCount">0</div>
-                    <div class="label">Prioridad Media</div>
+                    <div class="label">Media prioridad</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">🟢</div>
                     <div class="number" id="lowCount">0</div>
-                    <div class="label">Prioridad Baja</div>
+                    <div class="label">Baja prioridad</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">✅</div>
@@ -63,29 +64,24 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h3>Canciones por Ensayar</h3>
-                    <div class="search-filters">
+                    <h3>Por ensayar</h3>
+                    <div class="search-filters" style="margin: 0;">
                         <select id="filterPriority" onchange="renderRehearsals()">
-                            <option value="">Todas las prioridades</option>
+                            <option value="">Todas</option>
                             <option value="high">Alta</option>
                             <option value="medium">Media</option>
                             <option value="low">Baja</option>
                         </select>
-                        <select id="filterRehStatus" onchange="renderRehearsals()">
-                            <option value="">Todos los estados</option>
-                            <option value="pending">Pendiente</option>
-                            <option value="in_progress">En progreso</option>
-                        </select>
                     </div>
                 </div>
-                <div id="rehearsalsList">Cargando...</div>
+                <div id="rehearsalsList"></div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h3>✅ Canciones Listas (Pasadas a Repertorio)</h3>
+                    <h3>✅ Listas para repertorio</h3>
                 </div>
-                <div id="readyList">Cargando...</div>
+                <div id="readyList"></div>
             </div>
         </main>
     </div>
@@ -94,7 +90,7 @@
     <div class="modal-overlay" id="rehearsalModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Agregar Canción a Ensayos</h3>
+                <h3>Agregar a Ensayos</h3>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -102,10 +98,10 @@
                     <label>Buscar canción</label>
                     <input type="text" id="searchSongInput" placeholder="Nombre o artista..." onkeyup="filterAvailableSongs()">
                 </div>
-                <div id="availableSongs" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;">Cargando...</div>
+                <div id="availableSongs" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
                 
-                <div id="selectedSongInfo" style="display: none; padding: 16px; background: var(--light); border-radius: 8px; margin-bottom: 20px;">
-                    <strong>Canción seleccionada:</strong> <span id="selectedSongName"></span>
+                <div id="selectedSongInfo" style="display: none; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius); margin-bottom: 20px;">
+                    <strong>Seleccionada:</strong> <span id="selectedSongName"></span>
                     <input type="hidden" id="selectedSongId">
                 </div>
 
@@ -123,11 +119,11 @@
                 </div>
                 <div class="form-group">
                     <label>Notas</label>
-                    <textarea id="rehearsalNotes" rows="2" placeholder="Notas sobre qué ensayar..."></textarea>
+                    <textarea id="rehearsalNotes" rows="2" placeholder="Qué practicar..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveRehearsal()">Agregar</button>
             </div>
         </div>
