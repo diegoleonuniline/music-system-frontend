@@ -2,11 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Eventos - Music System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" id="themeColor" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Eventos - Music System Pro</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
-    <meta name="theme-color" content="#ffffff" id="themeColor">
 </head>
 <body>
     <div class="app">
@@ -20,85 +21,74 @@
         </header>
 
         <main class="main">
-            <!-- Filtro mes -->
-            <div class="form-group">
-                <input type="month" class="form-input" id="filterMonth" onchange="loadData()" style="text-align:center">
+            <!-- Controls -->
+            <div style="display: flex; gap: var(--space-md); margin-bottom: var(--space-lg); flex-wrap: wrap; align-items: center;">
+                <input type="month" class="form-input" id="filterMonth" onchange="loadEvents()" style="flex: 1; min-width: 150px;">
+                <select class="form-input" id="filterStatus" onchange="renderEvents()" style="width: auto;">
+                    <option value="">Todos</option>
+                    <option value="confirmed">Confirmados</option>
+                    <option value="tentative">Tentativos</option>
+                    <option value="cancelled">Cancelados</option>
+                </select>
             </div>
 
-            <!-- Lista eventos -->
+            <!-- View Toggle -->
+            <div class="view-toggle" style="margin-bottom: var(--space-lg);">
+                <button class="view-toggle-btn active" onclick="setView('list')" id="viewList">Lista</button>
+                <button class="view-toggle-btn" onclick="setView('table')" id="viewTable">Tabla</button>
+                <button class="view-toggle-btn" onclick="setView('calendar')" id="viewCalendar">Mes</button>
+                <button class="view-toggle-btn" onclick="setView('week')" id="viewWeek">Semana</button>
+            </div>
+
+            <!-- Events Container -->
             <div class="card">
-                <div class="card-body no-padding" id="eventsList">
-                    <div class="loading"><div class="spinner"></div></div>
+                <div class="card-body no-padding" id="eventsContainer">
+                    <div class="loading"><div class="spinner"></div>Cargando...</div>
                 </div>
             </div>
         </main>
 
-        <button class="fab" onclick="openEventModal()">+</button>
+        <button class="fab admin-only" onclick="openEventModal()">+</button>
 
         <nav class="nav">
+            <div class="nav-logo"><div class="nav-logo-icon">🎵</div>Music Pro</div>
             <div class="nav-items">
-                <a href="dashboard.html" class="nav-item"><span class="icon">🏠</span>Inicio</a>
-                <a href="songs.html" class="nav-item"><span class="icon">🎵</span>Canciones</a>
-                <a href="setlists.html" class="nav-item"><span class="icon">📋</span>Set Lists</a>
-                <a href="events.html" class="nav-item active"><span class="icon">📅</span>Eventos</a>
-                <a href="settings.html" class="nav-item"><span class="icon">⚙️</span>Config</a>
+                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>Inicio</span></a>
+                <a href="songs.html" class="nav-item"><span class="icon">🎵</span><span>Canciones</span></a>
+                <a href="setlists.html" class="nav-item"><span class="icon">📋</span><span>Set Lists</span></a>
+                <a href="events.html" class="nav-item active"><span class="icon">📅</span><span>Eventos</span></a>
+                <a href="settings.html" class="nav-item"><span class="icon">⚙️</span><span>Config</span></a>
+            </div>
+            <div class="nav-profile">
+                <div class="nav-profile-avatar" id="navUserAvatar">U</div>
+                <div class="nav-profile-info">
+                    <div class="nav-profile-name" id="navUserName">Usuario</div>
+                    <div class="nav-profile-role" id="navUserRole">Músico</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
             </div>
         </nav>
     </div>
 
-    <!-- Modal Evento -->
+    <!-- Modal Event CRUD -->
     <div class="modal-overlay" id="eventModal">
-        <div class="modal" style="max-height: 90vh;">
+        <div class="modal">
             <div class="modal-handle"></div>
             <div class="modal-header">
                 <h3 id="eventModalTitle">Nuevo Evento</h3>
-                <button class="modal-close" onclick="closeModal('eventModal')">×</button>
+                <button class="modal-close" onclick="closeModal('eventModal')">✕</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="eventId">
                 <div class="form-group">
-                    <label class="form-label">Nombre *</label>
-                    <input type="text" class="form-input" id="eventName" placeholder="Nombre del evento">
+                    <label class="form-label">Nombre del evento *</label>
+                    <input type="text" class="form-input" id="eventName" placeholder="Ej: Boda García">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Fecha *</label>
                         <input type="date" class="form-input" id="eventDate">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Ciudad</label>
-                        <input type="text" class="form-input" id="eventCity" placeholder="Ciudad">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Lugar</label>
-                    <input type="text" class="form-input" id="eventVenue" placeholder="Nombre del lugar">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Hora inicio</label>
-                        <input type="time" class="form-input" id="eventStart">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Hora fin</label>
-                        <input type="time" class="form-input" id="eventEnd">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Set List</label>
-                    <select class="form-input" id="eventSetlist"></select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Uniforme</label>
-                        <input type="text" class="form-input" id="eventUniform" placeholder="Ej: Negro">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Pago</label>
-                        <input type="number" class="form-input" id="eventPayment" placeholder="0">
-                    </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Estado</label>
                         <select class="form-input" id="eventStatus">
@@ -107,9 +97,53 @@
                             <option value="cancelled">Cancelado</option>
                         </select>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Lugar</label>
+                    <input type="text" class="form-input" id="eventVenue" placeholder="Nombre del lugar">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Ciudad</label>
+                        <input type="text" class="form-input" id="eventCity" placeholder="Ciudad">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" class="form-input" id="eventAddress" placeholder="Dirección">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Hora inicio</label>
+                        <input type="time" class="form-input" id="eventStartTime">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hora fin</label>
+                        <input type="time" class="form-input" id="eventEndTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Google Maps URL</label>
+                    <input type="url" class="form-input" id="eventMapsUrl" placeholder="https://maps.google.com/...">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Set List</label>
+                        <select class="form-input" id="eventSetlist"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Uniforme</label>
+                        <input type="text" class="form-input" id="eventUniform" placeholder="Ej: Negro formal">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Pago $</label>
+                        <input type="number" class="form-input" id="eventPayment" placeholder="0.00">
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Estado pago</label>
-                        <select class="form-input" id="eventPayStatus">
+                        <select class="form-input" id="eventPaymentStatus">
                             <option value="pending">Pendiente</option>
                             <option value="partial">Parcial</option>
                             <option value="paid">Pagado</option>
@@ -118,7 +152,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Notas</label>
-                    <textarea class="form-input" id="eventNotes" rows="2" placeholder="Notas..."></textarea>
+                    <textarea class="form-input" id="eventNotes" rows="2" placeholder="Notas adicionales..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -128,13 +162,13 @@
         </div>
     </div>
 
-    <!-- Modal Ver Evento -->
+    <!-- Modal View Event -->
     <div class="modal-overlay" id="viewEventModal">
         <div class="modal">
             <div class="modal-handle"></div>
             <div class="modal-header">
                 <h3 id="viewEventTitle">Evento</h3>
-                <button class="modal-close" onclick="closeModal('viewEventModal')">×</button>
+                <button class="modal-close" onclick="closeModal('viewEventModal')">✕</button>
             </div>
             <div class="modal-body" id="viewEventContent"></div>
             <div class="modal-footer">

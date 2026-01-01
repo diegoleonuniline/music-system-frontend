@@ -1,186 +1,295 @@
 checkAuth();
-initApp();
+setupUserInfo();
 
+let allCategories = [];
+let allGenres = [];
+let allMusicians = [];
+let allGroups = [];
+let allPlans = [];
+
+// Setup profile
 const user = getUser();
-document.getElementById('userName').textContent = user.first_name + ' ' + (user.last_name || '');
-document.getElementById('userRole').textContent = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
-document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) || 'U';
+document.getElementById('profileAvatar').textContent = (user.first_name || 'U').charAt(0).toUpperCase();
+document.getElementById('profileName').textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
+document.getElementById('profileRole').textContent = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Administrador' : 'Músico';
+document.getElementById('profileEmail').textContent = user.email || '';
 
-const isSuperAdmin = user.role === 'super_admin';
-if (!isAdmin()) document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-
-// Update theme button
-function updateThemeBtn() {
+// Update theme button text
+function updateThemeButton() {
     const theme = localStorage.getItem('theme') || 'light';
-    document.getElementById('themeBtnText').textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
 }
-updateThemeBtn();
+updateThemeButton();
 
-// Override toggleTheme to update button
-const originalToggle = toggleTheme;
+// Override toggleTheme to also update button
+const originalToggle = window.toggleTheme;
 window.toggleTheme = function() {
     originalToggle();
-    updateThemeBtn();
+    updateThemeButton();
 };
 
-let categories = [], genres = [], groups = [], plans = [];
-
-async function loadData() {
+async function loadSettings() {
     try {
-        [categories, genres] = await Promise.all([
-            apiGet('/categories'),
-            apiGet('/genres')
-        ]);
-
-        renderCategories();
-        renderGenres();
-
-        if (isSuperAdmin) {
-            document.getElementById('groupsSection').classList.remove('hidden');
-            [groups, plans] = await Promise.all([
+        if (isAdmin()) {
+            [allCategories, allGenres, allMusicians] = await Promise.all([
+                apiGet('/categories'),
+                apiGet('/genres'),
+                apiGet('/users').catch(() => [])
+            ]);
+            renderCategories();
+            renderGenres();
+            renderMusicians();
+        }
+        
+        if (isSuperAdmin()) {
+            [allGroups, allPlans] = await Promise.all([
                 apiGet('/groups'),
                 apiGet('/plans')
             ]);
             renderGroups();
-            
-            const planSel = document.getElementById('groupPlan');
-            planSel.innerHTML = '<option value="">Sin plan</option>' + 
-                plans.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            populatePlans();
         }
     } catch (error) {
         console.error('Error:', error);
     }
 }
 
-// ===== CATEGORÍAS =====
+// ===== CATEGORIES =====
 function renderCategories() {
     const container = document.getElementById('categoriesList');
-    if (!categories.length) {
+    
+    if (!allCategories?.length) {
         container.innerHTML = '<div class="empty-state"><p class="text-muted">Sin categorías</p></div>';
         return;
     }
     
-    container.innerHTML = categories.map(c => `
+    container.innerHTML = allCategories.map(c => `
         <div class="list-item">
-            <div style="width:8px;height:32px;border-radius:4px;background:${c.color || 'var(--accent)'}"></div>
+            <div style="width: 12px; height: 12px; border-radius: var(--radius-full); background: ${c.color || 'var(--accent)'}; flex-shrink: 0;"></div>
             <div class="list-item-content">
                 <div class="list-item-title">${c.name}</div>
             </div>
-            ${isAdmin() ? `
-                <button class="btn btn-ghost btn-sm" onclick="editCat(${c.id})">✎</button>
-                <button class="btn btn-ghost btn-sm" onclick="deleteCat(${c.id})">×</button>
-            ` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="editCategory(${c.id})">✏️</button>
+            <button class="btn btn-ghost btn-sm" onclick="deleteCategory(${c.id})" style="color: var(--red);">🗑️</button>
         </div>
     `).join('');
 }
 
-function openCatModal(cat = null) {
-    document.getElementById('catModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
-    document.getElementById('catId').value = cat?.id || '';
-    document.getElementById('catName').value = cat?.name || '';
-    openModal('catModal');
+function openCategoryModal(category = null) {
+    document.getElementById('categoryModalTitle').textContent = category ? 'Editar Categoría' : 'Nueva Categoría';
+    document.getElementById('categoryId').value = category?.id || '';
+    document.getElementById('categoryName').value = category?.name || '';
+    document.getElementById('categoryColor').value = category?.color || '#007aff';
+    openModal('categoryModal');
 }
 
-function editCat(id) {
-    openCatModal(categories.find(c => c.id === id));
+function editCategory(id) {
+    const cat = allCategories.find(c => c.id === id);
+    openCategoryModal(cat);
 }
 
-async function saveCat() {
-    const id = document.getElementById('catId').value;
-    const data = { name: document.getElementById('catName').value };
+async function saveCategory() {
+    const id = document.getElementById('categoryId').value;
+    const data = {
+        name: document.getElementById('categoryName').value.trim(),
+        color: document.getElementById('categoryColor').value
+    };
     
-    if (!data.name) { showToast('Nombre requerido'); return; }
+    if (!data.name) { showToast('Ingresa el nombre'); return; }
     
     try {
-        if (id) await apiPut(`/categories/${id}`, data);
-        else await apiPost('/categories', data);
-        closeModal('catModal');
-        loadData();
+        if (id) {
+            await apiPut(`/categories/${id}`, data);
+        } else {
+            await apiPost('/categories', data);
+        }
+        closeModal('categoryModal');
         showToast('Categoría guardada');
-    } catch (e) { showToast('Error'); }
-}
-
-async function deleteCat(id) {
-    if (confirm('¿Eliminar categoría?')) {
-        await apiDelete(`/categories/${id}`);
-        loadData();
-        showToast('Categoría eliminada');
+        allCategories = await apiGet('/categories');
+        renderCategories();
+    } catch (e) {
+        showToast('Error al guardar');
     }
 }
 
-// ===== GÉNEROS =====
+async function deleteCategory(id) {
+    if (!confirm('¿Eliminar esta categoría?')) return;
+    try {
+        await apiDelete(`/categories/${id}`);
+        showToast('Categoría eliminada');
+        allCategories = await apiGet('/categories');
+        renderCategories();
+    } catch (e) {
+        showToast('Error al eliminar');
+    }
+}
+
+// ===== GENRES =====
 function renderGenres() {
     const container = document.getElementById('genresList');
-    if (!genres.length) {
+    
+    if (!allGenres?.length) {
         container.innerHTML = '<div class="empty-state"><p class="text-muted">Sin géneros</p></div>';
         return;
     }
     
-    container.innerHTML = genres.map(g => `
+    container.innerHTML = allGenres.map(g => `
         <div class="list-item">
-            <span style="font-size:20px">🎸</span>
             <div class="list-item-content">
                 <div class="list-item-title">${g.name}</div>
             </div>
-            ${isAdmin() ? `
-                <button class="btn btn-ghost btn-sm" onclick="editGen(${g.id})">✎</button>
-                <button class="btn btn-ghost btn-sm" onclick="deleteGen(${g.id})">×</button>
-            ` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="editGenre(${g.id})">✏️</button>
+            <button class="btn btn-ghost btn-sm" onclick="deleteGenre(${g.id})" style="color: var(--red);">🗑️</button>
         </div>
     `).join('');
 }
 
-function openGenModal(gen = null) {
-    document.getElementById('genModalTitle').textContent = gen ? 'Editar Género' : 'Nuevo Género';
-    document.getElementById('genId').value = gen?.id || '';
-    document.getElementById('genName').value = gen?.name || '';
-    openModal('genModal');
+function openGenreModal(genre = null) {
+    document.getElementById('genreModalTitle').textContent = genre ? 'Editar Género' : 'Nuevo Género';
+    document.getElementById('genreId').value = genre?.id || '';
+    document.getElementById('genreName').value = genre?.name || '';
+    openModal('genreModal');
 }
 
-function editGen(id) {
-    openGenModal(genres.find(g => g.id === id));
+function editGenre(id) {
+    const genre = allGenres.find(g => g.id === id);
+    openGenreModal(genre);
 }
 
-async function saveGen() {
-    const id = document.getElementById('genId').value;
-    const data = { name: document.getElementById('genName').value };
+async function saveGenre() {
+    const id = document.getElementById('genreId').value;
+    const data = { name: document.getElementById('genreName').value.trim() };
     
-    if (!data.name) { showToast('Nombre requerido'); return; }
+    if (!data.name) { showToast('Ingresa el nombre'); return; }
     
     try {
-        if (id) await apiPut(`/genres/${id}`, data);
-        else await apiPost('/genres', data);
-        closeModal('genModal');
-        loadData();
+        if (id) {
+            await apiPut(`/genres/${id}`, data);
+        } else {
+            await apiPost('/genres', data);
+        }
+        closeModal('genreModal');
         showToast('Género guardado');
-    } catch (e) { showToast('Error'); }
-}
-
-async function deleteGen(id) {
-    if (confirm('¿Eliminar género?')) {
-        await apiDelete(`/genres/${id}`);
-        loadData();
-        showToast('Género eliminado');
+        allGenres = await apiGet('/genres');
+        renderGenres();
+    } catch (e) {
+        showToast('Error al guardar');
     }
 }
 
-// ===== GRUPOS =====
+async function deleteGenre(id) {
+    if (!confirm('¿Eliminar este género?')) return;
+    try {
+        await apiDelete(`/genres/${id}`);
+        showToast('Género eliminado');
+        allGenres = await apiGet('/genres');
+        renderGenres();
+    } catch (e) {
+        showToast('Error al eliminar');
+    }
+}
+
+// ===== MUSICIANS =====
+function renderMusicians() {
+    const container = document.getElementById('musiciansList');
+    
+    if (!allMusicians?.length) {
+        container.innerHTML = '<div class="empty-state"><p class="text-muted">Sin músicos</p></div>';
+        return;
+    }
+    
+    container.innerHTML = allMusicians.map(m => `
+        <div class="list-item">
+            <div class="nav-profile-avatar" style="width: 36px; height: 36px; font-size: 14px; flex-shrink: 0;">${(m.first_name || 'U').charAt(0)}</div>
+            <div class="list-item-content">
+                <div class="list-item-title">${m.first_name || ''} ${m.last_name || ''}</div>
+                <div class="list-item-subtitle">${m.email} · ${m.role === 'group_admin' ? 'Admin' : 'Músico'}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="editMusician(${m.id})">✏️</button>
+        </div>
+    `).join('');
+}
+
+function openMusicianModal(musician = null) {
+    document.getElementById('musicianModalTitle').textContent = musician ? 'Editar Músico' : 'Nuevo Músico';
+    document.getElementById('musicianId').value = musician?.id || '';
+    document.getElementById('musicianFirstName').value = musician?.first_name || '';
+    document.getElementById('musicianLastName').value = musician?.last_name || '';
+    document.getElementById('musicianEmail').value = musician?.email || '';
+    document.getElementById('musicianPassword').value = '';
+    document.getElementById('musicianPhone').value = musician?.phone || '';
+    document.getElementById('musicianRole').value = musician?.role || 'musician';
+    document.getElementById('passwordGroup').style.display = musician ? 'none' : 'block';
+    openModal('musicianModal');
+}
+
+function editMusician(id) {
+    const musician = allMusicians.find(m => m.id === id);
+    openMusicianModal(musician);
+}
+
+async function saveMusician() {
+    const id = document.getElementById('musicianId').value;
+    const data = {
+        first_name: document.getElementById('musicianFirstName').value.trim(),
+        last_name: document.getElementById('musicianLastName').value.trim(),
+        email: document.getElementById('musicianEmail').value.trim(),
+        phone: document.getElementById('musicianPhone').value.trim(),
+        role: document.getElementById('musicianRole').value
+    };
+    
+    if (!id) {
+        data.password = document.getElementById('musicianPassword').value;
+        if (!data.password || data.password.length < 6) {
+            showToast('Contraseña debe tener mínimo 6 caracteres');
+            return;
+        }
+    }
+    
+    if (!data.first_name || !data.email) {
+        showToast('Nombre y email son requeridos');
+        return;
+    }
+    
+    try {
+        if (id) {
+            await apiPut(`/users/${id}`, data);
+        } else {
+            await apiPost('/users', data);
+        }
+        closeModal('musicianModal');
+        showToast('Músico guardado');
+        allMusicians = await apiGet('/users');
+        renderMusicians();
+    } catch (e) {
+        showToast('Error al guardar');
+    }
+}
+
+// ===== GROUPS (Super Admin) =====
+function populatePlans() {
+    const select = document.getElementById('groupPlan');
+    select.innerHTML = '<option value="">Sin plan</option>' + 
+        (allPlans || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
 function renderGroups() {
     const container = document.getElementById('groupsList');
-    if (!groups.length) {
+    
+    if (!allGroups?.length) {
         container.innerHTML = '<div class="empty-state"><p class="text-muted">Sin grupos</p></div>';
         return;
     }
     
-    container.innerHTML = groups.map(g => `
+    container.innerHTML = allGroups.map(g => `
         <div class="list-item">
-            <span style="font-size:20px">🏢</span>
             <div class="list-item-content">
                 <div class="list-item-title">${g.name}</div>
-                <div class="list-item-subtitle">${g.plan_name || 'Sin plan'} · ${g.current_musicians || 0} músicos</div>
+                <div class="list-item-subtitle">${g.plan_name || 'Sin plan'} · ${g.user_count || 0} usuarios</div>
             </div>
-            <span class="badge badge-${g.is_active ? 'green' : 'red'}">${g.is_active ? 'Activo' : 'Inactivo'}</span>
-            <button class="btn btn-ghost btn-sm" onclick="editGroup(${g.id})">✎</button>
+            <span class="badge ${g.is_active ? 'badge-green' : 'badge-red'}">${g.is_active ? 'Activo' : 'Inactivo'}</span>
+            <button class="btn btn-ghost btn-sm" onclick="editGroup(${g.id})">✏️</button>
         </div>
     `).join('');
 }
@@ -190,29 +299,40 @@ function openGroupModal(group = null) {
     document.getElementById('groupId').value = group?.id || '';
     document.getElementById('groupName').value = group?.name || '';
     document.getElementById('groupPlan').value = group?.plan_id || '';
+    document.getElementById('groupStartDate').value = getDateValue(group?.subscription_start) || '';
+    document.getElementById('groupEndDate').value = getDateValue(group?.subscription_end) || '';
     openModal('groupModal');
 }
 
 function editGroup(id) {
-    openGroupModal(groups.find(g => g.id === id));
+    const group = allGroups.find(g => g.id === id);
+    openGroupModal(group);
 }
 
 async function saveGroup() {
     const id = document.getElementById('groupId').value;
     const data = {
-        name: document.getElementById('groupName').value,
-        plan_id: document.getElementById('groupPlan').value || null
+        name: document.getElementById('groupName').value.trim(),
+        plan_id: document.getElementById('groupPlan').value || null,
+        subscription_start: document.getElementById('groupStartDate').value || null,
+        subscription_end: document.getElementById('groupEndDate').value || null
     };
     
-    if (!data.name) { showToast('Nombre requerido'); return; }
+    if (!data.name) { showToast('Ingresa el nombre'); return; }
     
     try {
-        if (id) await apiPut(`/groups/${id}`, data);
-        else await apiPost('/groups', data);
+        if (id) {
+            await apiPut(`/groups/${id}`, data);
+        } else {
+            await apiPost('/groups', data);
+        }
         closeModal('groupModal');
-        loadData();
         showToast('Grupo guardado');
-    } catch (e) { showToast('Error'); }
+        allGroups = await apiGet('/groups');
+        renderGroups();
+    } catch (e) {
+        showToast('Error al guardar');
+    }
 }
 
-loadData();
+loadSettings();

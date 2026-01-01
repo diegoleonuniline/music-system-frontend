@@ -1,16 +1,19 @@
 // ===== AUTH =====
-const getToken = () => localStorage.getItem('token');
-const getUser = () => JSON.parse(localStorage.getItem('user') || '{}');
-const isAdmin = () => ['super_admin', 'group_admin'].includes(getUser().role);
+function getToken() { return localStorage.getItem('token'); }
+function getUser() { return JSON.parse(localStorage.getItem('user') || '{}'); }
+function isAdmin() { const u = getUser(); return u.role === 'super_admin' || u.role === 'group_admin'; }
+function isSuperAdmin() { return getUser().role === 'super_admin'; }
+
+function checkAuth() {
+    if (!getToken()) { window.location.href = '../index.html'; return false; }
+    initTheme();
+    return true;
+}
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    location.href = '../index.html';
-}
-
-function checkAuth() {
-    if (!getToken()) location.href = '../index.html';
+    window.location.href = '../index.html';
 }
 
 // ===== THEME =====
@@ -22,16 +25,10 @@ function initTheme() {
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
-    
-    const metaTheme = document.getElementById('themeColor');
-    if (metaTheme) {
-        metaTheme.content = theme === 'dark' ? '#000000' : '#ffffff';
-    }
-    
-    const toggleBtn = document.getElementById('themeToggle');
-    if (toggleBtn) {
-        toggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    }
+    const meta = document.getElementById('themeColor');
+    if (meta) meta.content = theme === 'dark' ? '#000000' : '#ffffff';
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
 }
 
 function toggleTheme() {
@@ -50,13 +47,11 @@ async function api(endpoint, options = {}) {
                 ...options.headers
             }
         });
-        
-        if (response.status === 401) {
-            logout();
-            return null;
-        }
-        
-        return response.json();
+        if (response.status === 401) { logout(); return null; }
+        if (response.status === 204) return null;
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error');
+        return data;
     } catch (error) {
         console.error('API Error:', error);
         throw error;
@@ -66,122 +61,201 @@ async function api(endpoint, options = {}) {
 const apiGet = (endpoint) => api(endpoint);
 const apiPost = (endpoint, data) => api(endpoint, { method: 'POST', body: JSON.stringify(data) });
 const apiPut = (endpoint, data) => api(endpoint, { method: 'PUT', body: JSON.stringify(data) });
-const apiPatch = (endpoint, data) => api(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
 const apiDelete = (endpoint) => api(endpoint, { method: 'DELETE' });
 
 // ===== UTILS =====
-function formatDuration(sec) {
-    if (!sec) return '-';
-    return `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`;
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function formatDate(str) {
-    if (!str) return '';
-    const [y, m, d] = str.split('T')[0].split('-');
-    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
+function formatDateShort(dateStr) {
+    if (!dateStr) return { day: '-', month: '-' };
+    const d = new Date(dateStr + 'T12:00:00');
+    return {
+        day: d.getDate(),
+        month: d.toLocaleDateString('es-MX', { month: 'short' }).toUpperCase()
+    };
 }
 
-function getDateValue(str) {
-    return str ? str.split('T')[0] : '';
+function getDateValue(dateStr) {
+    if (!dateStr) return '';
+    return dateStr.split('T')[0];
 }
 
-function getMonthName(m) {
-    return ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][m];
+function formatDuration(seconds) {
+    if (!seconds) return '-';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function formatTime(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${m} ${ampm}`;
 }
 
 // ===== UI HELPERS =====
 function showToast(message) {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
-    
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
-    
     setTimeout(() => toast.remove(), 3000);
 }
 
 function animateNumber(el, target, duration = 600) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el) return;
     const start = performance.now();
     const update = (now) => {
         const progress = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         el.textContent = Math.floor(eased * target);
         if (progress < 1) requestAnimationFrame(update);
-        else el.textContent = target;
     };
     requestAnimationFrame(update);
 }
 
-// ===== MODAL HELPERS =====
 function openModal(id) {
-    document.getElementById(id).classList.add('active');
-    document.body.style.overflow = 'hidden';
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+function closeAllModals() {
+    document.querySelectorAll('.modal-overlay.active').forEach(m => {
+        m.classList.remove('active');
+    });
     document.body.style.overflow = '';
 }
 
-// ===== SONG PICKER GLOBAL =====
+// ===== USER INFO =====
+function setupUserInfo() {
+    const user = getUser();
+    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
+    const initial = (user.first_name || 'U').charAt(0).toUpperCase();
+    const roleText = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
+    
+    // Desktop nav profile
+    const navName = document.getElementById('navUserName');
+    const navRole = document.getElementById('navUserRole');
+    const navAvatar = document.getElementById('navUserAvatar');
+    if (navName) navName.textContent = name;
+    if (navRole) navRole.textContent = roleText;
+    if (navAvatar) navAvatar.textContent = initial;
+    
+    // Mobile header avatar
+    const headerAvatar = document.getElementById('headerUserAvatar');
+    if (headerAvatar) headerAvatar.textContent = initial;
+    
+    // Admin only elements
+    if (!isAdmin()) {
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    }
+    if (!isSuperAdmin()) {
+        document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'none');
+    }
+}
+
+// ===== SONG PICKER (Global) =====
 let allSongsCache = [];
+let selectedSongsForPicker = [];
 let songPickerCallback = null;
 
-async function loadSongsCache() {
-    if (allSongsCache.length === 0) {
+async function loadSongsCache(force = false) {
+    if (allSongsCache.length === 0 || force) {
         allSongsCache = await apiGet('/songs') || [];
     }
     return allSongsCache;
 }
 
-function refreshSongsCache() {
-    allSongsCache = [];
+function refreshSongsCache() { allSongsCache = []; }
+
+async function openSongPicker(selectedIds = [], callback = null) {
+    selectedSongsForPicker = [...selectedIds];
+    songPickerCallback = callback;
+    await loadSongsCache();
+    renderSongPicker();
+    openModal('songPickerModal');
 }
 
-async function openSongPicker(selectedIds = [], callback) {
-    songPickerCallback = callback;
-    const songs = await loadSongsCache();
+function renderSongPicker(filter = '') {
+    const container = document.getElementById('songPickerList');
+    if (!container) return;
     
-    const overlay = document.getElementById('songPickerModal');
-    const list = document.getElementById('songPickerList');
+    let songs = allSongsCache;
+    if (filter) {
+        const f = filter.toLowerCase();
+        songs = songs.filter(s => 
+            s.name?.toLowerCase().includes(f) || 
+            s.artist?.toLowerCase().includes(f)
+        );
+    }
     
-    list.innerHTML = songs.map(s => `
-        <div class="song-picker-item ${selectedIds.includes(s.id) ? 'selected' : ''}" data-id="${s.id}" onclick="toggleSongSelection(this)">
-            <div class="checkbox">${selectedIds.includes(s.id) ? '✓' : ''}</div>
-            <div class="song-thumb">🎵</div>
+    if (!songs.length) {
+        container.innerHTML = '<div class="empty-state"><p class="text-muted">No hay canciones</p></div>';
+        return;
+    }
+    
+    container.innerHTML = songs.map(s => `
+        <div class="song-picker-item ${selectedSongsForPicker.includes(s.id) ? 'selected' : ''}" onclick="toggleSongPicker(${s.id})">
+            <div class="checkbox">${selectedSongsForPicker.includes(s.id) ? '✓' : ''}</div>
             <div class="song-info">
                 <div class="song-title">${s.name}</div>
                 <div class="song-artist">${s.artist || 'Sin artista'}</div>
             </div>
+            ${s.musical_key ? `<span class="badge badge-green">${s.musical_key}</span>` : ''}
         </div>
-    `).join('') || '<div class="empty-state"><p>No hay canciones</p></div>';
-    
-    openModal('songPickerModal');
+    `).join('');
 }
 
-function toggleSongSelection(el) {
-    el.classList.toggle('selected');
-    const checkbox = el.querySelector('.checkbox');
-    checkbox.textContent = el.classList.contains('selected') ? '✓' : '';
-}
-
-function confirmSongSelection() {
-    const selected = [...document.querySelectorAll('#songPickerList .song-picker-item.selected')]
-        .map(el => parseInt(el.dataset.id));
-    
-    if (songPickerCallback) {
-        songPickerCallback(selected);
+function toggleSongPicker(id) {
+    const idx = selectedSongsForPicker.indexOf(id);
+    if (idx === -1) {
+        selectedSongsForPicker.push(id);
+    } else {
+        selectedSongsForPicker.splice(idx, 1);
     }
-    
+    renderSongPicker(document.getElementById('songPickerSearch')?.value || '');
+}
+
+function filterSongPicker() {
+    const val = document.getElementById('songPickerSearch')?.value || '';
+    renderSongPicker(val);
+}
+
+function confirmSongPicker() {
+    if (songPickerCallback) {
+        songPickerCallback(selectedSongsForPicker);
+    }
     closeModal('songPickerModal');
 }
 
 // ===== QUICK ADD SONG =====
-async function openQuickAddSong() {
+async function openQuickAddSong(callback = null) {
+    window.quickAddCallback = callback;
+    document.getElementById('quickSongName').value = '';
+    document.getElementById('quickSongArtist').value = '';
     openModal('quickAddSongModal');
+    document.getElementById('quickSongName').focus();
 }
 
 async function saveQuickSong() {
@@ -189,37 +263,26 @@ async function saveQuickSong() {
     const artist = document.getElementById('quickSongArtist').value.trim();
     
     if (!name) {
-        showToast('Escribe el nombre de la canción');
+        showToast('Ingresa el nombre');
         return;
     }
     
     try {
-        await apiPost('/songs', { name, artist });
+        const newSong = await apiPost('/songs', { name, artist });
         refreshSongsCache();
+        await loadSongsCache(true);
         closeModal('quickAddSongModal');
-        document.getElementById('quickSongName').value = '';
-        document.getElementById('quickSongArtist').value = '';
-        showToast('Canción agregada');
+        showToast('Canción creada');
         
-        if (typeof loadData === 'function') {
-            loadData();
+        if (window.quickAddCallback) {
+            window.quickAddCallback(newSong);
         }
     } catch (e) {
-        showToast('Error al guardar');
+        showToast('Error al crear');
     }
 }
 
-// ===== INIT COMMON =====
-function initApp() {
+// Init
+document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-    
-    const user = getUser();
-    const avatarEl = document.getElementById('userAvatar');
-    const nameEl = document.getElementById('userName');
-    
-    if (avatarEl) avatarEl.textContent = user.first_name?.charAt(0) || 'U';
-    if (nameEl) nameEl.textContent = user.first_name || 'Usuario';
-}
-
-// Init on load
-document.addEventListener('DOMContentLoaded', initTheme);
+});

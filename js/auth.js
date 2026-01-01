@@ -1,36 +1,44 @@
 initTheme();
 
+// Check if already logged in
+if (getToken()) {
+    window.location.href = 'pages/dashboard.html';
+}
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('loginError');
     const btn = document.getElementById('loginBtn');
+    const errorEl = document.getElementById('loginError');
     
-    errorDiv.classList.add('hidden');
     btn.disabled = true;
-    btn.textContent = 'Iniciando...';
+    btn.textContent = 'Ingresando...';
+    errorEl.classList.add('hidden');
     
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            })
         });
         
         const data = await response.json();
         
-        if (!response.ok) throw new Error(data.error || 'Credenciales inválidas');
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al iniciar sesión');
+        }
         
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        location.href = 'pages/dashboard.html';
+        
+        window.location.href = 'pages/dashboard.html';
         
     } catch (error) {
-        errorDiv.textContent = error.message;
-        errorDiv.classList.remove('hidden');
-    } finally {
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
         btn.disabled = false;
         btn.textContent = 'Iniciar Sesión';
     }

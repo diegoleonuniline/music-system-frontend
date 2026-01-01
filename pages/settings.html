@@ -2,155 +2,245 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Configuración - Music System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" id="themeColor" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Configuración - Music System Pro</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
-    <meta name="theme-color" content="#ffffff" id="themeColor">
 </head>
 <body>
     <div class="app">
         <header class="header">
             <div class="header-content">
                 <h1>Configuración</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+                </div>
             </div>
         </header>
 
         <main class="main">
             <!-- Perfil -->
             <div class="card">
-                <div class="card-body" style="display:flex;align-items:center;gap:16px">
-                    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:24px;color:white;font-weight:600" id="userAvatar">U</div>
-                    <div style="flex:1">
-                        <div style="font-weight:600;font-size:17px" id="userName">Usuario</div>
-                        <div class="text-muted" id="userRole">Rol</div>
+                <div class="card-body">
+                    <div style="display: flex; align-items: center; gap: var(--space-lg);">
+                        <div class="nav-profile-avatar" id="profileAvatar" style="width: 64px; height: 64px; font-size: 24px;">U</div>
+                        <div style="flex: 1;">
+                            <h2 style="font-size: 20px; margin-bottom: 4px;" id="profileName">Usuario</h2>
+                            <p class="text-muted" id="profileRole">Músico</p>
+                            <p class="text-muted" id="profileEmail">email@ejemplo.com</p>
+                        </div>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick="logout()">Salir</button>
+                    <button class="btn btn-secondary btn-block" style="margin-top: var(--space-lg);" onclick="logout()">Cerrar Sesión</button>
                 </div>
             </div>
 
-            <!-- Tema -->
+            <!-- Apariencia -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Apariencia</span>
+                    <span class="card-title">🎨 Apariencia</span>
                 </div>
                 <div class="card-body">
-                    <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-weight:500">Tema oscuro</div>
-                            <div class="text-muted text-sm">Cambia la apariencia de la app</div>
+                            <strong>Tema oscuro</strong>
+                            <p class="text-muted" style="font-size: 13px;">Cambiar entre tema claro y oscuro</p>
                         </div>
-                        <button class="btn btn-secondary" id="themeBtn" onclick="toggleTheme()" style="min-width:80px">
-                            <span id="themeBtnText">🌙</span>
-                        </button>
+                        <button class="btn btn-secondary" onclick="toggleTheme()" id="themeToggleBtn">🌙 Oscuro</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Categorías -->
-            <div class="card">
+            <!-- Músicos (Admin) -->
+            <div class="card admin-only">
                 <div class="card-header">
-                    <span class="card-title">Categorías</span>
-                    <button class="btn btn-primary btn-sm admin-only" onclick="openCatModal()">+ Nueva</button>
+                    <span class="card-title">👥 Músicos</span>
+                    <button class="btn btn-primary btn-sm" onclick="openMusicianModal()">+ Nuevo</button>
+                </div>
+                <div class="card-body no-padding" id="musiciansList">
+                    <div class="loading"><div class="spinner"></div>Cargando...</div>
+                </div>
+            </div>
+
+            <!-- Categorías (Admin) -->
+            <div class="card admin-only">
+                <div class="card-header">
+                    <span class="card-title">📁 Categorías</span>
+                    <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva</button>
                 </div>
                 <div class="card-body no-padding" id="categoriesList">
-                    <div class="loading"><div class="spinner"></div></div>
+                    <div class="loading"><div class="spinner"></div>Cargando...</div>
                 </div>
             </div>
 
-            <!-- Géneros -->
-            <div class="card">
+            <!-- Géneros (Admin) -->
+            <div class="card admin-only">
                 <div class="card-header">
-                    <span class="card-title">Géneros</span>
-                    <button class="btn btn-primary btn-sm admin-only" onclick="openGenModal()">+ Nuevo</button>
+                    <span class="card-title">🎸 Géneros</span>
+                    <button class="btn btn-primary btn-sm" onclick="openGenreModal()">+ Nuevo</button>
                 </div>
                 <div class="card-body no-padding" id="genresList">
-                    <div class="loading"><div class="spinner"></div></div>
+                    <div class="loading"><div class="spinner"></div>Cargando...</div>
                 </div>
             </div>
 
-            <!-- Grupos (Solo Super Admin) -->
-            <div class="card hidden" id="groupsSection">
+            <!-- Grupos (Super Admin) -->
+            <div class="card super-admin-only">
                 <div class="card-header">
-                    <span class="card-title">Grupos</span>
+                    <span class="card-title">🏢 Grupos Musicales</span>
                     <button class="btn btn-primary btn-sm" onclick="openGroupModal()">+ Nuevo</button>
                 </div>
-                <div class="card-body no-padding" id="groupsList"></div>
+                <div class="card-body no-padding" id="groupsList">
+                    <div class="loading"><div class="spinner"></div>Cargando...</div>
+                </div>
             </div>
         </main>
 
         <nav class="nav">
+            <div class="nav-logo"><div class="nav-logo-icon">🎵</div>Music Pro</div>
             <div class="nav-items">
-                <a href="dashboard.html" class="nav-item"><span class="icon">🏠</span>Inicio</a>
-                <a href="songs.html" class="nav-item"><span class="icon">🎵</span>Canciones</a>
-                <a href="setlists.html" class="nav-item"><span class="icon">📋</span>Set Lists</a>
-                <a href="events.html" class="nav-item"><span class="icon">📅</span>Eventos</a>
-                <a href="settings.html" class="nav-item active"><span class="icon">⚙️</span>Config</a>
+                <a href="dashboard.html" class="nav-item"><span class="icon">📊</span><span>Inicio</span></a>
+                <a href="songs.html" class="nav-item"><span class="icon">🎵</span><span>Canciones</span></a>
+                <a href="setlists.html" class="nav-item"><span class="icon">📋</span><span>Set Lists</span></a>
+                <a href="events.html" class="nav-item"><span class="icon">📅</span><span>Eventos</span></a>
+                <a href="settings.html" class="nav-item active"><span class="icon">⚙️</span><span>Config</span></a>
+            </div>
+            <div class="nav-profile">
+                <div class="nav-profile-avatar" id="navUserAvatar">U</div>
+                <div class="nav-profile-info">
+                    <div class="nav-profile-name" id="navUserName">Usuario</div>
+                    <div class="nav-profile-role" id="navUserRole">Músico</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
             </div>
         </nav>
     </div>
 
-    <!-- Modal Categoría -->
-    <div class="modal-overlay" id="catModal">
-        <div class="modal" style="max-width:400px">
+    <!-- Modal Category -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal" style="max-height: 350px;">
             <div class="modal-handle"></div>
             <div class="modal-header">
-                <h3 id="catModalTitle">Nueva Categoría</h3>
-                <button class="modal-close" onclick="closeModal('catModal')">×</button>
+                <h3 id="categoryModalTitle">Nueva Categoría</h3>
+                <button class="modal-close" onclick="closeModal('categoryModal')">✕</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="catId">
+                <input type="hidden" id="categoryId">
                 <div class="form-group">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" class="form-input" id="catName" placeholder="Nombre">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-input" id="categoryName" placeholder="Nombre de la categoría">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Color</label>
+                    <input type="color" class="form-input" id="categoryColor" value="#007aff" style="height: 44px; padding: 4px;">
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('catModal')">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveCat()">Guardar</button>
+                <button class="btn btn-secondary" onclick="closeModal('categoryModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Género -->
-    <div class="modal-overlay" id="genModal">
-        <div class="modal" style="max-width:400px">
+    <!-- Modal Genre -->
+    <div class="modal-overlay" id="genreModal">
+        <div class="modal" style="max-height: 300px;">
             <div class="modal-handle"></div>
             <div class="modal-header">
-                <h3 id="genModalTitle">Nuevo Género</h3>
-                <button class="modal-close" onclick="closeModal('genModal')">×</button>
+                <h3 id="genreModalTitle">Nuevo Género</h3>
+                <button class="modal-close" onclick="closeModal('genreModal')">✕</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="genId">
+                <input type="hidden" id="genreId">
                 <div class="form-group">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" class="form-input" id="genName" placeholder="Nombre">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-input" id="genreName" placeholder="Nombre del género">
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('genModal')">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveGen()">Guardar</button>
+                <button class="btn btn-secondary" onclick="closeModal('genreModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveGenre()">Guardar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Grupo -->
+    <!-- Modal Musician -->
+    <div class="modal-overlay" id="musicianModal">
+        <div class="modal">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <h3 id="musicianModalTitle">Nuevo Músico</h3>
+                <button class="modal-close" onclick="closeModal('musicianModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="musicianId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" class="form-input" id="musicianFirstName" placeholder="Nombre">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" class="form-input" id="musicianLastName" placeholder="Apellido">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" class="form-input" id="musicianEmail" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group" id="passwordGroup">
+                    <label class="form-label">Contraseña *</label>
+                    <input type="password" class="form-input" id="musicianPassword" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Teléfono</label>
+                        <input type="tel" class="form-input" id="musicianPhone" placeholder="Teléfono">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rol</label>
+                        <select class="form-input" id="musicianRole">
+                            <option value="musician">Músico</option>
+                            <option value="group_admin">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('musicianModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveMusician()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Group (Super Admin) -->
     <div class="modal-overlay" id="groupModal">
         <div class="modal">
             <div class="modal-handle"></div>
             <div class="modal-header">
                 <h3 id="groupModalTitle">Nuevo Grupo</h3>
-                <button class="modal-close" onclick="closeModal('groupModal')">×</button>
+                <button class="modal-close" onclick="closeModal('groupModal')">✕</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="groupId">
                 <div class="form-group">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" class="form-input" id="groupName" placeholder="Nombre del grupo">
+                    <label class="form-label">Nombre del grupo *</label>
+                    <input type="text" class="form-input" id="groupName" placeholder="Nombre del grupo musical">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Plan</label>
                     <select class="form-input" id="groupPlan"></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Fecha inicio</label>
+                        <input type="date" class="form-input" id="groupStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha fin</label>
+                        <input type="date" class="form-input" id="groupEndDate">
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
