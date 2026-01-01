@@ -19,39 +19,50 @@ async function loadDashboard() {
         animateNumber('totalEvents', events?.length || 0);
         animateNumber('totalMusicians', users?.filter(u => u.role === 'musician').length || 0);
 
+        // Próximos eventos
         const today = new Date().toISOString().split('T')[0];
-        const upcoming = events?.filter(e => getDateValue(e.event_date) >= today).slice(0, 5) || [];
+        const upcoming = events?.filter(e => getDateValue(e.event_date) >= today)
+            .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
+            .slice(0, 4) || [];
         
         const eventsContainer = document.getElementById('upcomingEvents');
         if (upcoming.length) {
-            eventsContainer.innerHTML = upcoming.map(e => `
-                <div class="song-item">
-                    <div class="song-info">
-                        <h4>${e.name}</h4>
-                        <p>${e.venue || 'Sin lugar'} · ${formatDate(e.event_date)}</p>
-                    </div>
-                    <span class="badge ${e.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">
-                        ${e.status === 'confirmed' ? 'Confirmado' : 'Tentativo'}
-                    </span>
+            eventsContainer.innerHTML = `
+                <div class="events-list">
+                    ${upcoming.map(e => {
+                        const date = new Date(e.event_date + 'T00:00:00');
+                        return `
+                            <div class="event-card" onclick="location.href='events.html'">
+                                <div class="event-date">
+                                    <div class="day">${date.getDate()}</div>
+                                    <div class="month">${getMonthName(date.getMonth())}</div>
+                                </div>
+                                <div class="event-info">
+                                    <h4>${e.name}</h4>
+                                    <p>${e.venue || 'Sin lugar'}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
-            `).join('');
+            `;
         } else {
             eventsContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="icon">📅</div>
                     <h3>Sin eventos próximos</h3>
-                    <p>Agenda tu primer evento</p>
                 </div>
             `;
         }
 
+        // Favoritas
         const favorites = songs?.filter(s => s.is_favorite).slice(0, 5) || [];
         const favContainer = document.getElementById('favoriteSongs');
         
         if (favorites.length) {
             favContainer.innerHTML = favorites.map(s => `
-                <div class="song-item">
-                    <span style="color: var(--warning);">⭐</span>
+                <div class="song-item" onclick="location.href='songs.html'">
+                    <span style="color: var(--warning); font-size: 18px;">⭐</span>
                     <div class="song-info">
                         <h4>${s.name}</h4>
                         <p>${s.artist || 'Sin artista'}</p>
@@ -63,32 +74,26 @@ async function loadDashboard() {
                 <div class="empty-state">
                     <div class="icon">⭐</div>
                     <h3>Sin favoritas</h3>
-                    <p>Marca canciones como favoritas</p>
                 </div>
             `;
         }
 
     } catch (error) {
-        console.error('Error cargando dashboard:', error);
+        console.error('Error:', error);
     }
 }
 
-function animateNumber(elementId, target) {
-    const element = document.getElementById(elementId);
-    const duration = 500;
-    const startTime = performance.now();
+function animateNumber(id, target) {
+    const el = document.getElementById(id);
+    const duration = 600;
+    const start = performance.now();
     
-    function update(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const current = Math.floor(progress * target);
-        element.textContent = current;
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        } else {
-            element.textContent = target;
-        }
+    function update(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(eased * target);
+        if (progress < 1) requestAnimationFrame(update);
+        else el.textContent = target;
     }
     
     requestAnimationFrame(update);

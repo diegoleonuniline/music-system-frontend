@@ -1,12 +1,13 @@
 checkAuth();
-
 const user = getUser();
 document.getElementById('userName').textContent = user.first_name + ' ' + (user.last_name || '');
 document.getElementById('userRole').textContent = user.role === 'super_admin' ? 'Super Admin' : user.role === 'group_admin' ? 'Admin' : 'Músico';
 document.getElementById('userAvatar').textContent = user.first_name?.charAt(0) || 'U';
 
-let allEvents = [];
-let allSetlists = [];
+const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
+if (!isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+
+let allEvents = [], allSetlists = [], currentEvent = null;
 
 const today = new Date();
 document.getElementById('filterMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -25,9 +26,7 @@ async function loadEvents() {
 
         const setlistSelect = document.getElementById('eventSetlist');
         setlistSelect.innerHTML = '<option value="">Sin set list</option>';
-        allSetlists.forEach(s => {
-            setlistSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-        });
+        allSetlists.forEach(s => setlistSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
 
         renderEvents();
     } catch (error) {
@@ -36,79 +35,38 @@ async function loadEvents() {
 }
 
 function renderEvents() {
-    const viewMode = document.getElementById('viewMode').value;
-    const statusFilter = document.getElementById('filterStatus').value;
+    const sorted = [...allEvents].sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
 
-    let filtered = allEvents;
-    if (statusFilter) {
-        filtered = allEvents.filter(e => e.status === statusFilter);
+    // Lista para móvil
+    const listContainer = document.getElementById('eventsList');
+    if (!sorted.length) {
+        listContainer.innerHTML = `<div class="empty-state"><div class="icon">📅</div><h3>Sin eventos este mes</h3></div>`;
+    } else {
+        listContainer.innerHTML = sorted.map(e => {
+            const date = new Date(e.event_date + 'T00:00:00');
+            return `
+                <div class="event-card" onclick="viewEvent(${e.id})" style="${e.status === 'cancelled' ? 'opacity:0.5' : ''}">
+                    <div class="event-date">
+                        <div class="day">${date.getDate()}</div>
+                        <div class="month">${getMonthName(date.getMonth())}</div>
+                    </div>
+                    <div class="event-info">
+                        <h4>${e.name}</h4>
+                        <p>${e.venue || 'Sin lugar'} ${e.start_time ? '· ' + e.start_time : ''}</p>
+                    </div>
+                    <span class="badge ${e.status === 'confirmed' ? 'badge-success' : e.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
+                        ${e.status === 'confirmed' ? '✓' : e.status === 'tentative' ? '?' : '✗'}
+                    </span>
+                </div>
+            `;
+        }).join('');
     }
 
-    const container = document.getElementById('eventsContainer');
-
-    if (viewMode === 'list') {
-        renderListView(filtered, container);
-    } else if (viewMode === 'month') {
-        renderMonthView(filtered, container);
-    } else if (viewMode === 'week') {
-        renderWeekView(filtered, container);
-    }
+    // Calendario para desktop
+    renderCalendar();
 }
 
-function renderListView(events, container) {
-    const isAdmin = user.role === 'super_admin' || user.role === 'group_admin';
-
-    if (!events.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">📅</div>
-                <h3>Sin eventos</h3>
-                <p>No hay eventos este mes</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = `
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Evento</th>
-                        <th>Lugar</th>
-                        <th>Horario</th>
-                        <th>Estado</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${events.map(e => `
-                        <tr style="${e.status === 'cancelled' ? 'opacity: 0.5;' : ''}">
-                            <td><strong>${formatDate(e.event_date)}</strong></td>
-                            <td>${e.name}</td>
-                            <td>${e.venue || '-'}<br><small style="color: var(--text-tertiary);">${e.city || ''}</small></td>
-                            <td>${e.start_time || '-'} ${e.end_time ? '- ' + e.end_time : ''}</td>
-                            <td>
-                                <span class="badge ${e.status === 'confirmed' ? 'badge-success' : e.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
-                                    ${e.status === 'confirmed' ? 'Confirmado' : e.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
-                                </span>
-                            </td>
-                            <td>
-                                <button class="btn btn-ghost btn-sm" onclick="viewEvent(${e.id})">Ver</button>
-                                ${isAdmin ? `
-                                    <button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">Editar</button>
-                                ` : ''}
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
-
-function renderMonthView(events, container) {
+function renderCalendar() {
     const month = document.getElementById('filterMonth').value;
     const [year, monthNum] = month.split('-');
     const firstDay = new Date(year, monthNum - 1, 1);
@@ -118,110 +76,64 @@ function renderMonthView(events, container) {
     const todayStr = new Date().toISOString().split('T')[0];
 
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    document.getElementById('calendarHeader').innerHTML = dayNames.map(d => `<div>${d}</div>`).join('');
 
-    let html = `<div class="calendar-header">${dayNames.map(d => `<div>${d}</div>`).join('')}</div><div class="calendar-grid">`;
-
+    let gridHtml = '';
     for (let i = 0; i < startDay; i++) {
-        html += '<div class="calendar-day" style="opacity: 0.3;"></div>';
+        gridHtml += '<div class="calendar-day" style="opacity:0.3"></div>';
     }
 
     for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${year}-${monthNum}-${String(day).padStart(2, '0')}`;
-        const dayEvents = events.filter(e => getDateValue(e.event_date) === dateStr);
+        const dayEvents = allEvents.filter(e => getDateValue(e.event_date) === dateStr);
         const isToday = dateStr === todayStr;
 
-        html += `
+        gridHtml += `
             <div class="calendar-day ${isToday ? 'today' : ''}">
                 <div class="day-number">${day}</div>
                 ${dayEvents.slice(0, 2).map(e => `
                     <div class="calendar-event ${e.status}" onclick="viewEvent(${e.id})">${e.name}</div>
                 `).join('')}
-                ${dayEvents.length > 2 ? `<small style="color: var(--text-tertiary);">+${dayEvents.length - 2} más</small>` : ''}
+                ${dayEvents.length > 2 ? `<small style="color:var(--text-muted);font-size:10px">+${dayEvents.length - 2} más</small>` : ''}
             </div>
         `;
     }
 
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-function renderWeekView(events, container) {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    const todayStr = today.toISOString().split('T')[0];
-
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        days.push(d);
-    }
-
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
-    container.innerHTML = `
-        <div class="week-grid">
-            ${days.map((d, i) => {
-                const dateStr = d.toISOString().split('T')[0];
-                const dayEvents = events.filter(e => getDateValue(e.event_date) === dateStr);
-                const isToday = dateStr === todayStr;
-
-                return `
-                    <div class="week-day ${isToday ? 'today' : ''}">
-                        <div class="week-day-header">
-                            <div class="day-name">${dayNames[i]}</div>
-                            <div class="day-number">${d.getDate()}</div>
-                        </div>
-                        <div class="week-day-content">
-                            ${dayEvents.length ? dayEvents.map(e => `
-                                <div class="calendar-event ${e.status}" onclick="viewEvent(${e.id})" style="margin-bottom: 8px;">
-                                    <strong>${e.name}</strong><br>
-                                    <small>${e.start_time || ''}</small>
-                                </div>
-                            `).join('') : '<small style="color: var(--text-tertiary);">Sin eventos</small>'}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
+    document.getElementById('calendarGrid').innerHTML = gridHtml;
 }
 
 function viewEvent(id) {
-    const event = allEvents.find(e => e.id === id);
-    if (!event) return;
+    currentEvent = allEvents.find(e => e.id === id);
+    if (!currentEvent) return;
 
-    document.getElementById('viewEventTitle').textContent = event.name;
-    document.getElementById('viewEventContent').innerHTML = `
-        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-            <span class="badge ${event.status === 'confirmed' ? 'badge-success' : event.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
-                ${event.status === 'confirmed' ? 'Confirmado' : event.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
+    document.getElementById('viewTitle').textContent = currentEvent.name;
+    document.getElementById('viewContent').innerHTML = `
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+            <span class="badge ${currentEvent.status === 'confirmed' ? 'badge-success' : currentEvent.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
+                ${currentEvent.status === 'confirmed' ? 'Confirmado' : currentEvent.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
             </span>
-            <span class="badge ${event.payment_status === 'paid' ? 'badge-success' : event.payment_status === 'partial' ? 'badge-warning' : 'badge-neutral'}">
-                ${event.payment_status === 'paid' ? 'Pagado' : event.payment_status === 'partial' ? 'Pago parcial' : 'Pago pendiente'}
+            <span class="badge ${currentEvent.payment_status === 'paid' ? 'badge-success' : currentEvent.payment_status === 'partial' ? 'badge-warning' : 'badge-neutral'}">
+                ${currentEvent.payment_status === 'paid' ? 'Pagado' : currentEvent.payment_status === 'partial' ? 'Pago parcial' : 'Pago pendiente'}
             </span>
         </div>
-        
-        <div style="display: grid; gap: 12px;">
-            <div><strong>📅 Fecha:</strong> ${formatDate(event.event_date)}</div>
-            <div><strong>🕐 Horario:</strong> ${event.start_time || '-'} ${event.end_time ? '- ' + event.end_time : ''}</div>
-            <div><strong>📍 Lugar:</strong> ${event.venue || '-'}</div>
-            <div><strong>🏙️ Ciudad:</strong> ${event.city || '-'}</div>
-            ${event.address ? `<div><strong>📫 Dirección:</strong> ${event.address}</div>` : ''}
-            ${event.google_maps_url ? `<div><a href="${event.google_maps_url}" target="_blank" class="btn btn-ghost btn-sm">🗺️ Ver en Google Maps</a></div>` : ''}
-            <div><strong>👔 Uniforme:</strong> ${event.uniform || '-'}</div>
-            <div><strong>📋 Set List:</strong> ${event.setlist_name || 'No asignado'}</div>
-            <div><strong>💰 Pago:</strong> $${event.payment || 0}</div>
-            ${event.notes ? `<div><strong>📝 Notas:</strong> ${event.notes}</div>` : ''}
+        <div style="display:grid;gap:14px;font-size:14px">
+            <div><strong style="color:var(--text-muted)">📅 Fecha:</strong> ${formatDate(currentEvent.event_date)}</div>
+            <div><strong style="color:var(--text-muted)">🕐 Horario:</strong> ${currentEvent.start_time || '-'} ${currentEvent.end_time ? '- ' + currentEvent.end_time : ''}</div>
+            <div><strong style="color:var(--text-muted)">📍 Lugar:</strong> ${currentEvent.venue || '-'}</div>
+            <div><strong style="color:var(--text-muted)">🏙️ Ciudad:</strong> ${currentEvent.city || '-'}</div>
+            ${currentEvent.address ? `<div><strong style="color:var(--text-muted)">📫 Dirección:</strong> ${currentEvent.address}</div>` : ''}
+            ${currentEvent.google_maps_url ? `<div><a href="${currentEvent.google_maps_url}" target="_blank" class="btn btn-outline btn-sm">🗺️ Ver en Maps</a></div>` : ''}
+            <div><strong style="color:var(--text-muted)">👔 Uniforme:</strong> ${currentEvent.uniform || '-'}</div>
+            <div><strong style="color:var(--text-muted)">📋 Set List:</strong> ${currentEvent.setlist_name || 'No asignado'}</div>
+            <div><strong style="color:var(--text-muted)">💰 Pago:</strong> $${currentEvent.payment || 0}</div>
+            ${currentEvent.notes ? `<div><strong style="color:var(--text-muted)">📝 Notas:</strong> ${currentEvent.notes}</div>` : ''}
         </div>
     `;
-    document.getElementById('viewEventModal').classList.add('active');
+    document.getElementById('viewModal').classList.add('active');
 }
 
-function closeViewModal() {
-    document.getElementById('viewEventModal').classList.remove('active');
-}
+function closeViewModal() { document.getElementById('viewModal').classList.remove('active'); }
+function editFromView() { closeViewModal(); editEvent(currentEvent.id); }
 
 function openModal(event = null) {
     document.getElementById('modalTitle').textContent = event ? 'Editar Evento' : 'Nuevo Evento';
@@ -243,14 +155,8 @@ function openModal(event = null) {
     document.getElementById('eventModal').classList.add('active');
 }
 
-function closeModal() {
-    document.getElementById('eventModal').classList.remove('active');
-}
-
-function editEvent(id) {
-    const event = allEvents.find(e => e.id === id);
-    openModal(event);
-}
+function closeModal() { document.getElementById('eventModal').classList.remove('active'); }
+function editEvent(id) { openModal(allEvents.find(e => e.id === id)); }
 
 async function saveEvent() {
     const id = document.getElementById('eventId').value;
@@ -270,22 +176,10 @@ async function saveEvent() {
         status: document.getElementById('eventStatus').value,
         notes: document.getElementById('eventNotes').value
     };
-
-    if (id) {
-        await apiPut(`/events/${id}`, data);
-    } else {
-        await apiPost('/events', data);
-    }
-
+    if (id) await apiPut(`/events/${id}`, data);
+    else await apiPost('/events', data);
     closeModal();
     loadEvents();
-}
-
-async function deleteEvent(id) {
-    if (confirm('¿Eliminar este evento?')) {
-        await apiDelete(`/events/${id}`);
-        loadEvents();
-    }
 }
 
 loadEvents();

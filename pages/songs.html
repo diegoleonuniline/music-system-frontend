@@ -2,17 +2,16 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Canciones - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <meta name="theme-color" content="#0d0d0d">
 </head>
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>🎵 Music System</h2>
-            </div>
+            <div class="sidebar-header"><h2>🎵 Music System</h2></div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html"><span class="icon">📊</span> Dashboard</a>
                 <a href="songs.html" class="active"><span class="icon">🎵</span> Canciones</a>
@@ -25,10 +24,7 @@
             <div class="sidebar-footer">
                 <div class="user-info">
                     <div class="user-avatar" id="userAvatar">U</div>
-                    <div class="user-details">
-                        <h4 id="userName">Usuario</h4>
-                        <span id="userRole">Rol</span>
-                    </div>
+                    <div class="user-details"><h4 id="userName">Usuario</h4><span id="userRole">Rol</span></div>
                 </div>
                 <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
@@ -37,144 +33,98 @@
         <main class="main-content">
             <div class="page-header">
                 <h1>Canciones</h1>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-ghost" onclick="toggleView()">
-                        <span id="viewIcon">☰</span> <span id="viewText">Tabla</span>
-                    </button>
+                <div class="page-header-actions">
+                    <button class="btn btn-outline" onclick="toggleView()"><span id="viewIcon">☰</span></button>
                     <button class="btn btn-primary" onclick="openModal()">+ Nueva</button>
                 </div>
             </div>
 
             <div class="card">
                 <div class="search-filters">
-                    <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filterSongs()">
-                    <select id="filterCategory" onchange="filterSongs()">
-                        <option value="">Categoría</option>
-                    </select>
-                    <select id="filterGenre" onchange="filterSongs()">
-                        <option value="">Género</option>
-                    </select>
+                    <input type="text" id="searchInput" placeholder="Buscar canción..." oninput="filterSongs()">
+                    <select id="filterCategory" onchange="filterSongs()"><option value="">Categoría</option></select>
+                    <select id="filterGenre" onchange="filterSongs()"><option value="">Género</option></select>
                     <select id="groupBy" onchange="renderSongs()">
                         <option value="">A-Z</option>
                         <option value="artist">Por Artista</option>
                         <option value="category">Por Categoría</option>
-                        <option value="genre">Por Género</option>
                     </select>
                 </div>
-
-                <div id="songsList">
-                    <div class="loading">Cargando</div>
-                </div>
+                <div id="songsList"><div class="loading">Cargando</div></div>
             </div>
         </main>
     </div>
 
-    <!-- Modal Nueva/Editar Canción -->
+    <!-- Modal Canción -->
     <div class="modal-overlay" id="songModal">
-        <div class="modal" style="max-width: 600px;">
+        <div class="modal" style="max-width: 560px;">
             <div class="modal-header">
                 <h3 id="modalTitle">Nueva Canción</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()">×</button>
             </div>
             <div class="modal-body">
-                <form id="songForm">
-                    <input type="hidden" id="songId">
-                    
+                <input type="hidden" id="songId">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="songName" required placeholder="Nombre de la canción">
+                </div>
+                <div class="form-group">
+                    <label>Artista</label>
+                    <input type="text" id="songArtist" placeholder="Artista original">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <div class="form-inline" id="categoryInline">
+                        <div class="form-group"><select id="songCategory"></select></div>
+                        <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="showNewCategory()">+ Nueva</button>
+                    </div>
+                    <div class="form-inline hidden" id="newCategoryForm">
+                        <div class="form-group"><input type="text" id="newCategoryName" placeholder="Nueva categoría"></div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="createCategory()">Crear</button>
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="hideNewCategory()">×</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Género</label>
+                    <div class="form-inline" id="genreInline">
+                        <div class="form-group"><select id="songGenre"></select></div>
+                        <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="showNewGenre()">+ Nuevo</button>
+                    </div>
+                    <div class="form-inline hidden" id="newGenreForm">
+                        <div class="form-group"><input type="text" id="newGenreName" placeholder="Nuevo género"></div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="createGenre()">Crear</button>
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="hideNewGenre()">×</button>
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label>Nombre *</label>
-                        <input type="text" id="songName" required placeholder="Nombre de la canción">
+                        <label>Tipo</label>
+                        <select id="songType">
+                            <option value="cover">Cover</option>
+                            <option value="original">Original</option>
+                            <option value="medley">Medley</option>
+                        </select>
                     </div>
-                    
                     <div class="form-group">
-                        <label>Artista</label>
-                        <input type="text" id="songArtist" placeholder="Artista original">
+                        <label>Idioma</label>
+                        <select id="songLyricsType">
+                            <option value="spanish">Español</option>
+                            <option value="english">Inglés</option>
+                            <option value="instrumental">Instrumental</option>
+                        </select>
                     </div>
-                    
-                    <!-- Categoría con opción de crear -->
-                    <div class="form-group">
-                        <label>Categoría</label>
-                        <div class="form-inline" id="categoryInline">
-                            <div class="form-group">
-                                <select id="songCategory"></select>
-                            </div>
-                            <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="showNewCategory()">+ Nueva</button>
-                        </div>
-                        <div class="form-inline hidden" id="newCategoryForm">
-                            <div class="form-group">
-                                <input type="text" id="newCategoryName" placeholder="Nueva categoría">
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" onclick="createCategory()">Crear</button>
-                            <button type="button" class="btn btn-ghost btn-sm" onclick="hideNewCategory()">✕</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Género con opción de crear -->
-                    <div class="form-group">
-                        <label>Género</label>
-                        <div class="form-inline" id="genreInline">
-                            <div class="form-group">
-                                <select id="songGenre"></select>
-                            </div>
-                            <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="showNewGenre()">+ Nuevo</button>
-                        </div>
-                        <div class="form-inline hidden" id="newGenreForm">
-                            <div class="form-group">
-                                <input type="text" id="newGenreName" placeholder="Nuevo género">
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" onclick="createGenre()">Crear</button>
-                            <button type="button" class="btn btn-ghost btn-sm" onclick="hideNewGenre()">✕</button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Tipo</label>
-                            <select id="songType">
-                                <option value="cover">Cover</option>
-                                <option value="original">Original</option>
-                                <option value="medley">Medley</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Idioma</label>
-                            <select id="songLyricsType">
-                                <option value="spanish">Español</option>
-                                <option value="english">Inglés</option>
-                                <option value="instrumental">Instrumental</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>URL de Video</label>
-                        <input type="url" id="songVideo" placeholder="https://youtube.com/...">
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Duración (seg)</label>
-                            <input type="number" id="songDuration" placeholder="180">
-                        </div>
-                        <div class="form-group">
-                            <label>BPM</label>
-                            <input type="number" id="songBpm" placeholder="120">
-                        </div>
-                        <div class="form-group">
-                            <label>Tonalidad</label>
-                            <input type="text" id="songKey" placeholder="Am">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Letra</label>
-                        <textarea id="songLyrics" rows="4" placeholder="Letra de la canción..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Notas</label>
-                        <textarea id="songNotes" rows="2" placeholder="Notas adicionales..."></textarea>
-                    </div>
-                </form>
+                </div>
+                <div class="form-group">
+                    <label>Video URL</label>
+                    <input type="url" id="songVideo" placeholder="https://youtube.com/...">
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Duración (seg)</label><input type="number" id="songDuration" placeholder="180"></div>
+                    <div class="form-group"><label>BPM</label><input type="number" id="songBpm" placeholder="120"></div>
+                    <div class="form-group"><label>Tonalidad</label><input type="text" id="songKey" placeholder="Am"></div>
+                </div>
+                <div class="form-group"><label>Letra</label><textarea id="songLyrics" rows="4" placeholder="Letra..."></textarea></div>
+                <div class="form-group"><label>Notas</label><textarea id="songNotes" rows="2" placeholder="Notas..."></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
@@ -183,39 +133,39 @@
         </div>
     </div>
 
-    <!-- Modal Ver Canción -->
-    <div class="modal-overlay" id="viewSongModal">
+    <!-- Modal Ver -->
+    <div class="modal-overlay" id="viewModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="viewSongTitle">Canción</h3>
-                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+                <h3 id="viewTitle">Canción</h3>
+                <button class="modal-close" onclick="closeViewModal()">×</button>
             </div>
-            <div class="modal-body" id="viewSongContent"></div>
+            <div class="modal-body" id="viewContent"></div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeViewModal()">Cerrar</button>
-                <button class="btn btn-primary" onclick="openLyricsMode()" id="btnLyrics">📜 Ver Letra</button>
+                <button class="btn btn-primary" id="btnLyrics" onclick="openLyrics()">📜 Ver Letra</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Letra Grande -->
-    <div class="modal-overlay" id="lyricsModal" style="background: #0a0a0a; padding: 0;">
+    <!-- Modal Letra -->
+    <div class="modal-overlay" id="lyricsModal" style="background: #000;">
         <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
-            <div style="padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; justify-content: space-between; align-items: center; background: #111; border-bottom: 1px solid #222;">
+            <div class="stage-header">
                 <div style="overflow: hidden;">
-                    <h2 style="color: #fff; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="lyricsSongTitle">Canción</h2>
-                    <p style="color: #888; font-size: 13px;" id="lyricsSongArtist">Artista</p>
+                    <h2 id="lyricsSongTitle" style="color: #fff; font-size: 18px;">Canción</h2>
+                    <p id="lyricsSongArtist" style="color: #666; font-size: 13px;">Artista</p>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
-                    <span class="badge badge-success" id="lyricsSongKey" style="font-size: 14px;"></span>
-                    <span class="badge badge-warning" id="lyricsSongBpm" style="font-size: 14px;"></span>
-                    <button class="btn btn-sm" onclick="changeFontSize(-2)">A-</button>
-                    <button class="btn btn-sm" onclick="changeFontSize(2)">A+</button>
-                    <button class="btn btn-danger btn-sm" onclick="closeLyricsMode()">✕</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span class="badge badge-success" id="lyricsSongKey"></span>
+                    <span class="badge badge-warning" id="lyricsSongBpm"></span>
+                    <button class="btn btn-sm btn-ghost" onclick="changeFontSize(-2)">A-</button>
+                    <button class="btn btn-sm btn-ghost" onclick="changeFontSize(2)">A+</button>
+                    <button class="btn btn-danger btn-sm" onclick="closeLyrics()">×</button>
                 </div>
             </div>
-            <div id="lyricsContent" style="flex: 1; overflow-y: auto; padding: 24px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); -webkit-overflow-scrolling: touch;">
-                <pre style="color: #eee; font-size: 20px; line-height: 1.8; font-family: inherit; white-space: pre-wrap; max-width: 800px; margin: 0 auto;" id="lyricsText"></pre>
+            <div style="flex: 1; overflow-y: auto; padding: 24px; -webkit-overflow-scrolling: touch;">
+                <pre id="lyricsText" style="color: #ddd; font-size: 20px; line-height: 2; font-family: inherit; white-space: pre-wrap; max-width: 700px; margin: 0 auto;"></pre>
             </div>
         </div>
     </div>

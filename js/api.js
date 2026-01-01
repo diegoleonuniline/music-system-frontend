@@ -21,14 +21,9 @@ function checkAuth() {
 async function apiGet(endpoint) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
-            headers: {
-                'Authorization': `Bearer ${getToken()}`
-            }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
-        if (response.status === 401) {
-            logout();
-            return;
-        }
+        if (response.status === 401) { logout(); return; }
         return response.json();
     } catch (error) {
         console.error('API Error:', error);
@@ -46,10 +41,7 @@ async function apiPost(endpoint, data) {
             },
             body: JSON.stringify(data)
         });
-        if (response.status === 401) {
-            logout();
-            return;
-        }
+        if (response.status === 401) { logout(); return; }
         return response.json();
     } catch (error) {
         console.error('API Error:', error);
@@ -67,10 +59,7 @@ async function apiPut(endpoint, data) {
             },
             body: JSON.stringify(data)
         });
-        if (response.status === 401) {
-            logout();
-            return;
-        }
+        if (response.status === 401) { logout(); return; }
         return response.json();
     } catch (error) {
         console.error('API Error:', error);
@@ -88,10 +77,7 @@ async function apiPatch(endpoint, data) {
             },
             body: JSON.stringify(data)
         });
-        if (response.status === 401) {
-            logout();
-            return;
-        }
+        if (response.status === 401) { logout(); return; }
         return response.json();
     } catch (error) {
         console.error('API Error:', error);
@@ -103,14 +89,9 @@ async function apiDelete(endpoint) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${getToken()}`
-            }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
-        if (response.status === 401) {
-            logout();
-            return;
-        }
+        if (response.status === 401) { logout(); return; }
         return response.json();
     } catch (error) {
         console.error('API Error:', error);
@@ -119,24 +100,26 @@ async function apiDelete(endpoint) {
 }
 
 function formatDuration(seconds) {
-    if (!seconds) return '0:00';
+    if (!seconds) return '-';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Función corregida para fechas - evita problema de timezone
 function formatDate(dateString) {
     if (!dateString) return '';
-    // Tomar solo la parte de la fecha YYYY-MM-DD
     const datePart = dateString.split('T')[0];
     const [year, month, day] = datePart.split('-');
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}`;
 }
 
-// Función para obtener fecha en formato YYYY-MM-DD sin timezone
 function getDateValue(dateString) {
     if (!dateString) return '';
     return dateString.split('T')[0];
+}
+
+function getMonthName(month) {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return months[month];
 }

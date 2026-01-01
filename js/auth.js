@@ -7,17 +7,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     
     errorDiv.style.display = 'none';
-    errorDiv.textContent = '';
-    
     submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Iniciando sesión...';
+    submitBtn.innerHTML = '<span style="opacity:0.7">Iniciando sesión...</span>';
     
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
         
@@ -29,7 +25,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
         window.location.href = 'pages/dashboard.html';
         
     } catch (error) {

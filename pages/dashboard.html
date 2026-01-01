@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dashboard - Music System</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <meta name="theme-color" content="#0d0d0d">
 </head>
 <body>
     <div class="app-container">
@@ -42,27 +43,27 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="icon">🎵</div>
-                    <div class="number" id="totalSongs">-</div>
+                    <div class="number" id="totalSongs">0</div>
                     <div class="label">Canciones</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">📋</div>
-                    <div class="number" id="totalSetlists">-</div>
+                    <div class="number" id="totalSetlists">0</div>
                     <div class="label">Set Lists</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">📅</div>
-                    <div class="number" id="totalEvents">-</div>
+                    <div class="number" id="totalEvents">0</div>
                     <div class="label">Eventos</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">👥</div>
-                    <div class="number" id="totalMusicians">-</div>
+                    <div class="number" id="totalMusicians">0</div>
                     <div class="label">Músicos</div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="dashboard-grid">
                 <div class="card">
                     <div class="card-header">
                         <h3>📅 Próximos Eventos</h3>
@@ -75,7 +76,7 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <h3>⭐ Favoritas</h3>
+                        <h3>⭐ Canciones Favoritas</h3>
                         <a href="songs.html" class="btn btn-ghost btn-sm">Ver todas</a>
                     </div>
                     <div id="favoriteSongs">
