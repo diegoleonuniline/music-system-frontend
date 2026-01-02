@@ -1,6 +1,11 @@
 checkAuth();
 setupUserInfo();
 
+function getDateValue(dateStr) {
+    if (!dateStr) return '';
+    return dateStr.split('T')[0];
+}
+
 async function loadDashboard() {
     try {
         const [songs, setlists, events, users] = await Promise.all([
@@ -10,10 +15,10 @@ async function loadDashboard() {
             apiGet('/users')
         ]);
 
-        document.getElementById('totalSongs').textContent = songs?.length || 0;
-        document.getElementById('totalSetlists').textContent = setlists?.length || 0;
-        document.getElementById('totalEvents').textContent = events?.length || 0;
-        document.getElementById('totalMusicians').textContent = users?.filter(u => u.role === 'musician').length || 0;
+        document.getElementById('totalSongs').textContent = (songs || []).length;
+        document.getElementById('totalSetlists').textContent = (setlists || []).length;
+        document.getElementById('totalEvents').textContent = (events || []).length;
+        document.getElementById('totalMusicians').textContent = (users || []).filter(u => u.role === 'musician').length;
 
         // Próximos eventos
         const today = new Date().toISOString().split('T')[0];
