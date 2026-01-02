@@ -14,6 +14,10 @@ var groupBy = 'none';
 function closeActionsMenu() {
     document.querySelectorAll('.actions-menu.show').forEach(function(m) {
         m.classList.remove('show');
+        m.style.left = '';
+        m.style.top = '';
+        m.style.right = '';
+        m.style.bottom = '';
     });
     var overlay = document.querySelector('.actions-overlay');
     if (overlay) overlay.remove();
@@ -637,17 +641,40 @@ function toggleActionsMenu(e, songId) {
     // Cerrar otros menús abiertos
     closeActionsMenu();
     
-    // Buscar el menú correspondiente
+    // Buscar el menú
     var menu = document.getElementById('actions-menu-' + songId) || document.getElementById('actions-menu-card-' + songId);
     if (!menu) return;
     
     // Mostrar menú
     menu.classList.add('show');
     
-    // Solo mostrar overlay en móvil
-    if (window.innerWidth <= 768) {
+    // Posicionar en desktop
+    if (window.innerWidth > 768) {
+        var btn = e.currentTarget;
+        var rect = btn.getBoundingClientRect();
+        
+        // Calcular posición - alinear a la derecha del botón
+        var menuWidth = 200;
+        var left = rect.right - menuWidth;
+        var top = rect.bottom + 4;
+        
+        // Si se sale por la izquierda, ajustar
+        if (left < 10) left = 10;
+        
+        // Si se sale por abajo, mostrar arriba
+        if (top + 300 > window.innerHeight) {
+            top = rect.top - 300;
+            if (top < 10) top = 10;
+        }
+        
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+        menu.style.right = 'auto';
+        menu.style.bottom = 'auto';
+    } else {
+        // Móvil: overlay
         var overlay = document.createElement('div');
-        overlay.className = 'actions-overlay show';
+        overlay.className = 'actions-overlay';
         overlay.onclick = closeActionsMenu;
         document.body.appendChild(overlay);
     }
@@ -655,23 +682,15 @@ function toggleActionsMenu(e, songId) {
 
 // Cerrar menús al hacer clic afuera
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.actions-dropdown')) {
-        document.querySelectorAll('.actions-menu.show').forEach(function(m) {
-            m.classList.remove('show');
-        });
-        var overlay = document.querySelector('.actions-overlay');
-        if (overlay) overlay.remove();
+    if (!e.target.closest('.actions-dropdown') && !e.target.closest('.actions-menu')) {
+        closeActionsMenu();
     }
 });
 
 // Cerrar menú con tecla Escape
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        document.querySelectorAll('.actions-menu.show').forEach(function(m) {
-            m.classList.remove('show');
-        });
-        var overlay = document.querySelector('.actions-overlay');
-        if (overlay) overlay.remove();
+        closeActionsMenu();
     }
 });
 
