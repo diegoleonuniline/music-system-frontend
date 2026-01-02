@@ -953,6 +953,12 @@ tr:hover td {
     padding: 20px;
 }
 
+/* Stage Mode Modal - sin padding ni centrado */
+#stageModeModal.modal-overlay {
+    padding: 0;
+    display: block;
+}
+
 .modal-overlay.active {
     opacity: 1;
     visibility: visible;
@@ -1044,6 +1050,11 @@ tr:hover td {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    inset: 0;
+    z-index: 1001;
 }
 
 .stage-header {
@@ -1052,9 +1063,7 @@ tr:hover td {
     justify-content: space-between;
     align-items: center;
     background: #111;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    flex-shrink: 0;
 }
 
 .stage-header h2 {
@@ -1065,6 +1074,7 @@ tr:hover td {
 .stage-content {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 20px;
     max-width: 900px;
     margin: 0 auto;
@@ -2141,6 +2151,7 @@ body.offline .main-content {
     
     .stage-content {
         padding: 12px;
+        padding-bottom: 100px; /* Espacio extra para scroll */
     }
     
     .stage-song {
@@ -2748,39 +2759,39 @@ body.offline .main-content {
 }
 
 .actions-menu {
-    position: absolute;
-    right: 0;
-    top: 100%;
+    position: fixed;
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-lg);
-    min-width: 180px;
-    z-index: 1000;
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    min-width: 220px;
+    z-index: 9999;
     display: none;
     overflow: hidden;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 .actions-menu.show {
     display: block;
-    animation: fadeIn 0.15s ease;
+    animation: menuFadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes menuFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .actions-menu button {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 18px;
     border: none;
     background: transparent;
     text-align: left;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--text);
     cursor: pointer;
     transition: background 0.15s;
@@ -2801,27 +2812,55 @@ body.offline .main-content {
 .actions-divider {
     height: 1px;
     background: var(--border);
-    margin: 4px 0;
+    margin: 6px 0;
 }
 
 .actions-cell {
     white-space: nowrap;
+    position: relative;
 }
 
-/* Mobile actions menu */
+/* Overlay */
+.actions-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 9998;
+}
+
+/* Mobile: Bottom Sheet */
 @media (max-width: 768px) {
     .actions-menu {
-        position: fixed;
-        left: 16px;
-        right: 16px;
-        bottom: 80px;
-        top: auto;
-        border-radius: var(--radius);
+        left: 12px !important;
+        right: 12px !important;
+        bottom: 12px !important;
+        top: auto !important;
+        border-radius: 16px;
         min-width: unset;
+        width: auto !important;
+    }
+    
+    .actions-menu.show {
+        animation: slideUpMenu 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    @keyframes slideUpMenu {
+        from { opacity: 0; transform: translateY(100%); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .actions-menu button {
-        padding: 16px;
+        padding: 16px 20px;
         font-size: 16px;
+    }
+    
+    .actions-menu::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 12px auto 8px;
     }
 }
