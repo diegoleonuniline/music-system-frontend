@@ -7,6 +7,7 @@ let currentSetlist = null;
 let currentSongResources = [];
 let currentResourceSongId = null;
 let viewMode = 'cards';
+let inStageMode = false;
 
 function formatDuration(seconds) {
     if (!seconds) return '0:00';
@@ -355,6 +356,7 @@ function filterAvailableSongs() {
 
 // Modo Escenario
 function openStageMode() {
+    inStageMode = true;
     document.getElementById('stageModeTitle').textContent = currentSetlist.name;
     initStageTheme();
     renderStageMode();
@@ -386,18 +388,20 @@ function renderStageMode() {
             '<div class="stage-controls">' +
                 '<button class="stage-btn" onclick="moveSongStage(' + idx + ', -1)"' + (idx === 0 ? ' disabled' : '') + '>⬆️ Subir</button>' +
                 '<button class="stage-btn" onclick="moveSongStage(' + idx + ', 1)"' + (idx === songs.length - 1 ? ' disabled' : '') + '>⬇️ Bajar</button>' +
-                (s.lyrics ? '<button class="stage-btn" onclick="toggleLyrics(' + idx + ')">📄 Letra</button>' : '') +
-                '<button class="stage-btn" onclick="openSongResourcesStage(' + (s.song_id || s.id) + ', \'' + s.name.replace(/'/g, "\\'") + '\')">📎 Recursos</button>' +
+                (s.lyrics ? '<button class="stage-btn" onclick="toggleStageLyrics(' + idx + ')">📄 Letra</button>' : '') +
+                '<button class="stage-btn" onclick="openSongResources(' + (s.song_id || s.id) + ', \'' + s.name.replace(/'/g, "\\'") + '\')">📎 Recursos</button>' +
                 '<button class="stage-btn danger" onclick="removeSongStage(' + idx + ')">✕ Quitar</button>' +
             '</div>' +
-            '<div class="stage-lyrics" id="lyrics-' + idx + '" style="display: none;"><pre>' + (s.lyrics || '') + '</pre></div>' +
+            '<div class="stage-lyrics" id="stage-lyrics-' + idx + '" style="display: none;"><pre>' + (s.lyrics || '') + '</pre></div>' +
         '</div>';
     }).join('') + '<div style="text-align: center; padding: 20px;"><button class="btn btn-primary" onclick="openAddSongFromStage()">+ Agregar canción</button></div>';
 }
 
-function openSongResourcesStage(songId, songName) {
-    closeStageMode();
-    setTimeout(function() { openSongResources(songId, songName); }, 100);
+function toggleStageLyrics(idx) {
+    var el = document.getElementById('stage-lyrics-' + idx);
+    var isHidden = el.style.display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function toggleStageTheme() {
@@ -414,13 +418,6 @@ function initStageTheme() {
     var modal = document.getElementById('stageModeModal');
     modal.classList.toggle('stage-light', theme === 'light');
     document.getElementById('stageThemeBtn').textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
-}
-
-function toggleLyrics(idx) {
-    var el = document.getElementById('lyrics-' + idx);
-    var isHidden = el.style.display === 'none';
-    el.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function moveSongStage(idx, direction) {
@@ -461,11 +458,13 @@ async function removeSongStage(idx) {
 }
 
 function openAddSongFromStage() {
-    closeStageMode();
-    setTimeout(function() { openAddSongModal(); }, 100);
+    document.getElementById('searchSongInput').value = '';
+    filterAvailableSongs();
+    document.getElementById('addSongModal').classList.add('active');
 }
 
 function closeStageMode() {
+    inStageMode = false;
     document.getElementById('stageModeModal').classList.remove('active');
     document.body.style.overflow = '';
 }
