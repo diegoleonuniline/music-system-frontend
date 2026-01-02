@@ -2,65 +2,1520 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#4F46E5">
-    <title>Caimán - Login</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Caimán - El sistema definitivo para músicos y bandas. Gestiona canciones, setlists, eventos y más.">
+    <title>Caimán - Sistema para Músicos y Bandas</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
-    <!-- OneSignal -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --primary-light: #818CF8;
+            --secondary: #10B981;
+            --accent: #F59E0B;
+            --dark: #0F172A;
+            --dark-light: #1E293B;
+            --gray: #64748B;
+            --light: #F8FAFC;
+            --white: #FFFFFF;
+            --gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
+            --gradient-dark: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark);
+            color: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            font-size: 36px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--gray);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--white);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: var(--white);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: var(--white);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .btn-large {
+            padding: 16px 32px;
+            font-size: 17px;
+            border-radius: 14px;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        /* ========== HERO ========== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 80%;
+            height: 150%;
+            background: radial-gradient(ellipse, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -20%;
+            width: 60%;
+            height: 100%;
+            background: radial-gradient(ellipse, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-text h1 {
+            font-size: 56px;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-text h1 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .hero-text p {
+            font-size: 20px;
+            color: var(--gray);
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--white);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .hero-mockup {
+            background: var(--gradient-dark);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 24px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+            transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
+        }
+
+        .mockup-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .mockup-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #EF4444;
+        }
+
+        .mockup-dot:nth-child(2) { background: #F59E0B; }
+        .mockup-dot:nth-child(3) { background: #10B981; }
+
+        .mockup-content {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .mockup-song {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .mockup-song-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .mockup-song-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .mockup-song-info p {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        /* ========== FEATURES ========== */
+        .features {
+            padding: 100px 24px;
+            background: var(--dark-light);
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 60px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(79, 70, 229, 0.2);
+            color: var(--primary-light);
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .section-header h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--gray);
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(79, 70, 229, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--gradient);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: var(--gray);
+            line-height: 1.7;
+        }
+
+        /* ========== PRICING ========== */
+        .pricing {
+            padding: 100px 24px;
+            position: relative;
+        }
+
+        .pricing::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+
+        .pricing-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 40px 32px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .pricing-card.popular {
+            background: linear-gradient(180deg, rgba(79, 70, 229, 0.2) 0%, rgba(79, 70, 229, 0.05) 100%);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .pricing-card.popular:hover {
+            transform: scale(1.05) translateY(-8px);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient);
+            color: var(--white);
+            padding: 6px 20px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .pricing-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .pricing-price {
+            font-size: 48px;
+            font-weight: 800;
+        }
+
+        .pricing-price span {
+            font-size: 18px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .pricing-description {
+            font-size: 14px;
+            color: var(--gray);
+            margin-top: 8px;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 15px;
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        /* ========== TESTIMONIALS ========== */
+        .testimonials {
+            padding: 100px 24px;
+            background: var(--dark-light);
+        }
+
+        .testimonials-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .testimonial-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 32px;
+        }
+
+        .testimonial-stars {
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .testimonial-text {
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .testimonial-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .testimonial-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .testimonial-info p {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        /* ========== CTA ========== */
+        .cta {
+            padding: 100px 24px;
+            text-align: center;
+        }
+
+        .cta-box {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--gradient);
+            border-radius: 32px;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-box h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .cta-box p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        .btn-white {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--white);
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            padding: 60px 24px 30px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--white);
+        }
+
+        .footer-copyright {
+            width: 100%;
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        /* ========== MODALS ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--dark-light);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 24px 24px 0;
+            text-align: center;
+        }
+
+        .modal-header .logo-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .modal-header h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-header p {
+            color: var(--gray);
+            font-size: 15px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--gray);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: var(--white);
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--gray);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .modal-footer {
+            padding: 0 24px 24px;
+            text-align: center;
+        }
+
+        .modal-footer p {
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        .modal-footer a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: var(--white);
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .trial-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--secondary);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .form-group.password-group {
+            position: relative;
+        }
+
+        .form-group.password-group input {
+            padding-right: 48px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 6px;
+        }
+
+        .error-msg {
+            color: #EF4444;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 16px;
+            min-height: 20px;
+        }
+
+        .success-msg {
+            color: var(--secondary);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        /* ========== MOBILE MENU ========== */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text h1 {
+                font-size: 42px;
+            }
+
+            .hero-text p {
+                margin: 0 auto 32px;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                display: none;
+            }
+
+            .features-grid,
+            .pricing-grid,
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+
+            .pricing-card.popular {
+                transform: none;
+            }
+
+            .pricing-card.popular:hover {
+                transform: translateY(-8px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+
+            .hero-text h1 {
+                font-size: 32px;
+            }
+
+            .hero-text p {
+                font-size: 16px;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .section-header h2 {
+                font-size: 28px;
+            }
+
+            .features,
+            .pricing,
+            .testimonials,
+            .cta {
+                padding: 60px 20px;
+            }
+
+            .cta-box {
+                padding: 40px 24px;
+            }
+
+            .cta-box h2 {
+                font-size: 24px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-header">
-            <div class="app-logo">🐊</div>
-            <h1>Caimán</h1>
-            <p>Sistema para músicos</p>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <a href="#" class="logo">
+                <span class="logo-icon">🐊</span>
+                Caimán
+            </a>
+            <nav class="nav-links">
+                <a href="#features">Funciones</a>
+                <a href="#pricing">Planes</a>
+                <a href="#testimonials">Testimonios</a>
+                <a href="#" onclick="openLoginModal()">Iniciar Sesión</a>
+                <button class="btn btn-primary" onclick="openRegisterModal()">Prueba Gratis</button>
+            </nav>
+            <button class="mobile-menu-btn" onclick="openRegisterModal()">☰</button>
         </div>
-        
-        <form id="loginForm" class="login-form">
-            <div class="form-group">
-                <label>Email</label>
-                <input type="text" id="email" required placeholder="tu@email.com" autocomplete="email">
-            </div>
-            <div class="form-group">
-                <label>Contraseña</label>
-                <div style="position: relative;">
-                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password" style="padding-right: 45px;">
-                    <button type="button" onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;">👁️</button>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Tu banda merece un <span>sistema profesional</span></h1>
+                <p>Gestiona canciones, setlists, eventos y coordina a tu equipo desde una sola plataforma. Olvídate del caos de WhatsApp y las hojas de cálculo.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-large" onclick="openRegisterModal()">
+                        🚀 Comenzar Gratis
+                    </button>
+                    <a href="#features" class="btn btn-secondary btn-large">
+                        Ver Funciones
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">500+</div>
+                        <div class="stat-label">Bandas activas</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">10K+</div>
+                        <div class="stat-label">Canciones gestionadas</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">99.9%</div>
+                        <div class="stat-label">Uptime garantizado</div>
+                    </div>
                 </div>
             </div>
-            <div id="errorMsg" class="error-msg"></div>
-            <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
-        </form>
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-dot"></div>
+                        <div class="mockup-dot"></div>
+                        <div class="mockup-dot"></div>
+                    </div>
+                    <div class="mockup-content">
+                        <div class="mockup-song">
+                            <div class="mockup-song-icon">🎵</div>
+                            <div class="mockup-song-info">
+                                <h4>Hotel California</h4>
+                                <p>Eagles • Tono: Bm • 147 BPM</p>
+                            </div>
+                        </div>
+                        <div class="mockup-song">
+                            <div class="mockup-song-icon">🎸</div>
+                            <div class="mockup-song-info">
+                                <h4>La Bamba</h4>
+                                <p>Ritchie Valens • Tono: C • 144 BPM</p>
+                            </div>
+                        </div>
+                        <div class="mockup-song">
+                            <div class="mockup-song-icon">🎤</div>
+                            <div class="mockup-song-info">
+                                <h4>Cielito Lindo</h4>
+                                <p>Tradicional • Tono: G • 120 BPM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <span class="section-tag">✨ Funciones</span>
+            <h2>Todo lo que tu banda necesita</h2>
+            <p>Herramientas diseñadas por músicos, para músicos. Simplifica tu trabajo y enfócate en lo que importa: la música.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎵</div>
+                <h3>Biblioteca de Canciones</h3>
+                <p>Organiza todas tus canciones con tonos, BPM, letras, acordes y enlaces a videos. Todo en un solo lugar accesible para toda la banda.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Set Lists Inteligentes</h3>
+                <p>Crea setlists arrastrando canciones, calcula duración automática y comparte con tu equipo. Modo escenario para tocar en vivo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3>Gestión de Eventos</h3>
+                <p>Programa tocadas, ensayos y compromisos. Asigna setlists a eventos y mantén a todos sincronizados.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎸</div>
+                <h3>Control de Ensayos</h3>
+                <p>Marca canciones para practicar, establece metas y trackea el progreso de cada integrante del grupo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Equipo Conectado</h3>
+                <p>Cada músico tiene su cuenta. Comparte recursos, notas y mantén a todos en la misma página.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Acceso Móvil</h3>
+                <p>Funciona perfecto en celular y tablet. Consulta letras en el escenario o revisa el setlist camino al evento.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <div class="section-header">
+            <span class="section-tag">💰 Planes</span>
+            <h2>Precios simples y transparentes</h2>
+            <p>Elige el plan perfecto para tu banda. Todos incluyen 7 días de prueba gratis.</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <div class="pricing-name">Básico</div>
+                    <div class="pricing-price">$99<span>/mes</span></div>
+                    <div class="pricing-description">Para bandas que empiezan</div>
+                </div>
+                <ul class="pricing-features">
+                    <li><span class="check-icon">✓</span> Hasta 5 músicos</li>
+                    <li><span class="check-icon">✓</span> 100 canciones</li>
+                    <li><span class="check-icon">✓</span> 10 setlists</li>
+                    <li><span class="check-icon">✓</span> Eventos ilimitados</li>
+                    <li><span class="check-icon">✓</span> Modo escenario</li>
+                    <li><span class="check-icon">✓</span> Soporte por email</li>
+                </ul>
+                <button class="btn btn-secondary btn-block btn-large" onclick="openRegisterModal('basico')">
+                    Comenzar Prueba
+                </button>
+            </div>
+            <div class="pricing-card popular">
+                <div class="popular-badge">⭐ Más Popular</div>
+                <div class="pricing-header">
+                    <div class="pricing-name">Profesional</div>
+                    <div class="pricing-price">$199<span>/mes</span></div>
+                    <div class="pricing-description">Para bandas activas</div>
+                </div>
+                <ul class="pricing-features">
+                    <li><span class="check-icon">✓</span> Hasta 15 músicos</li>
+                    <li><span class="check-icon">✓</span> Canciones ilimitadas</li>
+                    <li><span class="check-icon">✓</span> Setlists ilimitados</li>
+                    <li><span class="check-icon">✓</span> Recursos y archivos</li>
+                    <li><span class="check-icon">✓</span> Notificaciones push</li>
+                    <li><span class="check-icon">✓</span> Soporte prioritario</li>
+                </ul>
+                <button class="btn btn-primary btn-block btn-large" onclick="openRegisterModal('profesional')">
+                    Comenzar Prueba
+                </button>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <div class="pricing-name">Empresarial</div>
+                    <div class="pricing-price">$399<span>/mes</span></div>
+                    <div class="pricing-description">Para agrupaciones grandes</div>
+                </div>
+                <ul class="pricing-features">
+                    <li><span class="check-icon">✓</span> Músicos ilimitados</li>
+                    <li><span class="check-icon">✓</span> Todo ilimitado</li>
+                    <li><span class="check-icon">✓</span> Múltiples grupos</li>
+                    <li><span class="check-icon">✓</span> API personalizada</li>
+                    <li><span class="check-icon">✓</span> Reportes avanzados</li>
+                    <li><span class="check-icon">✓</span> Soporte 24/7</li>
+                </ul>
+                <button class="btn btn-secondary btn-block btn-large" onclick="openRegisterModal('empresarial')">
+                    Comenzar Prueba
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials" id="testimonials">
+        <div class="section-header">
+            <span class="section-tag">💬 Testimonios</span>
+            <h2>Lo que dicen nuestros usuarios</h2>
+            <p>Músicos reales compartiendo su experiencia con Caimán</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                <p class="testimonial-text">"Antes perdíamos horas buscando letras y tonos en grupos de WhatsApp. Ahora todo está a un clic. ¡Increíble herramienta!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">JR</div>
+                    <div class="testimonial-info">
+                        <h4>Juan Ramírez</h4>
+                        <p>Los Coyotes • Guadalajara</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                <p class="testimonial-text">"El modo escenario es una maravilla. Ya no llevamos papeles a las tocadas, todo lo vemos en la tablet. Profesionalismo nivel 100."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">MG</div>
+                    <div class="testimonial-info">
+                        <h4>María González</h4>
+                        <p>Banda Sinfonía • CDMX</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                <p class="testimonial-text">"Tenemos 12 músicos y coordinarlos era un caos. Con Caimán todos saben qué ensayar y cuándo. Nos cambió la vida."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">RL</div>
+                    <div class="testimonial-info">
+                        <h4>Roberto López</h4>
+                        <p>Orquesta Luna • Monterrey</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="cta-box">
+            <h2>¿Listo para profesionalizar tu banda?</h2>
+            <p>Únete a cientos de músicos que ya organizan su trabajo con Caimán. 7 días gratis, sin tarjeta.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-white btn-large" onclick="openRegisterModal()">
+                    🚀 Crear Cuenta Gratis
+                </button>
+                <button class="btn btn-ghost btn-large" onclick="openLoginModal()">
+                    Ya tengo cuenta
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <span>🐊</span>
+                Caimán
+            </div>
+            <div class="footer-links">
+                <a href="#features">Funciones</a>
+                <a href="#pricing">Planes</a>
+                <a href="#testimonials">Testimonios</a>
+                <a href="mailto:soporte@caiman.app">Contacto</a>
+            </div>
+            <div class="footer-copyright">
+                © 2025 Caimán. Todos los derechos reservados. Hecho con 🎵 para músicos.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Login -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal" style="position: relative;">
+            <button class="modal-close" onclick="closeLoginModal()">×</button>
+            <div class="modal-header">
+                <div class="logo-icon">🐊</div>
+                <h3>Bienvenido de vuelta</h3>
+                <p>Ingresa a tu cuenta de Caimán</p>
+            </div>
+            <div class="modal-body">
+                <div id="loginError" class="error-msg"></div>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="form-group password-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-large">
+                        Iniciar Sesión
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <p>¿No tienes cuenta? <a href="#" onclick="switchToRegister()">Regístrate gratis</a></p>
+            </div>
+        </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script>
-    // OneSignal Init
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-            appId: "9c406d11-293e-4344-bbbc-5f7ae8c997be",
-        });
-    });
+    <!-- Modal Register -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal" style="position: relative;">
+            <button class="modal-close" onclick="closeRegisterModal()">×</button>
+            <div class="modal-header">
+                <div class="logo-icon">🐊</div>
+                <div class="trial-badge">🎁 7 días gratis</div>
+                <h3>Crea tu cuenta</h3>
+                <p>Registra tu grupo y comienza hoy</p>
+            </div>
+            <div class="modal-body">
+                <div id="registerError" class="error-msg"></div>
+                <div id="registerSuccess" class="success-msg"></div>
+                <form id="registerForm" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>Nombre del Grupo Musical *</label>
+                        <input type="text" id="registerGroupName" placeholder="Ej: Los Caimanes" required>
+                    </div>
+                    <div class="form-divider">Datos del Administrador</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" id="registerFirstName" placeholder="Tu nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido</label>
+                            <input type="text" id="registerLastName" placeholder="Tu apellido">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="registerEmail" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="registerPhone" placeholder="10 dígitos">
+                    </div>
+                    <div class="form-group password-group">
+                        <label>Contraseña *</label>
+                        <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        <button type="button" class="password-toggle" onclick="togglePassword('registerPassword', this)">👁️</button>
+                    </div>
+                    <div class="form-hint" style="margin-bottom: 20px; text-align: center;">
+                        Al registrarte aceptas nuestros términos de servicio
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-large" id="registerBtn">
+                        🚀 Crear Cuenta Gratis
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <p>¿Ya tienes cuenta? <a href="#" onclick="switchToLogin()">Inicia sesión</a></p>
+            </div>
+        </div>
+    </div>
 
-    function togglePasswordVisibility(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (input.type === 'password') {
-            input.type = 'text';
-            btn.textContent = '🙈';
-        } else {
-            input.type = 'password';
-            btn.textContent = '👁️';
+    <script>
+        const API_URL = 'https://caiman-backend-b97f68780d7d.herokuapp.com/api';
+
+        // Modal functions
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('loginError').textContent = '';
         }
-    }
-    
-    // Si ya hay sesión, ir al dashboard
-    if (localStorage.getItem('token') && localStorage.getItem('user')) {
-        window.location.href = 'pages/dashboard.html';
-    }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+        }
+
+        function openRegisterModal(plan) {
+            document.getElementById('registerModal').classList.add('active');
+            document.getElementById('registerError').textContent = '';
+            document.getElementById('registerSuccess').textContent = '';
+            if (plan) localStorage.setItem('selectedPlan', plan);
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+
+        function switchToRegister() {
+            closeLoginModal();
+            setTimeout(openRegisterModal, 200);
+        }
+
+        function switchToLogin() {
+            closeRegisterModal();
+            setTimeout(openLoginModal, 200);
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        // Login
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'pages/dashboard.html';
+                } else {
+                    errorEl.textContent = data.error || 'Credenciales incorrectas';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Error de conexión. Intenta de nuevo.';
+            }
+        }
+
+        // Register
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            const errorEl = document.getElementById('registerError');
+            const successEl = document.getElementById('registerSuccess');
+
+            const groupName = document.getElementById('registerGroupName').value.trim();
+            const firstName = document.getElementById('registerFirstName').value.trim();
+            const lastName = document.getElementById('registerLastName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const phone = document.getElementById('registerPhone').value.trim();
+            const password = document.getElementById('registerPassword').value;
+
+            if (!groupName || !firstName || !email || !password) {
+                errorEl.textContent = 'Completa los campos requeridos';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creando cuenta...';
+            errorEl.textContent = '';
+            successEl.textContent = '';
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register-group`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        group_name: groupName,
+                        first_name: firstName,
+                        last_name: lastName,
+                        email: email,
+                        phone: phone,
+                        password: password,
+                        plan: localStorage.getItem('selectedPlan') || 'profesional'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    successEl.textContent = '¡Cuenta creada! Redirigiendo...';
+                    setTimeout(() => {
+                        window.location.href = 'pages/dashboard.html';
+                    }, 1500);
+                } else {
+                    errorEl.textContent = data.error || 'Error al crear cuenta';
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Crear Cuenta Gratis';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Error de conexión. Intenta de nuevo.';
+                btn.disabled = false;
+                btn.textContent = '🚀 Crear Cuenta Gratis';
+            }
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('token') && localStorage.getItem('user')) {
+            // User is logged in, could redirect or show different UI
+        }
     </script>
-    <script src="js/auth.js"></script>
 </body>
 </html>
