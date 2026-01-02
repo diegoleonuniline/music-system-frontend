@@ -3,261 +3,145 @@ setupUserInfo();
 
 let allEvents = [];
 let allSetlists = [];
-let currentView = 'list';
-
-// Set current month
-const today = new Date();
-document.getElementById('filterMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+let viewMode = 'cards';
 
 async function loadEvents() {
     try {
-        const month = document.getElementById('filterMonth').value;
-        const [year, monthNum] = month.split('-');
-        const startDate = `${year}-${monthNum}-01`;
-        const endDate = `${year}-${monthNum}-31`;
-
         [allEvents, allSetlists] = await Promise.all([
-            apiGet(`/events?start_date=${startDate}&end_date=${endDate}`),
+            apiGet('/events'),
             apiGet('/setlists')
         ]);
-
-        // Fill setlist select
-        const setlistSelect = document.getElementById('eventSetlist');
-        setlistSelect.innerHTML = '<option value="">Sin set list</option>' +
-            (allSetlists || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
+        allEvents = Array.isArray(allEvents) ? allEvents : [];
+        allSetlists = Array.isArray(allSetlists) ? allSetlists : [];
         renderEvents();
     } catch (error) {
         console.error('Error:', error);
+        document.getElementById('eventsContainer').innerHTML = '<div class="empty-state"><p>Error al cargar</p></div>';
     }
 }
 
-function setView(view) {
-    currentView = view;
-    document.querySelectorAll('.view-toggle button').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(view === 'month' ? 'mes' : view === 'week' ? 'semana' : view));
+function setViewMode(mode) {
+    viewMode = mode;
+    document.querySelectorAll('.view-toggle button').forEach(function(btn) {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().indexOf(mode === 'cards' ? 'tarjeta' : 'tabla') !== -1);
     });
     renderEvents();
 }
 
+function getDateValue(dateStr) {
+    if (!dateStr) return '';
+    return dateStr.split('T')[0];
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    var d = new Date(dateStr);
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatTime(timeStr) {
+    if (!timeStr) return '';
+    var parts = timeStr.split(':');
+    var h = parseInt(parts[0]);
+    var m = parts[1];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + m + ' ' + ampm;
+}
+
 function renderEvents() {
-    const statusFilter = document.getElementById('filterStatus').value;
-    let filtered = (allEvents || []).filter(e => !statusFilter || e.status === statusFilter);
+    var container = document.getElementById('eventsContainer');
+    
+    if (!allEvents.length) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">📅</div><h3>Sin eventos</h3><p>Crea tu primer evento</p></div>';
+        return;
+    }
 
-    const container = document.getElementById('eventsContainer');
+    var today = new Date().toISOString().split('T')[0];
+    var sorted = allEvents.slice().sort(function(a, b) {
+        return new Date(b.event_date) - new Date(a.event_date);
+    });
 
-    if (currentView === 'list') {
-        renderListView(filtered, container);
-    } else if (currentView === 'table') {
-        renderTableView(filtered, container);
-    } else if (currentView === 'month') {
-        renderMonthView(filtered, container);
+    if (viewMode === 'table') {
+        container.innerHTML = '<div class="table-container"><table><thead><tr><th>Evento</th><th>Fecha</th><th>Lugar</th><th>Estado</th><th></th></tr></thead><tbody>' +
+            sorted.map(function(e) {
+                var isPast = getDateValue(e.event_date) < today;
+                return '<tr style="' + (isPast ? 'opacity: 0.6;' : '') + '">' +
+                    '<td><strong>' + e.name + '</strong></td>' +
+                    '<td>' + formatDate(e.event_date) + (e.event_time ? ' ' + formatTime(e.event_time) : '') + '</td>' +
+                    '<td>' + (e.venue || '-') + '</td>' +
+                    '<td><span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
+                        (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span></td>' +
+                    '<td>' +
+                        '<button class="btn btn-ghost btn-sm" onclick="viewEvent(' + e.id + ')">Ver</button>' +
+                        (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">✏️</button>' +
+                        '<button class="btn btn-ghost btn-sm" onclick="deleteEvent(' + e.id + ')">🗑️</button>' : '') +
+                    '</td></tr>';
+            }).join('') + '</tbody></table></div>';
     } else {
-        renderWeekView(filtered, container);
+        container.innerHTML = '<div class="events-grid">' + sorted.map(function(e) {
+            var isPast = getDateValue(e.event_date) < today;
+            return '<div class="event-card" onclick="viewEvent(' + e.id + ')" style="' + (isPast ? 'opacity: 0.6;' : '') + '">' +
+                '<div class="event-date-badge"><span class="day">' + new Date(e.event_date).getDate() + '</span>' +
+                '<span class="month">' + new Date(e.event_date).toLocaleDateString('es-MX', {month: 'short'}).toUpperCase() + '</span></div>' +
+                '<div class="event-info"><h4>' + e.name + '</h4><p>📍 ' + (e.venue || 'Sin lugar') + '</p>' +
+                (e.event_time ? '<p>🕐 ' + formatTime(e.event_time) + '</p>' : '') + '</div>' +
+                '<span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
+                    (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span>' +
+                (isAdmin() ? '<div class="actions" onclick="event.stopPropagation();">' +
+                    '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">Editar</button>' +
+                    '<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="deleteEvent(' + e.id + ')">Eliminar</button></div>' : '') +
+            '</div>';
+        }).join('') + '</div>';
     }
 }
 
-function renderListView(events, container) {
-    if (!events.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">📅</div>
-                <h3>Sin eventos</h3>
-            </div>
-        `;
-        return;
+async function viewEvent(id) {
+    var e = allEvents.find(function(ev) { return ev.id === id; });
+    if (!e) return;
+
+    document.getElementById('viewEventName').textContent = e.name;
+    document.getElementById('viewEventDate').textContent = formatDate(e.event_date) + (e.event_time ? ' a las ' + formatTime(e.event_time) : '');
+    document.getElementById('viewEventVenue').textContent = e.venue || 'Sin lugar';
+    document.getElementById('viewEventStatus').textContent = e.status === 'confirmed' ? 'Confirmado' : 'Tentativo';
+    document.getElementById('viewEventStatus').className = 'badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning');
+    document.getElementById('viewEventNotes').textContent = e.notes || 'Sin notas';
+    
+    // Setlist
+    var setlistHtml = 'Sin set list asignado';
+    if (e.setlist_id) {
+        var setlist = allSetlists.find(function(s) { return s.id === e.setlist_id; });
+        if (setlist) {
+            setlistHtml = '<strong>' + setlist.name + '</strong> (' + (setlist.total_songs || 0) + ' canciones)';
+        }
     }
+    document.getElementById('viewEventSetlist').innerHTML = setlistHtml;
 
-    container.innerHTML = events.map(e => `
-        <div class="song-item" onclick="viewEvent(${e.id})" style="cursor: pointer; ${e.status === 'cancelled' ? 'opacity: 0.5;' : ''}">
-            <div class="song-thumb">${e.status === 'confirmed' ? '✅' : e.status === 'tentative' ? '⏳' : '❌'}</div>
-            <div class="song-info">
-                <h4>${e.name}</h4>
-                <p>${formatDate(e.event_date)} · ${e.venue || 'Sin lugar'}</p>
-            </div>
-            <span class="badge ${e.status === 'confirmed' ? 'badge-success' : e.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
-                ${e.status === 'confirmed' ? 'Confirmado' : e.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
-            </span>
-            ${isAdmin() ? `
-                <div class="song-actions" onclick="event.stopPropagation();">
-                    <button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">✏️</button>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-function renderTableView(events, container) {
-    if (!events.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">📅</div>
-                <h3>Sin eventos</h3>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = `
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Evento</th>
-                        <th>Lugar</th>
-                        <th>Hora</th>
-                        <th>Estado</th>
-                        <th>Pago</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${events.map(e => `
-                        <tr style="${e.status === 'cancelled' ? 'opacity: 0.5;' : ''}">
-                            <td><strong>${formatDate(e.event_date)}</strong></td>
-                            <td>${e.name}</td>
-                            <td>${e.venue || '-'}<br><small style="color: var(--text-tertiary);">${e.city || ''}</small></td>
-                            <td>${e.start_time || '-'}</td>
-                            <td>
-                                <span class="badge ${e.status === 'confirmed' ? 'badge-success' : e.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
-                                    ${e.status === 'confirmed' ? 'Confirmado' : e.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
-                                </span>
-                            </td>
-                            <td>$${e.payment || 0}</td>
-                            <td>
-                                <button class="btn btn-ghost btn-sm" onclick="viewEvent(${e.id})">Ver</button>
-                                ${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="editEvent(${e.id})">✏️</button>` : ''}
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
-
-function renderMonthView(events, container) {
-    const month = document.getElementById('filterMonth').value;
-    const [year, monthNum] = month.split('-');
-    const firstDay = new Date(year, monthNum - 1, 1);
-    const lastDay = new Date(year, monthNum, 0);
-    const startDay = firstDay.getDay();
-    const totalDays = lastDay.getDate();
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
-    let html = `<div class="calendar-header">${dayNames.map(d => `<div>${d}</div>`).join('')}</div><div class="calendar-grid">`;
-
-    for (let i = 0; i < startDay; i++) {
-        html += '<div class="calendar-day" style="opacity: 0.3;"></div>';
-    }
-
-    for (let day = 1; day <= totalDays; day++) {
-        const dateStr = `${year}-${monthNum}-${String(day).padStart(2, '0')}`;
-        const dayEvents = events.filter(e => getDateValue(e.event_date) === dateStr);
-        const isToday = dateStr === todayStr;
-
-        html += `
-            <div class="calendar-day ${isToday ? 'today' : ''}">
-                <div class="day-number">${day}</div>
-                ${dayEvents.slice(0, 2).map(e => `
-                    <div class="calendar-event ${e.status}" onclick="viewEvent(${e.id})">${e.name}</div>
-                `).join('')}
-                ${dayEvents.length > 2 ? `<small style="color: var(--text-tertiary);">+${dayEvents.length - 2} más</small>` : ''}
-            </div>
-        `;
-    }
-
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-function renderWeekView(events, container) {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    const todayStr = today.toISOString().split('T')[0];
-
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        days.push(d);
-    }
-
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
-    container.innerHTML = `
-        <div class="week-grid">
-            ${days.map((d, i) => {
-                const dateStr = d.toISOString().split('T')[0];
-                const dayEvents = events.filter(e => getDateValue(e.event_date) === dateStr);
-                const isToday = dateStr === todayStr;
-
-                return `
-                    <div class="week-day ${isToday ? 'today' : ''}">
-                        <div class="week-day-header">
-                            <div class="day-name">${dayNames[i]}</div>
-                            <div class="day-number">${d.getDate()}</div>
-                        </div>
-                        <div class="week-day-content">
-                            ${dayEvents.length ? dayEvents.map(e => `
-                                <div class="calendar-event ${e.status}" onclick="viewEvent(${e.id})" style="margin-bottom: 8px;">
-                                    <strong>${e.name}</strong><br>
-                                    <small>${e.start_time || ''}</small>
-                                </div>
-                            `).join('') : '<small style="color: var(--text-tertiary);">Sin eventos</small>'}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-}
-
-function viewEvent(id) {
-    const event = allEvents.find(e => e.id === id);
-    if (!event) return;
-
-    document.getElementById('viewEventTitle').textContent = event.name;
-    document.getElementById('viewEventContent').innerHTML = `
-        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-            <span class="badge ${event.status === 'confirmed' ? 'badge-success' : event.status === 'tentative' ? 'badge-warning' : 'badge-danger'}">
-                ${event.status === 'confirmed' ? 'Confirmado' : event.status === 'tentative' ? 'Tentativo' : 'Cancelado'}
-            </span>
-        </div>
-        <div style="display: grid; gap: 12px;">
-            <div><strong>📅 Fecha:</strong> ${formatDate(event.event_date)}</div>
-            <div><strong>🕐 Hora:</strong> ${event.start_time || '-'} ${event.end_time ? '- ' + event.end_time : ''}</div>
-            <div><strong>📍 Lugar:</strong> ${event.venue || '-'}</div>
-            <div><strong>🏙️ Ciudad:</strong> ${event.city || '-'}</div>
-            <div><strong>📋 Set List:</strong> ${event.setlist_name || 'No asignado'}</div>
-            <div><strong>💰 Pago:</strong> $${event.payment || 0}</div>
-            ${event.notes ? `<div><strong>📝 Notas:</strong> ${event.notes}</div>` : ''}
-        </div>
-    `;
     document.getElementById('viewEventModal').classList.add('active');
+    document.getElementById('viewEventModal').dataset.eventId = id;
 }
 
 function closeViewEventModal() {
     document.getElementById('viewEventModal').classList.remove('active');
 }
 
-function openEventModal(event = null) {
-    document.getElementById('eventModalTitle').textContent = event ? 'Editar Evento' : 'Nuevo Evento';
-    document.getElementById('eventId').value = event?.id || '';
-    document.getElementById('eventName').value = event?.name || '';
-    document.getElementById('eventDate').value = getDateValue(event?.event_date) || '';
-    document.getElementById('eventCity').value = event?.city || '';
-    document.getElementById('eventVenue').value = event?.venue || '';
-    document.getElementById('eventStartTime').value = event?.start_time || '';
-    document.getElementById('eventEndTime').value = event?.end_time || '';
-    document.getElementById('eventSetlist').value = event?.setlist_id || '';
-    document.getElementById('eventStatus').value = event?.status || 'confirmed';
-    document.getElementById('eventPayment').value = event?.payment || '';
-    document.getElementById('eventNotes').value = event?.notes || '';
+function openEventModal(eventData) {
+    document.getElementById('eventModalTitle').textContent = eventData ? 'Editar Evento' : 'Nuevo Evento';
+    document.getElementById('eventId').value = eventData ? eventData.id : '';
+    document.getElementById('eventName').value = eventData ? eventData.name : '';
+    document.getElementById('eventDate').value = eventData ? getDateValue(eventData.event_date) : '';
+    document.getElementById('eventTime').value = eventData ? (eventData.event_time || '') : '';
+    document.getElementById('eventVenue').value = eventData ? (eventData.venue || '') : '';
+    document.getElementById('eventStatus').value = eventData ? eventData.status : 'tentative';
+    document.getElementById('eventNotes').value = eventData ? (eventData.notes || '') : '';
+    
+    // Setlists
+    var setlistSelect = document.getElementById('eventSetlist');
+    setlistSelect.innerHTML = '<option value="">Sin set list</option>' +
+        allSetlists.map(function(s) {
+            return '<option value="' + s.id + '"' + (eventData && eventData.setlist_id === s.id ? ' selected' : '') + '>' + s.name + '</option>';
+        }).join('');
+
     document.getElementById('eventModal').classList.add('active');
 }
 
@@ -266,42 +150,64 @@ function closeEventModal() {
 }
 
 function editEvent(id) {
-    const event = allEvents.find(e => e.id === id);
-    openEventModal(event);
+    var e = allEvents.find(function(ev) { return ev.id === id; });
+    if (e) openEventModal(e);
+}
+
+function editCurrentEvent() {
+    var id = document.getElementById('viewEventModal').dataset.eventId;
+    closeViewEventModal();
+    editEvent(parseInt(id));
 }
 
 async function saveEvent() {
-    const id = document.getElementById('eventId').value;
-    const data = {
+    var id = document.getElementById('eventId').value;
+    var data = {
         name: document.getElementById('eventName').value,
         event_date: document.getElementById('eventDate').value,
-        city: document.getElementById('eventCity').value,
-        venue: document.getElementById('eventVenue').value,
-        start_time: document.getElementById('eventStartTime').value || null,
-        end_time: document.getElementById('eventEndTime').value || null,
-        setlist_id: document.getElementById('eventSetlist').value || null,
+        event_time: document.getElementById('eventTime').value || null,
+        venue: document.getElementById('eventVenue').value || null,
         status: document.getElementById('eventStatus').value,
-        payment: document.getElementById('eventPayment').value || null,
-        notes: document.getElementById('eventNotes').value
+        notes: document.getElementById('eventNotes').value || null,
+        setlist_id: document.getElementById('eventSetlist').value ? parseInt(document.getElementById('eventSetlist').value) : null
     };
 
-    if (id) {
-        await apiPut(`/events/${id}`, data);
-    } else {
-        await apiPost('/events', data);
+    if (!data.name || !data.event_date) {
+        showToast('Nombre y fecha son requeridos', 'warning');
+        return;
     }
 
-    closeEventModal();
-    loadEvents();
-    showToast('Evento guardado');
+    try {
+        if (id) {
+            await apiPut('/events/' + id, data);
+        } else {
+            await apiPost('/events', data);
+        }
+        closeEventModal();
+        loadEvents();
+        showToast('Evento guardado');
+    } catch (e) {
+        console.error('Error:', e);
+        showToast('Error al guardar', 'error');
+    }
 }
 
 async function deleteEvent(id) {
     if (confirm('¿Eliminar este evento?')) {
-        await apiDelete(`/events/${id}`);
-        loadEvents();
-        showToast('Evento eliminado');
+        try {
+            await apiDelete('/events/' + id);
+            closeViewEventModal();
+            loadEvents();
+            showToast('Evento eliminado');
+        } catch (e) {
+            showToast('Error al eliminar', 'error');
+        }
     }
+}
+
+function deleteCurrentEvent() {
+    var id = document.getElementById('viewEventModal').dataset.eventId;
+    deleteEvent(parseInt(id));
 }
 
 loadEvents();
