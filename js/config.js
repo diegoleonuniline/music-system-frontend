@@ -68,6 +68,26 @@ function launchConfetti() {
     }
 }
 
+// ========== THEME TOGGLE ==========
+function initTheme() {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+}
+
+function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme');
+    var newTheme = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    showToast(newTheme === 'dark' ? '🌙 Modo oscuro' : '☀️ Modo claro', 'info');
+}
+
+initTheme();
+
 // ========== TOAST MEJORADO ==========
 function showToast(message, type) {
     type = type || 'success';

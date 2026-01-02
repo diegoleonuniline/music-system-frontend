@@ -38,6 +38,108 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ========== CHECKBOX STYLING ========== */
+.form-check {
+    margin-top: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.checkbox-label:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.checkbox-label span {
+    font-size: 15px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* ========== THEME TOGGLE ========== */
+.theme-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin: 8px 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.theme-toggle-wrapper span {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.theme-toggle {
+    position: relative;
+    width: 56px;
+    height: 28px;
+    background: var(--bg-secondary);
+    border-radius: 14px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    transition: all 0.3s;
+}
+
+.theme-toggle::before {
+    content: '☀️';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+}
+
+.theme-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+}
+
+[data-theme="dark"] .theme-toggle {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .theme-toggle::before {
+    content: '🌙';
+    left: auto;
+    right: 4px;
+}
+
+[data-theme="dark"] .theme-toggle::after {
+    transform: translateX(28px);
+    background: white;
+}
+
 /* Login */
 .login-page {
     display: flex;
