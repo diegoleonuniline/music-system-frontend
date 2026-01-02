@@ -43,10 +43,12 @@
             </div>
 
             <div class="card">
-                <div class="search-filters">
-                    <div class="view-toggle">
-                        <button class="active" onclick="setViewMode('cards')">Tarjetas</button>
-                        <button onclick="setViewMode('table')">Tabla</button>
+                <div class="card-body">
+                    <div class="search-filters">
+                        <div class="view-toggle">
+                            <button class="active" onclick="setViewMode('cards')">Tarjetas</button>
+                            <button onclick="setViewMode('table')">Tabla</button>
+                        </div>
                     </div>
                 </div>
                 <div id="eventsContainer"><div class="loading">Cargando...</div></div>
@@ -64,19 +66,54 @@
 
     <!-- Modal Ver Evento -->
     <div class="modal-overlay" id="viewEventModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 550px;">
             <div class="modal-header">
                 <h3>📅 Evento</h3>
                 <button class="modal-close" onclick="closeViewEventModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <h2 id="viewEventName" style="margin-bottom: 16px;"></h2>
-                <div style="display: grid; gap: 12px;">
-                    <div><strong>📆 Fecha:</strong> <span id="viewEventDate"></span></div>
-                    <div><strong>📍 Lugar:</strong> <span id="viewEventVenue"></span></div>
-                    <div><strong>Estado:</strong> <span id="viewEventStatus" class="badge"></span></div>
-                    <div><strong>📋 Set List:</strong> <span id="viewEventSetlist"></span></div>
-                    <div><strong>📝 Notas:</strong><br><span id="viewEventNotes" style="color: var(--text-secondary);"></span></div>
+                <h2 id="viewEventName" style="margin-bottom: 20px;"></h2>
+                <div style="display: grid; gap: 16px;">
+                    <div class="event-detail-row">
+                        <span class="event-detail-icon">📆</span>
+                        <div>
+                            <strong>Fecha y Hora</strong>
+                            <p id="viewEventDate"></p>
+                        </div>
+                    </div>
+                    <div class="event-detail-row">
+                        <span class="event-detail-icon">📍</span>
+                        <div>
+                            <strong>Lugar</strong>
+                            <p id="viewEventVenue"></p>
+                        </div>
+                    </div>
+                    <div id="viewEventMaps" style="margin-left: 36px;"></div>
+                    <div class="event-detail-row">
+                        <span class="event-detail-icon">👔</span>
+                        <div>
+                            <strong>Uniforme</strong>
+                            <p id="viewEventUniform"></p>
+                        </div>
+                    </div>
+                    <div class="event-detail-row">
+                        <span class="event-detail-icon">📋</span>
+                        <div>
+                            <strong>Set List</strong>
+                            <p id="viewEventSetlist"></p>
+                        </div>
+                    </div>
+                    <div class="event-detail-row">
+                        <span class="event-detail-icon">✓</span>
+                        <div>
+                            <strong>Estado</strong>
+                            <p id="viewEventStatus"></p>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-secondary); padding: 14px; border-radius: 10px; margin-top: 8px;">
+                        <strong style="font-size: 14px;">📝 Notas</strong>
+                        <div id="viewEventNotes" style="margin-top: 8px; color: var(--text-secondary);"></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -88,45 +125,82 @@
 
     <!-- Modal Crear/Editar Evento -->
     <div class="modal-overlay" id="eventModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
                 <h3 id="eventModalTitle">Nuevo Evento</h3>
                 <button class="modal-close" onclick="closeEventModal()">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <input type="hidden" id="eventId">
+                
                 <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" id="eventName" required placeholder="Ej: Boda García">
+                    <label>Nombre del Evento *</label>
+                    <input type="text" id="eventName" required placeholder="Ej: Boda García López">
                 </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                     <div class="form-group">
                         <label>Fecha *</label>
                         <input type="date" id="eventDate" required>
                     </div>
                     <div class="form-group">
-                        <label>Hora</label>
-                        <input type="time" id="eventTime">
+                        <label>Hora Inicio</label>
+                        <input type="time" id="eventStartTime">
+                    </div>
+                    <div class="form-group">
+                        <label>Hora Fin</label>
+                        <input type="time" id="eventEndTime">
                     </div>
                 </div>
+                
+                <div class="form-section-title">📍 Ubicación</div>
+                
                 <div class="form-group">
-                    <label>Lugar</label>
+                    <label>Nombre del Lugar</label>
                     <input type="text" id="eventVenue" placeholder="Ej: Salón Los Arcos">
                 </div>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select id="eventStatus">
-                        <option value="tentative">Tentativo</option>
-                        <option value="confirmed">Confirmado</option>
-                    </select>
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="eventAddress" placeholder="Calle, número, colonia">
+                    </div>
+                    <div class="form-group">
+                        <label>Ciudad</label>
+                        <input type="text" id="eventCity" placeholder="Ej: Guadalajara">
+                    </div>
                 </div>
+                
+                <div class="form-group">
+                    <label>Link Google Maps</label>
+                    <input type="url" id="eventGoogleMaps" placeholder="https://maps.google.com/...">
+                </div>
+                
+                <div class="form-section-title">🎵 Detalles</div>
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Uniforme</label>
+                        <input type="text" id="eventUniform" placeholder="Ej: Camisa negra, pantalón negro">
+                    </div>
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select id="eventStatus">
+                            <option value="tentative">Tentativo</option>
+                            <option value="confirmed">Confirmado</option>
+                            <option value="cancelled">Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label>Set List</label>
                     <select id="eventSetlist"></select>
                 </div>
+                
                 <div class="form-group">
                     <label>Notas</label>
-                    <textarea id="eventNotes" rows="3" placeholder="Notas adicionales..."></textarea>
+                    <textarea id="eventNotes" rows="3" placeholder="Indicaciones especiales, contacto del cliente, etc..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -135,6 +209,49 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .event-detail-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .event-detail-icon {
+            font-size: 20px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .event-detail-row strong {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .event-detail-row p {
+            font-size: 15px;
+            margin: 0;
+        }
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 20px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .event-card-actions {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            gap: 4px;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
 
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
