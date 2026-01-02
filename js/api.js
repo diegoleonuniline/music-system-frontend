@@ -348,3 +348,24 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+// ============ AUTO CACHE BUSTER ============
+(function() {
+    var APP_VERSION = '1.0.2'; // Cambia esto cada deploy
+    var storedVersion = localStorage.getItem('appVersion');
+    
+    if (storedVersion && storedVersion !== APP_VERSION) {
+        localStorage.setItem('appVersion', APP_VERSION);
+        // Limpiar cache del navegador
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                names.forEach(function(name) {
+                    caches.delete(name);
+                });
+            });
+        }
+        // Recargar forzando desde servidor
+        window.location.reload(true);
+    } else {
+        localStorage.setItem('appVersion', APP_VERSION);
+    }
+})();
