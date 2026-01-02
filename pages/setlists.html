@@ -18,10 +18,7 @@
 
     <div class="app-container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <span class="logo">🐊</span>
-                <h2>Caimán</h2>
-            </div>
+            <div class="sidebar-header"><span class="logo">🐊</span><h2>Caimán</h2></div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html"><span class="icon">📊</span> Inicio</a>
                 <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
@@ -33,10 +30,7 @@
             <div class="sidebar-footer">
                 <div class="user-profile">
                     <div class="user-avatar" id="userAvatar">U</div>
-                    <div class="user-info">
-                        <h4 id="userName">Usuario</h4>
-                        <span id="userRole">Rol</span>
-                    </div>
+                    <div class="user-info"><h4 id="userName">Usuario</h4><span id="userRole">Rol</span></div>
                 </div>
                 <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
@@ -68,7 +62,7 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modals -->
+    <!-- Modal Crear/Editar Setlist -->
     <div class="modal-overlay" id="setlistModal">
         <div class="modal">
             <div class="modal-header">
@@ -87,6 +81,7 @@
         </div>
     </div>
 
+    <!-- Modal Ver Setlist -->
     <div class="modal-overlay" id="viewSetlistModal">
         <div class="modal" style="max-width: 700px;">
             <div class="modal-header">
@@ -109,6 +104,7 @@
         </div>
     </div>
 
+    <!-- Modal Agregar Canción -->
     <div class="modal-overlay" id="addSongModal">
         <div class="modal">
             <div class="modal-header">
@@ -122,6 +118,7 @@
         </div>
     </div>
 
+    <!-- Modal Modo Escenario -->
     <div class="modal-overlay" id="stageModeModal" style="background: #000; padding: 0;">
         <div class="stage-mode" style="width: 100%; height: 100%;">
             <div class="stage-header">
@@ -132,6 +129,106 @@
                 </div>
             </div>
             <div class="stage-content" id="stageModeContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Letra -->
+    <div class="modal-overlay" id="lyricsModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="lyricsModalTitle">Letra</h3>
+                <button class="modal-close" onclick="closeLyricsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="lyricsContent" style="white-space: pre-wrap; font-family: monospace; max-height: 500px; overflow-y: auto; padding: 12px; background: var(--bg-secondary); border-radius: 8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Recursos -->
+    <div class="modal-overlay" id="resourcesModal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3>📎 Recursos: <span id="resourcesSongName">Canción</span></h3>
+                <button class="modal-close" onclick="closeResourcesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <select id="resourcesFilter" onchange="loadResources()" style="flex: 1; min-width: 120px;">
+                        <option value="all">Todos</option>
+                        <option value="mine">Solo míos</option>
+                        <option value="shared">Compartidos</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="openAddResourceModal()">+ Agregar</button>
+                </div>
+                <div id="resourcesList" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Recurso -->
+    <div class="modal-overlay" id="addResourceModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Agregar Recurso</h3>
+                <button class="modal-close" onclick="closeAddResourceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="resourceType" onchange="toggleResourceContentType()">
+                        <option value="lyrics">📝 Letra</option>
+                        <option value="chords">🎸 Acordes</option>
+                        <option value="tabs">🎼 Tablatura</option>
+                        <option value="notes">📒 Notas personales</option>
+                        <option value="pdf">📕 PDF</option>
+                        <option value="image">🖼️ Imagen</option>
+                        <option value="sheet">📄 Partitura (archivo)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Título (opcional)</label>
+                    <input type="text" id="resourceTitle" placeholder="Ej: Acordes para bajo, Mis notas...">
+                </div>
+                <div class="form-group" id="resourceContentGroup">
+                    <label>Contenido</label>
+                    <textarea id="resourceContent" rows="10" placeholder="Pega aquí el contenido..." style="white-space: pre-wrap; font-family: monospace;"></textarea>
+                </div>
+                <div class="form-group" id="resourceFileGroup" style="display: none;">
+                    <label>Archivo (máx 10MB)</label>
+                    <input type="file" id="resourceFileInput" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                    <div id="uploadProgress" style="display: none; margin-top: 8px;">
+                        <div style="background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                            <div id="uploadProgressBar" style="height: 8px; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <small id="uploadProgressText">0%</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="resourceShared" checked style="width: 18px; height: 18px;">
+                        <span>Compartir con el grupo</span>
+                    </label>
+                    <small style="color: var(--text-tertiary);">Si lo desactivas, solo tú podrás verlo</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeAddResourceModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveResource()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Recurso -->
+    <div class="modal-overlay" id="viewResourceModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="viewResourceTitle">Contenido</h3>
+                <button class="modal-close" onclick="closeViewResourceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="viewResourceContent" style="white-space: pre-wrap; font-family: monospace; max-height: 500px; overflow-y: auto; padding: 12px; background: var(--bg-secondary); border-radius: 8px;"></div>
+            </div>
         </div>
     </div>
 
