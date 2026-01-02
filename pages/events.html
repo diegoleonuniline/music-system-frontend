@@ -1,213 +1,143 @@
-checkAuth();
-setupUserInfo();
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#4F46E5">
+    <title>Eventos - Caimán</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
+</head>
+<body>
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+        <span class="logo">🐊</span>
+        <h1>Eventos</h1>
+    </header>
+    <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
 
-let allEvents = [];
-let allSetlists = [];
-let viewMode = 'cards';
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><span class="logo">🐊</span><h2>Caimán</h2></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><span class="icon">📊</span> Inicio</a>
+                <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
+                <a href="setlists.html"><span class="icon">📋</span> Set Lists</a>
+                <a href="events.html" class="active"><span class="icon">📅</span> Eventos</a>
+                <a href="rehearsals.html"><span class="icon">🎸</span> Ensayos</a>
+                <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-info"><h4 id="userName">Usuario</h4><span id="userRole">Rol</span></div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </aside>
 
-async function loadEvents() {
-    try {
-        [allEvents, allSetlists] = await Promise.all([
-            apiGet('/events'),
-            apiGet('/setlists')
-        ]);
-        allEvents = Array.isArray(allEvents) ? allEvents : [];
-        allSetlists = Array.isArray(allSetlists) ? allSetlists : [];
-        renderEvents();
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('eventsContainer').innerHTML = '<div class="empty-state"><p>Error al cargar</p></div>';
-    }
-}
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Eventos</h1>
+                <button class="btn btn-primary" onclick="openEventModal()">+ Nuevo</button>
+            </div>
 
-function setViewMode(mode) {
-    viewMode = mode;
-    document.querySelectorAll('.view-toggle button').forEach(function(btn) {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().indexOf(mode === 'cards' ? 'tarjeta' : 'tabla') !== -1);
-    });
-    renderEvents();
-}
+            <div class="card">
+                <div class="search-filters">
+                    <div class="view-toggle">
+                        <button class="active" onclick="setViewMode('cards')">Tarjetas</button>
+                        <button onclick="setViewMode('table')">Tabla</button>
+                    </div>
+                </div>
+                <div id="eventsContainer"><div class="loading">Cargando...</div></div>
+            </div>
+        </main>
+    </div>
 
-function getDateValue(dateStr) {
-    if (!dateStr) return '';
-    return dateStr.split('T')[0];
-}
+    <nav class="mobile-nav">
+        <a href="dashboard.html"><span class="icon">📊</span>Inicio</a>
+        <a href="songs.html"><span class="icon">🎵</span>Canciones</a>
+        <a href="setlists.html"><span class="icon">📋</span>Set Lists</a>
+        <a href="events.html" class="active"><span class="icon">📅</span>Eventos</a>
+        <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
+    </nav>
 
-function formatDate(dateStr) {
-    if (!dateStr) return '';
-    var d = new Date(dateStr);
-    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+    <!-- Modal Ver Evento -->
+    <div class="modal-overlay" id="viewEventModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📅 Evento</h3>
+                <button class="modal-close" onclick="closeViewEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h2 id="viewEventName" style="margin-bottom: 16px;"></h2>
+                <div style="display: grid; gap: 12px;">
+                    <div><strong>📆 Fecha:</strong> <span id="viewEventDate"></span></div>
+                    <div><strong>📍 Lugar:</strong> <span id="viewEventVenue"></span></div>
+                    <div><strong>Estado:</strong> <span id="viewEventStatus" class="badge"></span></div>
+                    <div><strong>📋 Set List:</strong> <span id="viewEventSetlist"></span></div>
+                    <div><strong>📝 Notas:</strong><br><span id="viewEventNotes" style="color: var(--text-secondary);"></span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="editCurrentEvent()">✏️ Editar</button>
+                <button class="btn btn-danger" onclick="deleteCurrentEvent()">🗑️ Eliminar</button>
+            </div>
+        </div>
+    </div>
 
-function formatTime(timeStr) {
-    if (!timeStr) return '';
-    var parts = timeStr.split(':');
-    var h = parseInt(parts[0]);
-    var m = parts[1];
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return h + ':' + m + ' ' + ampm;
-}
+    <!-- Modal Crear/Editar Evento -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="eventModalTitle">Nuevo Evento</h3>
+                <button class="modal-close" onclick="closeEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="eventId">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="eventName" required placeholder="Ej: Boda García">
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Fecha *</label>
+                        <input type="date" id="eventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora</label>
+                        <input type="time" id="eventTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Lugar</label>
+                    <input type="text" id="eventVenue" placeholder="Ej: Salón Los Arcos">
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="eventStatus">
+                        <option value="tentative">Tentativo</option>
+                        <option value="confirmed">Confirmado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Set List</label>
+                    <select id="eventSetlist"></select>
+                </div>
+                <div class="form-group">
+                    <label>Notas</label>
+                    <textarea id="eventNotes" rows="3" placeholder="Notas adicionales..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeEventModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveEvent()">Guardar</button>
+            </div>
+        </div>
+    </div>
 
-function renderEvents() {
-    var container = document.getElementById('eventsContainer');
-    
-    if (!allEvents.length) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">📅</div><h3>Sin eventos</h3><p>Crea tu primer evento</p></div>';
-        return;
-    }
-
-    var today = new Date().toISOString().split('T')[0];
-    var sorted = allEvents.slice().sort(function(a, b) {
-        return new Date(b.event_date) - new Date(a.event_date);
-    });
-
-    if (viewMode === 'table') {
-        container.innerHTML = '<div class="table-container"><table><thead><tr><th>Evento</th><th>Fecha</th><th>Lugar</th><th>Estado</th><th></th></tr></thead><tbody>' +
-            sorted.map(function(e) {
-                var isPast = getDateValue(e.event_date) < today;
-                return '<tr style="' + (isPast ? 'opacity: 0.6;' : '') + '">' +
-                    '<td><strong>' + e.name + '</strong></td>' +
-                    '<td>' + formatDate(e.event_date) + (e.event_time ? ' ' + formatTime(e.event_time) : '') + '</td>' +
-                    '<td>' + (e.venue || '-') + '</td>' +
-                    '<td><span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
-                        (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span></td>' +
-                    '<td>' +
-                        '<button class="btn btn-ghost btn-sm" onclick="viewEvent(' + e.id + ')">Ver</button>' +
-                        (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">✏️</button>' +
-                        '<button class="btn btn-ghost btn-sm" onclick="deleteEvent(' + e.id + ')">🗑️</button>' : '') +
-                    '</td></tr>';
-            }).join('') + '</tbody></table></div>';
-    } else {
-        container.innerHTML = '<div class="events-grid">' + sorted.map(function(e) {
-            var isPast = getDateValue(e.event_date) < today;
-            return '<div class="event-card" onclick="viewEvent(' + e.id + ')" style="' + (isPast ? 'opacity: 0.6;' : '') + '">' +
-                '<div class="event-date-badge"><span class="day">' + new Date(e.event_date).getDate() + '</span>' +
-                '<span class="month">' + new Date(e.event_date).toLocaleDateString('es-MX', {month: 'short'}).toUpperCase() + '</span></div>' +
-                '<div class="event-info"><h4>' + e.name + '</h4><p>📍 ' + (e.venue || 'Sin lugar') + '</p>' +
-                (e.event_time ? '<p>🕐 ' + formatTime(e.event_time) + '</p>' : '') + '</div>' +
-                '<span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
-                    (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span>' +
-                (isAdmin() ? '<div class="actions" onclick="event.stopPropagation();">' +
-                    '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">Editar</button>' +
-                    '<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="deleteEvent(' + e.id + ')">Eliminar</button></div>' : '') +
-            '</div>';
-        }).join('') + '</div>';
-    }
-}
-
-async function viewEvent(id) {
-    var e = allEvents.find(function(ev) { return ev.id === id; });
-    if (!e) return;
-
-    document.getElementById('viewEventName').textContent = e.name;
-    document.getElementById('viewEventDate').textContent = formatDate(e.event_date) + (e.event_time ? ' a las ' + formatTime(e.event_time) : '');
-    document.getElementById('viewEventVenue').textContent = e.venue || 'Sin lugar';
-    document.getElementById('viewEventStatus').textContent = e.status === 'confirmed' ? 'Confirmado' : 'Tentativo';
-    document.getElementById('viewEventStatus').className = 'badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning');
-    document.getElementById('viewEventNotes').textContent = e.notes || 'Sin notas';
-    
-    // Setlist
-    var setlistHtml = 'Sin set list asignado';
-    if (e.setlist_id) {
-        var setlist = allSetlists.find(function(s) { return s.id === e.setlist_id; });
-        if (setlist) {
-            setlistHtml = '<strong>' + setlist.name + '</strong> (' + (setlist.total_songs || 0) + ' canciones)';
-        }
-    }
-    document.getElementById('viewEventSetlist').innerHTML = setlistHtml;
-
-    document.getElementById('viewEventModal').classList.add('active');
-    document.getElementById('viewEventModal').dataset.eventId = id;
-}
-
-function closeViewEventModal() {
-    document.getElementById('viewEventModal').classList.remove('active');
-}
-
-function openEventModal(eventData) {
-    document.getElementById('eventModalTitle').textContent = eventData ? 'Editar Evento' : 'Nuevo Evento';
-    document.getElementById('eventId').value = eventData ? eventData.id : '';
-    document.getElementById('eventName').value = eventData ? eventData.name : '';
-    document.getElementById('eventDate').value = eventData ? getDateValue(eventData.event_date) : '';
-    document.getElementById('eventTime').value = eventData ? (eventData.event_time || '') : '';
-    document.getElementById('eventVenue').value = eventData ? (eventData.venue || '') : '';
-    document.getElementById('eventStatus').value = eventData ? eventData.status : 'tentative';
-    document.getElementById('eventNotes').value = eventData ? (eventData.notes || '') : '';
-    
-    // Setlists
-    var setlistSelect = document.getElementById('eventSetlist');
-    setlistSelect.innerHTML = '<option value="">Sin set list</option>' +
-        allSetlists.map(function(s) {
-            return '<option value="' + s.id + '"' + (eventData && eventData.setlist_id === s.id ? ' selected' : '') + '>' + s.name + '</option>';
-        }).join('');
-
-    document.getElementById('eventModal').classList.add('active');
-}
-
-function closeEventModal() {
-    document.getElementById('eventModal').classList.remove('active');
-}
-
-function editEvent(id) {
-    var e = allEvents.find(function(ev) { return ev.id === id; });
-    if (e) openEventModal(e);
-}
-
-function editCurrentEvent() {
-    var id = document.getElementById('viewEventModal').dataset.eventId;
-    closeViewEventModal();
-    editEvent(parseInt(id));
-}
-
-async function saveEvent() {
-    var id = document.getElementById('eventId').value;
-    var data = {
-        name: document.getElementById('eventName').value,
-        event_date: document.getElementById('eventDate').value,
-        event_time: document.getElementById('eventTime').value || null,
-        venue: document.getElementById('eventVenue').value || null,
-        status: document.getElementById('eventStatus').value,
-        notes: document.getElementById('eventNotes').value || null,
-        setlist_id: document.getElementById('eventSetlist').value ? parseInt(document.getElementById('eventSetlist').value) : null
-    };
-
-    if (!data.name || !data.event_date) {
-        showToast('Nombre y fecha son requeridos', 'warning');
-        return;
-    }
-
-    try {
-        if (id) {
-            await apiPut('/events/' + id, data);
-        } else {
-            await apiPost('/events', data);
-        }
-        closeEventModal();
-        loadEvents();
-        showToast('Evento guardado');
-    } catch (e) {
-        console.error('Error:', e);
-        showToast('Error al guardar', 'error');
-    }
-}
-
-async function deleteEvent(id) {
-    if (confirm('¿Eliminar este evento?')) {
-        try {
-            await apiDelete('/events/' + id);
-            closeViewEventModal();
-            loadEvents();
-            showToast('Evento eliminado');
-        } catch (e) {
-            showToast('Error al eliminar', 'error');
-        }
-    }
-}
-
-function deleteCurrentEvent() {
-    var id = document.getElementById('viewEventModal').dataset.eventId;
-    deleteEvent(parseInt(id));
-}
-
-loadEvents();
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/events.js"></script>
+</body>
+</html>
