@@ -33,9 +33,15 @@ function getDateValue(dateStr) {
     return dateStr.split('T')[0];
 }
 
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    var parts = dateStr.split('T')[0].split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+}
+
 function formatDate(dateStr) {
     if (!dateStr) return '';
-    var d = new Date(dateStr);
+    var d = parseLocalDate(dateStr);
     return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -57,7 +63,10 @@ function renderEvents() {
         return;
     }
 
-    var today = new Date().toISOString().split('T')[0];
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var todayStr = today.toISOString().split('T')[0];
+    
     var sorted = allEvents.slice().sort(function(a, b) {
         return new Date(b.event_date) - new Date(a.event_date);
     });
@@ -65,7 +74,7 @@ function renderEvents() {
     if (viewMode === 'table') {
         container.innerHTML = '<div class="table-container"><table><thead><tr><th>Evento</th><th>Fecha</th><th>Lugar</th><th>Estado</th><th></th></tr></thead><tbody>' +
             sorted.map(function(e) {
-                var isPast = getDateValue(e.event_date) < today;
+                var isPast = getDateValue(e.event_date) < todayStr;
                 return '<tr style="' + (isPast ? 'opacity: 0.6;' : '') + '">' +
                     '<td><strong>' + e.name + '</strong></td>' +
                     '<td>' + formatDate(e.event_date) + (e.event_time ? ' ' + formatTime(e.event_time) : '') + '</td>' +
@@ -80,10 +89,11 @@ function renderEvents() {
             }).join('') + '</tbody></table></div>';
     } else {
         container.innerHTML = '<div class="events-grid">' + sorted.map(function(e) {
-            var isPast = getDateValue(e.event_date) < today;
+            var eventDate = parseLocalDate(e.event_date);
+            var isPast = getDateValue(e.event_date) < todayStr;
             return '<div class="event-card" onclick="viewEvent(' + e.id + ')" style="' + (isPast ? 'opacity: 0.6;' : '') + '">' +
-                '<div class="event-date-badge"><span class="day">' + new Date(e.event_date).getDate() + '</span>' +
-                '<span class="month">' + new Date(e.event_date).toLocaleDateString('es-MX', {month: 'short'}).toUpperCase() + '</span></div>' +
+                '<div class="event-date-badge"><span class="day">' + eventDate.getDate() + '</span>' +
+                '<span class="month">' + eventDate.toLocaleDateString('es-MX', {month: 'short'}).toUpperCase() + '</span></div>' +
                 '<div class="event-info"><h4>' + e.name + '</h4><p>📍 ' + (e.venue || 'Sin lugar') + '</p>' +
                 (e.event_time ? '<p>🕐 ' + formatTime(e.event_time) + '</p>' : '') + '</div>' +
                 '<span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
@@ -107,7 +117,6 @@ async function viewEvent(id) {
     document.getElementById('viewEventStatus').className = 'badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning');
     document.getElementById('viewEventNotes').textContent = e.notes || 'Sin notas';
     
-    // Setlist
     var setlistHtml = 'Sin set list asignado';
     if (e.setlist_id) {
         var setlist = allSetlists.find(function(s) { return s.id === e.setlist_id; });
@@ -135,7 +144,6 @@ function openEventModal(eventData) {
     document.getElementById('eventStatus').value = eventData ? eventData.status : 'tentative';
     document.getElementById('eventNotes').value = eventData ? (eventData.notes || '') : '';
     
-    // Setlists
     var setlistSelect = document.getElementById('eventSetlist');
     setlistSelect.innerHTML = '<option value="">Sin set list</option>' +
         allSetlists.map(function(s) {
