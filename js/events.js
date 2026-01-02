@@ -1,18 +1,18 @@
 checkAuth();
 setupUserInfo();
 
-let allEvents = [];
-let allSetlists = [];
-let viewMode = 'cards';
+var allEvents = [];
+var allSetlists = [];
+var viewMode = 'cards'; // Siempre inicia en cards
 
 async function loadEvents() {
     try {
-        [allEvents, allSetlists] = await Promise.all([
+        var results = await Promise.all([
             apiGet('/events'),
             apiGet('/setlists')
         ]);
-        allEvents = Array.isArray(allEvents) ? allEvents : [];
-        allSetlists = Array.isArray(allSetlists) ? allSetlists : [];
+        allEvents = Array.isArray(results[0]) ? results[0] : [];
+        allSetlists = Array.isArray(results[1]) ? results[1] : [];
         renderEvents();
     } catch (error) {
         console.error('Error:', error);
@@ -23,7 +23,7 @@ async function loadEvents() {
 function setViewMode(mode) {
     viewMode = mode;
     document.querySelectorAll('.view-toggle button').forEach(function(btn) {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().indexOf(mode === 'cards' ? 'tarjeta' : 'tabla') !== -1);
+        btn.classList.toggle('active', btn.dataset.mode === mode);
     });
     renderEvents();
 }
@@ -74,56 +74,92 @@ function renderEvents() {
     var todayStr = today.toISOString().split('T')[0];
     
     var sorted = allEvents.slice().sort(function(a, b) {
-        return new Date(b.event_date) - new Date(a.event_date);
+        return new Date(a.event_date) - new Date(b.event_date);
     });
 
+    // Separar próximos y pasados
+    var upcoming = sorted.filter(function(e) { return getDateValue(e.event_date) >= todayStr; });
+    var past = sorted.filter(function(e) { return getDateValue(e.event_date) < todayStr; }).reverse();
+
     if (viewMode === 'table') {
-        container.innerHTML = '<div class="table-container"><table><thead><tr><th>Evento</th><th>Fecha</th><th>Lugar</th><th>Uniforme</th><th>Estado</th><th></th></tr></thead><tbody>' +
-            sorted.map(function(e) {
-                var isPast = getDateValue(e.event_date) < todayStr;
-                var isCancelled = e.status === 'cancelled';
-                return '<tr style="' + (isPast || isCancelled ? 'opacity: 0.6;' : '') + '">' +
-                    '<td><strong>' + e.name + '</strong></td>' +
-                    '<td>' + formatDate(e.event_date) + (e.start_time ? ' ' + formatTime(e.start_time) : '') + '</td>' +
-                    '<td>' + (e.venue || '-') + (e.city ? ', ' + e.city : '') + '</td>' +
-                    '<td>' + (e.uniform || '-') + '</td>' +
-                    '<td>' + getStatusBadge(e.status) + '</td>' +
-                    '<td>' +
-                        '<button class="btn btn-ghost btn-sm" onclick="viewEvent(' + e.id + ')">Ver</button>' +
-                        (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">✏️</button>' +
-                        '<button class="btn btn-ghost btn-sm" onclick="deleteEvent(' + e.id + ')">🗑️</button>' : '') +
-                    '</td></tr>';
-            }).join('') + '</tbody></table></div>';
+        var html = '';
+        if (upcoming.length) {
+            html += '<h4 style="padding: 16px 16px 8px; color: var(--text-secondary);">📅 Próximos</h4>';
+            html += renderEventsTable(upcoming, todayStr);
+        }
+        if (past.length) {
+            html += '<h4 style="padding: 16px 16px 8px; color: var(--text-secondary);">📆 Pasados</h4>';
+            html += renderEventsTable(past, todayStr);
+        }
+        container.innerHTML = html;
     } else {
-        container.innerHTML = '<div class="events-grid">' + sorted.map(function(e) {
-            var eventDate = parseLocalDate(e.event_date);
-            var isPast = getDateValue(e.event_date) < todayStr;
-            var isCancelled = e.status === 'cancelled';
-            return '<div class="event-card" onclick="viewEvent(' + e.id + ')" style="' + (isPast || isCancelled ? 'opacity: 0.6;' : '') + '">' +
-                '<div class="event-date-badge"><span class="day">' + eventDate.getDate() + '</span>' +
-                '<span class="month">' + eventDate.toLocaleDateString('es-MX', {month: 'short'}).toUpperCase() + '</span></div>' +
-                '<div class="event-info">' +
-                    '<h4>' + e.name + '</h4>' +
-                    '<p>📍 ' + (e.venue || 'Sin lugar') + (e.city ? ', ' + e.city : '') + '</p>' +
-                    (e.start_time ? '<p>🕐 ' + formatTime(e.start_time) + (e.end_time ? ' - ' + formatTime(e.end_time) : '') + '</p>' : '') +
-                    (e.uniform ? '<p>👔 ' + e.uniform + '</p>' : '') +
-                '</div>' +
-                getStatusBadge(e.status) +
-                (isAdmin() ? '<div class="event-card-actions" onclick="event.stopPropagation();">' +
-                    '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">✏️</button>' +
-                    '<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="deleteEvent(' + e.id + ')">🗑️</button></div>' : '') +
-            '</div>';
-        }).join('') + '</div>';
+        var html = '';
+        if (upcoming.length) {
+            html += '<h4 style="padding: 16px 16px 8px; color: var(--text-secondary);">📅 Próximos</h4>';
+            html += '<div class="events-grid">' + upcoming.map(function(e) { return renderEventCard(e, todayStr); }).join('') + '</div>';
+        }
+        if (past.length) {
+            html += '<h4 style="padding: 16px 16px 8px; color: var(--text-secondary);">📆 Pasados</h4>';
+            html += '<div class="events-grid">' + past.map(function(e) { return renderEventCard(e, todayStr); }).join('') + '</div>';
+        }
+        container.innerHTML = html;
     }
 }
 
-async function viewEvent(id) {
+function renderEventCard(e, todayStr) {
+    var eventDate = parseLocalDate(e.event_date);
+    var isPast = getDateValue(e.event_date) < todayStr;
+    var isCancelled = e.status === 'cancelled';
+    
+    return '<div class="event-card" style="' + (isPast || isCancelled ? 'opacity: 0.6;' : '') + '">' +
+        '<div class="event-card-header" onclick="viewEvent(' + e.id + ')">' +
+            '<div class="event-date-badge">' +
+                '<span class="day">' + eventDate.getDate() + '</span>' +
+                '<span class="month">' + eventDate.toLocaleDateString('es-MX', {month: 'short'}).toUpperCase() + '</span>' +
+            '</div>' +
+            '<div class="event-info">' +
+                '<h4>' + e.name + '</h4>' +
+                '<p>📍 ' + (e.venue || 'Sin lugar') + (e.city ? ', ' + e.city : '') + '</p>' +
+                (e.start_time ? '<p>🕐 ' + formatTime(e.start_time) + (e.end_time ? ' - ' + formatTime(e.end_time) : '') + '</p>' : '') +
+                (e.uniform ? '<p>👔 ' + e.uniform + '</p>' : '') +
+            '</div>' +
+            getStatusBadge(e.status) +
+        '</div>' +
+        '<div class="event-card-actions">' +
+            '<button class="btn btn-ghost btn-sm" onclick="viewEvent(' + e.id + ')">👁️ Ver</button>' +
+            (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">✏️ Editar</button>' +
+            '<button class="btn btn-ghost btn-sm btn-danger-text" onclick="deleteEvent(' + e.id + ')">🗑️ Eliminar</button>' : '') +
+        '</div>' +
+    '</div>';
+}
+
+function renderEventsTable(events, todayStr) {
+    return '<div class="table-container"><table><thead><tr>' +
+        '<th>Evento</th><th>Fecha</th><th>Lugar</th><th>Uniforme</th><th>Estado</th><th>Acciones</th>' +
+        '</tr></thead><tbody>' +
+        events.map(function(e) {
+            var isPast = getDateValue(e.event_date) < todayStr;
+            var isCancelled = e.status === 'cancelled';
+            return '<tr style="' + (isPast || isCancelled ? 'opacity: 0.6;' : '') + '">' +
+                '<td><strong>' + e.name + '</strong></td>' +
+                '<td>' + formatDate(e.event_date) + (e.start_time ? '<br><small>' + formatTime(e.start_time) + '</small>' : '') + '</td>' +
+                '<td>' + (e.venue || '-') + (e.city ? '<br><small>' + e.city + '</small>' : '') + '</td>' +
+                '<td>' + (e.uniform || '-') + '</td>' +
+                '<td>' + getStatusBadge(e.status) + '</td>' +
+                '<td class="table-actions">' +
+                    '<button class="btn btn-ghost btn-sm" onclick="viewEvent(' + e.id + ')">👁️</button>' +
+                    (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editEvent(' + e.id + ')">✏️</button>' +
+                    '<button class="btn btn-ghost btn-sm btn-danger-text" onclick="deleteEvent(' + e.id + ')">🗑️</button>' : '') +
+                '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+}
+
+function viewEvent(id) {
     var e = allEvents.find(function(ev) { return ev.id === id; });
     if (!e) return;
 
     document.getElementById('viewEventName').textContent = e.name;
     
-    // Fecha y hora
     var dateTimeStr = formatDate(e.event_date);
     if (e.start_time) {
         dateTimeStr += ' a las ' + formatTime(e.start_time);
@@ -131,13 +167,11 @@ async function viewEvent(id) {
     }
     document.getElementById('viewEventDate').textContent = dateTimeStr;
     
-    // Lugar
     var venueStr = e.venue || 'Sin lugar';
     if (e.city) venueStr += ', ' + e.city;
     if (e.address) venueStr += '<br><small style="color:var(--text-tertiary);">' + e.address + '</small>';
     document.getElementById('viewEventVenue').innerHTML = venueStr;
     
-    // Google Maps
     var mapsEl = document.getElementById('viewEventMaps');
     if (e.google_maps_url) {
         mapsEl.innerHTML = '<a href="' + e.google_maps_url + '" target="_blank" class="btn btn-ghost btn-sm">🗺️ Ver en Google Maps</a>';
@@ -146,16 +180,10 @@ async function viewEvent(id) {
         mapsEl.style.display = 'none';
     }
     
-    // Uniforme
     document.getElementById('viewEventUniform').textContent = e.uniform || 'No especificado';
-    
-    // Estado
     document.getElementById('viewEventStatus').innerHTML = getStatusBadge(e.status);
-    
-    // Notas
     document.getElementById('viewEventNotes').innerHTML = e.notes ? nl2br(e.notes) : '<em>Sin notas</em>';
     
-    // Setlist
     var setlistHtml = 'Sin set list asignado';
     if (e.setlist_id) {
         var setlist = allSetlists.find(function(s) { return s.id === e.setlist_id; });
@@ -188,7 +216,6 @@ function openEventModal(eventData) {
     document.getElementById('eventStatus').value = eventData ? eventData.status : 'tentative';
     document.getElementById('eventNotes').value = eventData ? (eventData.notes || '') : '';
     
-    // Setlists
     var setlistSelect = document.getElementById('eventSetlist');
     setlistSelect.innerHTML = '<option value="">Sin set list</option>' +
         allSetlists.map(function(s) {
@@ -203,6 +230,7 @@ function closeEventModal() {
 }
 
 function editEvent(id) {
+    event.stopPropagation();
     var e = allEvents.find(function(ev) { return ev.id === id; });
     if (e) openEventModal(e);
 }
@@ -251,6 +279,7 @@ async function saveEvent() {
 }
 
 async function deleteEvent(id) {
+    event.stopPropagation();
     if (confirm('¿Eliminar este evento?')) {
         try {
             await apiDelete('/events/' + id);
