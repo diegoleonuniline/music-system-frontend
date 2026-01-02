@@ -185,6 +185,18 @@ async function uploadToCloudinary(file, onProgress) {
         xhr.send(formData);
     });
 }
+async function apiPatch(url, data) {
+    const response = await fetch(API_URL + url, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Error en PATCH');
+    return response.json();
+}
 
 // ============ OneSignal Notifications ============
 async function initOneSignal() {
