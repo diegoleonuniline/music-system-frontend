@@ -195,7 +195,6 @@ async function initOneSignal() {
                 await OneSignal.Notifications.requestPermission();
             }
             
-            // Registrar usuario con su ID
             const user = getUser();
             if (user.id) {
                 await OneSignal.login(user.id.toString());
@@ -209,12 +208,6 @@ async function initOneSignal() {
             console.log('OneSignal init error:', e);
         }
     }
-}
-
-async function sendPushNotification(title, message, userIds = []) {
-    // Las notificaciones se envían desde el backend
-    // Esta función es para referencia
-    console.log('Push notification:', { title, message, userIds });
 }
 
 // ============ Toast ============
@@ -257,19 +250,18 @@ function setupUserInfo() {
                           user.role === 'group_admin' ? 'Administrador' : 'Músico';
     }
 
-    // Init OneSignal después de login
     initOneSignal();
 }
 
 // ============ Mobile Menu ============
 function toggleMobileMenu() {
-    document.querySelector('.sidebar').classList.toggle('open');
-    document.querySelector('.sidebar-overlay').classList.toggle('active');
+    document.querySelector('.sidebar')?.classList.toggle('open');
+    document.querySelector('.sidebar-overlay')?.classList.toggle('active');
 }
 
 function closeMobileMenu() {
-    document.querySelector('.sidebar').classList.remove('open');
-    document.querySelector('.sidebar-overlay').classList.remove('active');
+    document.querySelector('.sidebar')?.classList.remove('open');
+    document.querySelector('.sidebar-overlay')?.classList.remove('active');
 }
 
 // ============ Format Helpers ============
@@ -288,6 +280,13 @@ function formatDateTime(dateStr) {
     });
 }
 
+function formatDuration(seconds) {
+    if (!seconds) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 // ============ Text with line breaks ============
 function formatTextWithBreaks(text) {
     if (!text) return '';
@@ -297,6 +296,35 @@ function formatTextWithBreaks(text) {
 function nl2br(str) {
     if (!str) return '';
     return str.replace(/(?:\r\n|\r|\n)/g, '<br>');
+}
+
+// ============ Cache Management ============
+function clearAppCache() {
+    // Limpiar caches de Service Worker
+    if ('caches' in window) {
+        caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+        });
+    }
+    
+    // Limpiar IndexedDB de OneSignal
+    if (indexedDB && indexedDB.databases) {
+        indexedDB.databases().then(dbs => {
+            dbs.forEach(db => {
+                if (db.name && db.name.includes('OneSignal')) {
+                    indexedDB.deleteDatabase(db.name);
+                }
+            });
+        }).catch(() => {});
+    }
+    
+    showToast('Cache limpiado, recargando...');
+    setTimeout(() => window.location.reload(true), 500);
+}
+
+function forceReload() {
+    const url = window.location.href.split('?')[0];
+    window.location.href = `${url}?v=${Date.now()}`;
 }
 
 // CSS Animation
