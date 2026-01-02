@@ -351,18 +351,7 @@ async function toggleFavorite(id) {
     if (!song) return;
     
     try {
-        await apiPut('/songs/' + id, {
-            name: song.name,
-            artist: song.artist,
-            musical_key: song.musical_key,
-            bpm: song.bpm,
-            time_signature: song.time_signature,
-            duration_seconds: song.duration_seconds,
-            video_url: song.video_url,
-            audio_url: song.audio_url,
-            lyrics: song.lyrics,
-            category_id: song.category_id,
-            genre_id: song.genre_id,
+        await apiPatch('/songs/' + id + '/favorite', {
             is_favorite: song.is_favorite ? 0 : 1
         });
         await loadSongs();
