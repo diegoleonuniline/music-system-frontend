@@ -7,16 +7,22 @@ let currentRehearsal = null;
 
 async function loadData() {
     try {
-        [allSongs, rehearsals] = await Promise.all([
-            apiGet('/songs') || [],
-            apiGet('/rehearsals').catch(() => [])
+        const [songsRes, rehearsalsRes] = await Promise.all([
+            apiGet('/songs'),
+            apiGet('/rehearsals')
         ]);
+        
+        allSongs = Array.isArray(songsRes) ? songsRes : (songsRes?.data || []);
+        rehearsals = Array.isArray(rehearsalsRes) ? rehearsalsRes : (rehearsalsRes?.data || []);
+        
+        console.log('Songs:', allSongs);
+        console.log('Rehearsals:', rehearsals);
+        
         renderRehearsals();
         updateStats();
     } catch (error) {
         console.error('Error:', error);
-        // Fallback a localStorage si el endpoint no existe
-        rehearsals = JSON.parse(localStorage.getItem('rehearsals') || '[]');
+        rehearsals = [];
         renderRehearsals();
         updateStats();
     }
@@ -29,16 +35,10 @@ async function saveRehearsal(data) {
         } else {
             await apiPost('/rehearsals', data);
         }
+        showToast('Guardado');
     } catch (e) {
-        // Fallback localStorage
-        if (data.id) {
-            const idx = rehearsals.findIndex(r => r.id === data.id);
-            if (idx >= 0) rehearsals[idx] = data;
-        } else {
-            data.id = Date.now();
-            rehearsals.push(data);
-        }
-        localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
+        console.error('Error guardando:', e);
+        showToast('Error al guardar');
     }
     loadData();
 }
@@ -46,9 +46,9 @@ async function saveRehearsal(data) {
 async function deleteRehearsal(id) {
     try {
         await apiDelete(`/rehearsals/${id}`);
+        showToast('Eliminado');
     } catch (e) {
-        rehearsals = rehearsals.filter(r => r.id !== id);
-        localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
+        console.error('Error eliminando:', e);
     }
     loadData();
 }
@@ -56,19 +56,19 @@ async function deleteRehearsal(id) {
 function updateStats() {
     const total = rehearsals.length;
     const pending = rehearsals.filter(r => r.status === 'pending').length;
-    const learning = rehearsals.filter(r => r.status === 'learning').length;
+    const inProgress = rehearsals.filter(r => r.status === 'in_progress').length;
     const ready = rehearsals.filter(r => r.status === 'ready').length;
     
     document.getElementById('statTotal').textContent = total;
     document.getElementById('statPending').textContent = pending;
-    document.getElementById('statLearning').textContent = learning;
+    document.getElementById('statLearning').textContent = inProgress;
     document.getElementById('statReady').textContent = ready;
 }
 
 function renderRehearsals() {
     const container = document.getElementById('rehearsalsList');
 
-    if (!rehearsals.length) {
+    if (!rehearsals || !rehearsals.length) {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="icon">🎸</div>
@@ -85,12 +85,22 @@ function renderRehearsals() {
     });
 
     container.innerHTML = sorted.map(r => {
-        const song = allSongs.find(s => s.id === r.song_id);
+        const songId = r.song_id || r.songId;
+        const song = allSongs.find(s => s.id === songId);
         if (!song) return '';
         
-        const daysLeft = r.target_date ? getDaysUntil(r.target_date) : null;
+        const targetDate = r.target_date || r.targetDate;
+        const daysLeft = targetDate ? getDaysUntil(targetDate) : null;
         const isOverdue = daysLeft !== null && daysLeft < 0;
         const isUrgent = daysLeft !== null && daysLeft <= 3 && daysLeft >= 0;
+        
+        let daysText = '';
+        if (daysLeft !== null && !isNaN(daysLeft)) {
+            if (isOverdue) daysText = `Vencida (${Math.abs(daysLeft)} días)`;
+            else if (daysLeft === 0) daysText = 'Hoy';
+            else if (daysLeft === 1) daysText = 'Mañana';
+            else daysText = `${daysLeft} días`;
+        }
         
         return `
             <div class="song-item" style="flex-wrap: wrap; gap: 8px;">
@@ -100,9 +110,9 @@ function renderRehearsals() {
                 <div class="song-info" style="flex: 1; min-width: 150px;">
                     <h4>${song.name}</h4>
                     <p>${song.artist || 'Sin artista'}${song.musical_key ? ' · ' + song.musical_key : ''}</p>
-                    ${r.target_date ? `
+                    ${daysText ? `
                         <small style="color: ${isOverdue ? 'var(--danger)' : isUrgent ? 'var(--warning)' : 'var(--text-tertiary)'};">
-                            📅 ${isOverdue ? 'Vencida' : daysLeft === 0 ? 'Hoy' : daysLeft + ' días'}
+                            📅 ${daysText}
                         </small>
                     ` : ''}
                     ${r.notes ? `<small style="color: var(--text-tertiary); display: block;">📝 ${r.notes.substring(0, 30)}${r.notes.length > 30 ? '...' : ''}</small>` : ''}
@@ -111,7 +121,7 @@ function renderRehearsals() {
                     ${song.video_url ? `<a href="${song.video_url}" target="_blank" class="btn btn-ghost btn-sm" title="Ver video">🎬</a>` : ''}
                     <select onchange="quickUpdateStatus(${r.id}, this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; background: var(--bg-secondary);">
                         <option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-                        <option value="learning" ${r.status === 'learning' ? 'selected' : ''}>Aprendiendo</option>
+                        <option value="in_progress" ${r.status === 'in_progress' ? 'selected' : ''}>Aprendiendo</option>
                         <option value="ready" ${r.status === 'ready' ? 'selected' : ''}>Lista ✓</option>
                     </select>
                     <button class="btn btn-ghost btn-sm" onclick="openEditModal(${r.id})" title="Editar">✏️</button>
@@ -123,7 +133,11 @@ function renderRehearsals() {
 }
 
 function getDaysUntil(dateStr) {
-    const target = new Date(dateStr + 'T00:00:00');
+    if (!dateStr) return null;
+    // Manejar formato YYYY-MM-DD o ISO
+    const dateOnly = dateStr.split('T')[0];
+    const [year, month, day] = dateOnly.split('-').map(Number);
+    const target = new Date(year, month - 1, day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
@@ -139,16 +153,13 @@ function getPriorityColor(priority) {
 async function quickUpdateStatus(id, status) {
     const item = rehearsals.find(r => r.id === id);
     if (item) {
-        item.status = status;
-        await saveRehearsal(item);
-        showToast(status === 'ready' ? '¡Canción lista!' : 'Estado actualizado');
+        await saveRehearsal({ ...item, status });
     }
 }
 
 function confirmRemove(id) {
     if (confirm('¿Quitar del repertorio de ensayo?')) {
         deleteRehearsal(id);
-        showToast('Canción quitada');
     }
 }
 
@@ -165,7 +176,7 @@ function closeAddModal() {
 
 function filterAvailableSongs() {
     const search = document.getElementById('searchSongInput').value.toLowerCase();
-    const rehearsalSongIds = rehearsals.map(r => r.song_id);
+    const rehearsalSongIds = rehearsals.map(r => r.song_id || r.songId);
 
     const available = allSongs.filter(s =>
         !rehearsalSongIds.includes(s.id) &&
@@ -189,12 +200,11 @@ function selectSongToAdd(songId) {
     const song = allSongs.find(s => s.id === songId);
     closeAddModal();
     
-    // Abrir modal de edición con la canción seleccionada
     currentRehearsal = {
         song_id: songId,
         priority: 'medium',
         status: 'pending',
-        target_date: '',
+        target_date: null,
         notes: ''
     };
     
@@ -218,17 +228,23 @@ function openEditModal(id) {
     if (!r) return;
     
     currentRehearsal = { ...r };
-    const song = allSongs.find(s => s.id === r.song_id);
+    const songId = r.song_id || r.songId;
+    const song = allSongs.find(s => s.id === songId);
     
     document.getElementById('editModalTitle').textContent = 'Editar Canción';
     document.getElementById('editSongName').textContent = song?.name || 'Canción';
     document.getElementById('editSongArtist').textContent = song?.artist || 'Sin artista';
     document.getElementById('editVideoBtn').style.display = song?.video_url ? 'inline-flex' : 'none';
-    document.getElementById('editVideoBtn').onclick = () => window.open(song.video_url, '_blank');
+    if (song?.video_url) {
+        document.getElementById('editVideoBtn').onclick = () => window.open(song.video_url, '_blank');
+    }
     
     document.getElementById('editPriority').value = r.priority || 'medium';
     document.getElementById('editStatus').value = r.status || 'pending';
-    document.getElementById('editTargetDate').value = r.target_date || '';
+    
+    // Formatear fecha para input date
+    const targetDate = r.target_date || r.targetDate;
+    document.getElementById('editTargetDate').value = targetDate ? targetDate.split('T')[0] : '';
     document.getElementById('editNotes').value = r.notes || '';
     
     document.getElementById('editModal').classList.add('active');
@@ -242,14 +258,17 @@ function closeEditModal() {
 async function saveEdit() {
     if (!currentRehearsal) return;
     
+    const targetDate = document.getElementById('editTargetDate').value;
+    
     currentRehearsal.priority = document.getElementById('editPriority').value;
     currentRehearsal.status = document.getElementById('editStatus').value;
-    currentRehearsal.target_date = document.getElementById('editTargetDate').value || null;
-    currentRehearsal.notes = document.getElementById('editNotes').value.trim();
+    currentRehearsal.target_date = targetDate || null;
+    currentRehearsal.notes = document.getElementById('editNotes').value.trim() || null;
+    
+    console.log('Guardando:', currentRehearsal);
     
     await saveRehearsal(currentRehearsal);
     closeEditModal();
-    showToast('Guardado');
 }
 
 loadData();

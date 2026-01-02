@@ -65,11 +65,25 @@ async function loadData() {
 
 async function loadSuperAdminData() {
     try {
-        [groups, plans, allUsers] = await Promise.all([
+        const [groupsRes, plansRes, usersRes] = await Promise.all([
             apiGet('/groups'),
             apiGet('/plans'),
             apiGet('/users/all').catch(() => apiGet('/users'))
         ]);
+        
+        console.log('=== DEBUG API RESPONSES ===');
+        console.log('Groups response:', groupsRes);
+        console.log('Plans response:', plansRes);
+        console.log('Users response:', usersRes);
+        
+        // Manejar si viene como objeto con propiedad o como array directo
+        groups = Array.isArray(groupsRes) ? groupsRes : (groupsRes?.groups || groupsRes?.data || []);
+        plans = Array.isArray(plansRes) ? plansRes : (plansRes?.plans || plansRes?.data || []);
+        allUsers = Array.isArray(usersRes) ? usersRes : (usersRes?.users || usersRes?.data || []);
+        
+        console.log('Groups parsed:', groups);
+        console.log('Plans parsed:', plans);
+        console.log('Users parsed:', allUsers);
         
         renderGroups();
         renderPlans();
@@ -300,23 +314,30 @@ function populateGroupSelects() {
 
 function renderGroups() {
     const container = document.getElementById('groupsList');
+    console.log('renderGroups - groups:', groups);
     
-    if (!groups?.length) {
+    if (!groups || !groups.length) {
         container.innerHTML = '<div class="empty-state"><p>Sin grupos musicales</p></div>';
         return;
     }
     
     container.innerHTML = groups.map(g => {
-        const plan = plans.find(p => p.id === g.plan_id);
-        const admin = allUsers.find(u => u.id === g.admin_user_id);
+        // Manejar diferentes nombres de campos
+        const planId = g.plan_id || g.planId;
+        const adminId = g.admin_user_id || g.adminUserId || g.admin_id;
+        const isActive = g.is_active !== undefined ? g.is_active : (g.isActive !== undefined ? g.isActive : true);
+        
+        const plan = plans.find(p => p.id === planId);
+        const admin = allUsers.find(u => u.id === adminId);
+        
         return `
         <div class="song-item">
             <div class="song-thumb">🏢</div>
             <div class="song-info">
                 <h4>${g.name}</h4>
-                <p>${plan ? plan.name : 'Sin plan'} · ${admin ? `Admin: ${admin.first_name}` : 'Sin admin'}</p>
+                <p>${plan ? plan.name : 'Sin plan'} · ${admin ? `Admin: ${admin.first_name || admin.email}` : 'Sin admin'}</p>
             </div>
-            <span class="badge ${g.is_active ? 'badge-success' : 'badge-danger'}">${g.is_active ? 'Activo' : 'Inactivo'}</span>
+            <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">${isActive ? 'Activo' : 'Inactivo'}</span>
             <div class="song-actions">
                 <button class="btn btn-ghost btn-sm" onclick="editGroup(${g.id})">✏️</button>
                 <button class="btn btn-ghost btn-sm" onclick="deleteGroup(${g.id})">🗑️</button>
@@ -392,25 +413,29 @@ async function deleteGroup(id) {
 // ========== SUPER ADMIN: PLANS ==========
 function renderPlans() {
     const container = document.getElementById('plansList');
+    console.log('renderPlans - plans:', plans);
     
-    if (!plans?.length) {
+    if (!plans || !plans.length) {
         container.innerHTML = '<div class="empty-state"><p>Sin planes</p></div>';
         return;
     }
     
-    container.innerHTML = plans.map(p => `
+    container.innerHTML = plans.map(p => {
+        const maxUsers = p.max_users || p.maxUsers || '∞';
+        const maxSongs = p.max_songs || p.maxSongs || '∞';
+        return `
         <div class="song-item">
             <div class="song-thumb">💳</div>
             <div class="song-info">
                 <h4>${p.name}</h4>
-                <p>$${p.price || 0} · ${p.max_users || '∞'} usuarios · ${p.max_songs || '∞'} canciones</p>
+                <p>$${p.price || 0} · ${maxUsers} usuarios · ${maxSongs} canciones</p>
             </div>
             <div class="song-actions">
                 <button class="btn btn-ghost btn-sm" onclick="editPlan(${p.id})">✏️</button>
                 <button class="btn btn-ghost btn-sm" onclick="deletePlan(${p.id})">🗑️</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function openPlanModal(plan = null) {
