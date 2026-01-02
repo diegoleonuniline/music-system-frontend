@@ -383,6 +383,8 @@ function renderStageMode() {
                 '<div class="stage-song-badges">' +
                     (s.musical_key ? '<span class="stage-badge">' + s.musical_key + '</span>' : '') +
                     (s.bpm ? '<span class="stage-badge">' + s.bpm + ' BPM</span>' : '') +
+                    (s.time_signature ? '<span class="stage-badge">' + s.time_signature + '</span>' : '') +
+                    '<span class="stage-badge">⏱ ' + formatDuration(s.duration_seconds) + '</span>' +
                 '</div>' +
             '</div>' +
             '<div class="stage-controls">' +
