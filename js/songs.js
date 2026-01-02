@@ -1,4 +1,24 @@
-checkAuth();
+async function toggleFavorite(id) {
+    var song = allSongs.find(function(s) { return s.id === id; });
+    if (!song) return;
+    
+    var newValue = song.is_favorite ? 0 : 1;
+    console.log('Song ID:', id);
+    console.log('Current is_favorite:', song.is_favorite);
+    console.log('Sending new value:', newValue);
+    
+    try {
+        var result = await apiPatch('/songs/' + id + '/favorite', {
+            is_favorite: newValue
+        });
+        console.log('Response:', result);
+        await loadSongs();
+        showToast(song.is_favorite ? 'Quitado de favoritos' : 'Agregado a favoritos');
+    } catch (e) {
+        console.error('Error:', e);
+        showToast('Error al actualizar', 'error');
+    }
+}checkAuth();
 setupUserInfo();
 
 let allSongs = [];
@@ -350,10 +370,16 @@ async function toggleFavorite(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
     
+    var newValue = song.is_favorite ? 0 : 1;
+    console.log('Song ID:', id);
+    console.log('Current is_favorite:', song.is_favorite);
+    console.log('Sending new value:', newValue);
+    
     try {
-        await apiPatch('/songs/' + id + '/favorite', {
-            is_favorite: song.is_favorite ? 0 : 1
+        var result = await apiPatch('/songs/' + id + '/favorite', {
+            is_favorite: newValue
         });
+        console.log('Response:', result);
         await loadSongs();
         showToast(song.is_favorite ? 'Quitado de favoritos' : 'Agregado a favoritos');
     } catch (e) {
