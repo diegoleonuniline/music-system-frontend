@@ -1074,8 +1074,21 @@ tr:hover td {
     font-size: 18px;
     line-height: 1.8;
     white-space: pre-wrap;
-    font-family: inherit;
+    font-family: 'Courier New', Courier, monospace;
     margin: 0;
+}
+
+/* ========== LYRICS MONOSPACE ========== */
+#viewSongLyrics,
+#lyricsContent,
+#viewResourceContent pre,
+.lyrics-content,
+.stage-lyrics,
+.stage-lyrics pre {
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 15px;
+    line-height: 1.9;
+    letter-spacing: 0.3px;
 }
 
 /* Stage Mode Light Theme */
