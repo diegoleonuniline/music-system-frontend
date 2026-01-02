@@ -346,11 +346,64 @@ function deleteCurrentSong() {
     deleteSong(parseInt(id));
 }
 
+// REEMPLAZA la función toggleFavorite
 async function toggleFavorite(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
-    await apiPut('/songs/' + id, { is_favorite: song.is_favorite ? 0 : 1 });
+    
+    // Enviar TODOS los datos para no perderlos
+    await apiPut('/songs/' + id, {
+        name: song.name,
+        artist: song.artist,
+        musical_key: song.musical_key,
+        bpm: song.bpm,
+        time_signature: song.time_signature,
+        duration_seconds: song.duration_seconds,
+        video_url: song.video_url,
+        audio_url: song.audio_url,
+        lyrics: song.lyrics,
+        category_id: song.category_id,
+        genre_id: song.genre_id,
+        is_favorite: song.is_favorite ? 0 : 1
+    });
     loadSongs();
+}
+
+// AGREGA esta función para copiar canción
+function copyCurrentSong() {
+    var id = document.getElementById('viewSongModal').dataset.songId;
+    var song = allSongs.find(function(s) { return s.id == id; });
+    if (!song) return;
+    
+    closeViewSongModal();
+    
+    // Abrir modal con datos parciales
+    document.getElementById('songModalTitle').textContent = 'Nueva Canción (Copia)';
+    document.getElementById('songId').value = '';
+    document.getElementById('songName').value = '';
+    document.getElementById('songArtist').value = song.artist || '';
+    document.getElementById('songKey').value = song.musical_key || '';
+    document.getElementById('songBpm').value = song.bpm || '';
+    document.getElementById('songTimeSignature').value = song.time_signature || '4/4';
+    document.getElementById('songDuration').value = '';
+    document.getElementById('songVideoUrl').value = '';
+    document.getElementById('songAudioUrl').value = '';
+    document.getElementById('songLyrics').value = '';
+    document.getElementById('songFavorite').checked = false;
+
+    var catSelect = document.getElementById('songCategory');
+    catSelect.innerHTML = '<option value="">Sin categoría</option>' +
+        allCategories.map(function(c) { return '<option value="' + c.id + '"' + (song.category_id == c.id ? ' selected' : '') + '>' + c.name + '</option>'; }).join('') +
+        '<option value="__new__">+ Crear nueva...</option>';
+    
+    var genSelect = document.getElementById('songGenre');
+    genSelect.innerHTML = '<option value="">Sin género</option>' +
+        allGenres.map(function(g) { return '<option value="' + g.id + '"' + (song.genre_id == g.id ? ' selected' : '') + '>' + g.name + '</option>'; }).join('') +
+        '<option value="__new__">+ Crear nuevo...</option>';
+
+    document.getElementById('newCategoryGroup').style.display = 'none';
+    document.getElementById('newGenreGroup').style.display = 'none';
+    document.getElementById('songModal').classList.add('active');
 }
 
 // Recursos
