@@ -699,25 +699,17 @@ body {
 /* Tables */
 .table-container {
     overflow-x: auto;
-    overflow-y: visible;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    overflow: visible;
 }
 
 th, td {
     padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid var(--border);
-}
-
-/* Última columna (acciones) - permite overflow */
-td:last-child {
-    overflow: visible;
-    position: relative;
 }
 
 th {
@@ -2761,44 +2753,45 @@ body.offline .main-content {
 
 /* ============ ACTIONS DROPDOWN MENU ============ */
 .actions-dropdown {
+    position: static;
+}
+
+.actions-cell {
     position: relative;
-    display: inline-block;
+    overflow: visible;
 }
 
 .actions-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 4px);
+    position: fixed;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    min-width: 220px;
+    min-width: 200px;
     z-index: 9999;
     display: none;
-    overflow: hidden;
 }
 
 .actions-menu.show {
     display: block;
-    animation: menuFadeIn 0.2s ease;
+    animation: menuFadeIn 0.15s ease;
 }
 
 @keyframes menuFadeIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .actions-menu button {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    padding: 14px 18px;
+    padding: 12px 16px;
     border: none;
     background: transparent;
     text-align: left;
-    font-size: 15px;
+    font-size: 14px;
     color: var(--text);
     cursor: pointer;
     transition: background 0.15s;
@@ -2819,53 +2812,20 @@ body.offline .main-content {
 .actions-divider {
     height: 1px;
     background: var(--border);
-    margin: 6px 0;
-}
-
-.actions-cell {
-    white-space: nowrap;
-    position: relative;
-}
-
-/* Overlay para cerrar en móvil */
-.actions-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 9998;
-    display: none;
-}
-
-.actions-overlay.show {
-    display: block;
+    margin: 4px 0;
 }
 
 /* Mobile: Bottom Sheet */
 @media (max-width: 768px) {
     .actions-menu {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        bottom: 80px;
-        top: auto;
+        left: 12px !important;
+        right: 12px !important;
+        bottom: 80px !important;
+        top: auto !important;
         border-radius: 16px;
         min-width: unset;
         max-height: 60vh;
         overflow-y: auto;
-    }
-    
-    .actions-menu.show {
-        animation: slideUpMenu 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    
-    @keyframes slideUpMenu {
-        from { opacity: 0; transform: translateY(100px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .actions-menu button {
-        padding: 16px 20px;
-        font-size: 16px;
     }
     
     .actions-menu::before {
@@ -2875,6 +2835,19 @@ body.offline .main-content {
         height: 4px;
         background: var(--border);
         border-radius: 2px;
-        margin: 12px auto 8px;
+        margin: 10px auto 6px;
     }
+    
+    .actions-menu button {
+        padding: 16px 20px;
+        font-size: 16px;
+    }
+}
+
+/* Overlay para cerrar */
+.actions-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 9998;
 }
