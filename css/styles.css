@@ -2247,3 +2247,88 @@ body.offline .main-content {
     font-size: 13px;
     color: var(--text-secondary);
 }
+
+/* ============ ACTIONS DROPDOWN MENU ============ */
+.actions-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.actions-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+
+.actions-menu.show {
+    display: block;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.actions-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.actions-menu button:hover {
+    background: var(--bg-secondary);
+}
+
+.actions-menu button.danger {
+    color: var(--danger);
+}
+
+.actions-menu button.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.actions-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
+
+.actions-cell {
+    white-space: nowrap;
+}
+
+/* Mobile actions menu */
+@media (max-width: 768px) {
+    .actions-menu {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        bottom: 80px;
+        top: auto;
+        border-radius: var(--radius);
+        min-width: unset;
+    }
+    
+    .actions-menu button {
+        padding: 16px;
+        font-size: 16px;
+    }
+}

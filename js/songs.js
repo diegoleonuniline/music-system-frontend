@@ -130,13 +130,26 @@ function renderSongs() {
             }
             html += '<div class="table-container"><table><thead><tr><th>Canción</th><th>Artista</th><th>Tono</th><th>BPM</th><th>Duración</th><th>Acciones</th></tr></thead><tbody>' +
                 songs.map(function(s) {
-                    return '<tr onclick="viewSong(' + s.id + ')" style="cursor:pointer;"><td><strong>' + s.name + '</strong>' + (s.is_favorite ? ' ⭐' : '') + '</td>' +
-                    '<td>' + (s.artist || '-') + '</td><td>' + (s.musical_key || '-') + '</td><td>' + (s.bpm || '-') + '</td>' +
-                    '<td>' + formatDuration(s.duration_seconds) + '</td>' +
-                    '<td onclick="event.stopPropagation()">' +
+                    var songName = s.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    return '<tr style="cursor:pointer;"><td onclick="viewSong(' + s.id + ')"><strong>' + s.name + '</strong>' + (s.is_favorite ? ' ⭐' : '') + '</td>' +
+                    '<td onclick="viewSong(' + s.id + ')">' + (s.artist || '-') + '</td><td onclick="viewSong(' + s.id + ')">' + (s.musical_key || '-') + '</td><td onclick="viewSong(' + s.id + ')">' + (s.bpm || '-') + '</td>' +
+                    '<td onclick="viewSong(' + s.id + ')">' + formatDuration(s.duration_seconds) + '</td>' +
+                    '<td class="actions-cell">' +
                         '<button class="btn btn-ghost btn-sm" onclick="toggleFavorite(' + s.id + ')" title="Favorito">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
-                        '<button class="btn btn-ghost btn-sm" onclick="openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')" title="Recursos">📎</button>' +
-                        '<button class="btn-add-setlist" onclick="openAddToSetlistModal(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')" title="Agregar a Set List">📋+</button>' +
+                        '<div class="actions-dropdown">' +
+                            '<button class="btn btn-ghost btn-sm" onclick="toggleActionsMenu(event, ' + s.id + ')">⋮</button>' +
+                            '<div class="actions-menu" id="actions-menu-' + s.id + '">' +
+                                (s.lyrics ? '<button onclick="quickViewLyrics(' + s.id + ')">📝 Ver Letra</button>' : '') +
+                                '<button onclick="openSongResources(' + s.id + ',\'' + songName + '\')">📎 Recursos</button>' +
+                                '<button onclick="openAddToSetlistModal(' + s.id + ',\'' + songName + '\')">📋 Agregar a Set List</button>' +
+                                (s.video_url ? '<button onclick="window.open(\'' + s.video_url + '\', \'_blank\')">🎬 Ver Video</button>' : '') +
+                                (s.audio_url ? '<button onclick="window.open(\'' + s.audio_url + '\', \'_blank\')">🎧 Escuchar</button>' : '') +
+                                '<div class="actions-divider"></div>' +
+                                '<button onclick="editSong(' + s.id + ')">✏️ Editar</button>' +
+                                '<button onclick="copySong(' + s.id + ')">📄 Copiar</button>' +
+                                '<button onclick="deleteSong(' + s.id + ')" class="danger">🗑️ Eliminar</button>' +
+                            '</div>' +
+                        '</div>' +
                     '</td></tr>';
                 }).join('') + '</tbody></table></div>';
         });
@@ -149,10 +162,10 @@ function renderSongs() {
                 html += '<div class="group-header"><span>' + groupName + '</span><span class="count">' + songs.length + '</span></div>';
             }
             html += '<div class="songs-grid">' + songs.map(function(s) {
-                return '<div class="song-card" onclick="viewSong(' + s.id + ')">' +
-                    '<div class="song-card-thumb">🎵</div>' +
-                    '<div class="song-card-body">' +
-                        '<h4>' + s.name + '</h4>' +
+                var songName = s.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                return '<div class="song-card">' +
+                    '<div class="song-card-body" onclick="viewSong(' + s.id + ')">' +
+                        '<h4>' + s.name + (s.is_favorite ? ' ⭐' : '') + '</h4>' +
                         '<p>' + (s.artist || 'Sin artista') + '</p>' +
                         '<div class="song-card-meta">' +
                             (s.musical_key ? '<span class="badge badge-neutral">' + s.musical_key + '</span>' : '') +
@@ -161,9 +174,21 @@ function renderSongs() {
                         '</div>' +
                     '</div>' +
                     '<div class="song-card-actions">' +
-                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
-                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
-                        '<button class="btn-add-setlist" onclick="event.stopPropagation();openAddToSetlistModal(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📋+</button>' +
+                        '<button class="btn btn-icon btn-ghost" onclick="toggleFavorite(' + s.id + ')">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
+                        '<div class="actions-dropdown">' +
+                            '<button class="btn btn-icon btn-ghost" onclick="toggleActionsMenu(event, ' + s.id + ')">⋮</button>' +
+                            '<div class="actions-menu" id="actions-menu-card-' + s.id + '">' +
+                                (s.lyrics ? '<button onclick="quickViewLyrics(' + s.id + ')">📝 Ver Letra</button>' : '') +
+                                '<button onclick="openSongResources(' + s.id + ',\'' + songName + '\')">📎 Recursos</button>' +
+                                '<button onclick="openAddToSetlistModal(' + s.id + ',\'' + songName + '\')">📋 Agregar a Set List</button>' +
+                                (s.video_url ? '<button onclick="window.open(\'' + s.video_url + '\', \'_blank\')">🎬 Ver Video</button>' : '') +
+                                (s.audio_url ? '<button onclick="window.open(\'' + s.audio_url + '\', \'_blank\')">🎧 Escuchar</button>' : '') +
+                                '<div class="actions-divider"></div>' +
+                                '<button onclick="editSong(' + s.id + ')">✏️ Editar</button>' +
+                                '<button onclick="copySong(' + s.id + ')">📄 Copiar</button>' +
+                                '<button onclick="deleteSong(' + s.id + ')" class="danger">🗑️ Eliminar</button>' +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
                 '</div>';
             }).join('') + '</div>';
@@ -589,6 +614,89 @@ async function saveResource() {
 
 function nl2br(str) {
     return str ? str.replace(/\n/g, '<br>') : '';
+}
+
+// ========== ACTIONS MENU ==========
+function toggleActionsMenu(e, songId) {
+    e.stopPropagation();
+    
+    // Cerrar otros menús abiertos
+    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
+    
+    // Buscar el menú correspondiente
+    var menu = document.getElementById('actions-menu-' + songId) || document.getElementById('actions-menu-card-' + songId);
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// Cerrar menús al hacer clic afuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.actions-dropdown')) {
+        document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+            m.classList.remove('show');
+        });
+    }
+});
+
+function quickViewLyrics(id) {
+    var song = allSongs.find(function(s) { return s.id === id; });
+    if (!song || !song.lyrics) {
+        showToast('Sin letra disponible');
+        return;
+    }
+    
+    document.getElementById('quickLyricsTitle').textContent = song.name + ' - ' + (song.artist || 'Sin artista');
+    document.getElementById('quickLyricsContent').innerHTML = '<pre style="white-space:pre-wrap;font-family:Courier New,monospace;">' + song.lyrics + '</pre>';
+    document.getElementById('quickLyricsModal').classList.add('active');
+    
+    // Cerrar menú
+    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
+}
+
+function closeQuickLyricsModal() {
+    document.getElementById('quickLyricsModal').classList.remove('active');
+}
+
+function copySong(id) {
+    var song = allSongs.find(function(s) { return s.id === id; });
+    if (!song) return;
+    
+    // Cerrar menú
+    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
+    
+    document.getElementById('songModalTitle').textContent = 'Nueva Canción (Copia)';
+    document.getElementById('songId').value = '';
+    document.getElementById('songName').value = '';
+    document.getElementById('songArtist').value = song.artist || '';
+    document.getElementById('songKey').value = song.musical_key || '';
+    document.getElementById('songBpm').value = song.bpm || '';
+    document.getElementById('songTimeSignature').value = song.time_signature || '4/4';
+    document.getElementById('songDuration').value = '';
+    document.getElementById('songVideoUrl').value = '';
+    document.getElementById('songAudioUrl').value = '';
+    document.getElementById('songLyrics').value = '';
+    document.getElementById('songFavorite').checked = false;
+
+    var catSelect = document.getElementById('songCategory');
+    catSelect.innerHTML = '<option value="">Sin categoría</option>' +
+        allCategories.map(function(c) { return '<option value="' + c.id + '"' + (song.category_id == c.id ? ' selected' : '') + '>' + c.name + '</option>'; }).join('') +
+        '<option value="__new__">+ Crear nueva...</option>';
+    
+    var genSelect = document.getElementById('songGenre');
+    genSelect.innerHTML = '<option value="">Sin género</option>' +
+        allGenres.map(function(g) { return '<option value="' + g.id + '"' + (song.genre_id == g.id ? ' selected' : '') + '>' + g.name + '</option>'; }).join('') +
+        '<option value="__new__">+ Crear nuevo...</option>';
+
+    document.getElementById('newCategoryGroup').style.display = 'none';
+    document.getElementById('newGenreGroup').style.display = 'none';
+    document.getElementById('songModal').classList.add('active');
 }
 
 loadSongs();
