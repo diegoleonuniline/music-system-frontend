@@ -43,13 +43,25 @@
             </div>
 
             <div class="card">
-                <div class="search-filters">
-                    <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filterSongs()">
-                    <select id="filterCategory" onchange="filterSongs()"></select>
-                    <select id="filterGenre" onchange="filterSongs()"></select>
-                    <div class="view-toggle">
-                        <button class="active" onclick="setViewMode('cards')">Tarjetas</button>
-                        <button onclick="setViewMode('table')">Tabla</button>
+                <div class="card-body">
+                    <div class="search-filters">
+                        <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filterSongs()">
+                        <select id="filterCategory" onchange="filterSongs()"></select>
+                        <select id="filterGenre" onchange="filterSongs()"></select>
+                        <div class="view-toggle">
+                            <button class="active" onclick="setViewMode('cards')">Tarjetas</button>
+                            <button onclick="setViewMode('table')">Tabla</button>
+                        </div>
+                    </div>
+                    
+                    <div class="group-chips" style="margin-top: 12px;">
+                        <span style="font-size: 13px; color: var(--text-secondary); margin-right: 8px;">Agrupar:</span>
+                        <button class="filter-chip active" data-group="none" onclick="setGroupBy('none')">Ninguno</button>
+                        <button class="filter-chip" data-group="artist" onclick="setGroupBy('artist')">Artista</button>
+                        <button class="filter-chip" data-group="category" onclick="setGroupBy('category')">Categoría</button>
+                        <button class="filter-chip" data-group="genre" onclick="setGroupBy('genre')">Género</button>
+                        <button class="filter-chip" data-group="key" onclick="setGroupBy('key')">Tono</button>
+                        <button class="filter-chip" data-group="favorite" onclick="setGroupBy('favorite')">Favoritas</button>
                     </div>
                 </div>
                 <div id="songsContainer"><div class="loading">Cargando...</div></div>
