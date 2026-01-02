@@ -18,10 +18,7 @@
 
     <div class="app-container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <span class="logo">🐊</span>
-                <h2>Caimán</h2>
-            </div>
+            <div class="sidebar-header"><span class="logo">🐊</span><h2>Caimán</h2></div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html"><span class="icon">📊</span> Inicio</a>
                 <a href="songs.html"><span class="icon">🎵</span> Canciones</a>
@@ -33,10 +30,7 @@
             <div class="sidebar-footer">
                 <div class="user-profile">
                     <div class="user-avatar" id="userAvatar">U</div>
-                    <div class="user-info">
-                        <h4 id="userName">Usuario</h4>
-                        <span id="userRole">Rol</span>
-                    </div>
+                    <div class="user-info"><h4 id="userName">Usuario</h4><span id="userRole">Rol</span></div>
                 </div>
                 <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Cerrar Sesión</button>
             </div>
@@ -44,37 +38,12 @@
 
         <main class="main-content">
             <div class="page-header">
-                <h1>Canciones para Ensayar</h1>
-                <button class="btn btn-primary" onclick="openAddModal()">+ Agregar</button>
-            </div>
-
-            <!-- Stats -->
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--primary);" id="statTotal">0</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">Total</div>
-                </div>
-                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--danger);" id="statPending">0</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">Pendientes</div>
-                </div>
-                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--warning);" id="statLearning">0</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">Aprendiendo</div>
-                </div>
-                <div class="stat-card" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: 700; color: var(--success);" id="statReady">0</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">Listas</div>
-                </div>
+                <h1>Ensayos</h1>
+                <button class="btn btn-primary" onclick="openAddRehearsalModal()">+ Agregar</button>
             </div>
 
             <div class="card">
-                <div class="card-header">
-                    <h3>🎸 Repertorio para practicar</h3>
-                </div>
-                <div id="rehearsalsList">
-                    <div class="loading">Cargando...</div>
-                </div>
+                <div id="rehearsalsContainer"><div class="loading">Cargando...</div></div>
             </div>
         </main>
     </div>
@@ -87,71 +56,93 @@
         <a href="rehearsals.html" class="active"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Buscar/Agregar -->
-    <div class="modal-overlay" id="addModal">
+    <!-- Modal Ver Ensayo -->
+    <div class="modal-overlay" id="viewRehearsalModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Agregar canción para ensayar</h3>
-                <button class="modal-close" onclick="closeAddModal()">&times;</button>
+                <h3>🎸 Ensayo</h3>
+                <button class="modal-close" onclick="closeViewRehearsalModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <input type="text" id="searchSongInput" placeholder="Buscar canción..." onkeyup="filterAvailableSongs()">
+                <h2 id="viewRehearsalSong" style="margin-bottom: 4px;"></h2>
+                <p id="viewRehearsalArtist" style="color: var(--text-secondary); margin-bottom: 8px;"></p>
+                <p id="viewRehearsalDetails" style="color: var(--text-tertiary); font-size: 14px; margin-bottom: 16px;"></p>
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span class="badge badge-primary" id="viewRehearsalStatus">Estado</span>
+                    <span class="badge badge-neutral" id="viewRehearsalDate">Fecha meta</span>
                 </div>
-                <div id="availableSongs" style="max-height: 350px; overflow-y: auto;"></div>
+                
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                    <strong style="font-size: 14px;">Notas:</strong>
+                    <div id="viewRehearsalNotes" style="margin-top: 8px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="editCurrentRehearsal()">✏️ Editar</button>
+                <button class="btn btn-primary" onclick="markCurrentAsReady()">✓ Marcar lista</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Editar/Detalles -->
-    <div class="modal-overlay" id="editModal">
+    <!-- Modal Agregar a Ensayos -->
+    <div class="modal-overlay" id="addRehearsalModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="editModalTitle">Editar Canción</h3>
-                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+                <h3>Agregar a Ensayos</h3>
+                <button class="modal-close" onclick="closeAddRehearsalModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
-                    <div>
-                        <h4 id="editSongName" style="font-size: 16px;">Canción</h4>
-                        <p id="editSongArtist" style="color: var(--text-secondary); font-size: 13px;">Artista</p>
-                    </div>
-                    <button class="btn btn-secondary btn-sm" id="editVideoBtn" style="margin-left: auto;">🎬 Video</button>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Prioridad</label>
-                        <select id="editPriority">
-                            <option value="high">🔥 Alta</option>
-                            <option value="medium">⚡ Media</option>
-                            <option value="low">📌 Baja</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <select id="editStatus">
-                            <option value="pending">Pendiente</option>
-                            <option value="in_progress">Aprendiendo</option>
-                            <option value="ready">Lista ✓</option>
-                        </select>
-                    </div>
-                </div>
-                
                 <div class="form-group">
-                    <label>📅 Fecha Objetivo</label>
-                    <input type="date" id="editTargetDate">
-                    <small style="color: var(--text-tertiary);">¿Para cuándo necesitas tenerla lista?</small>
+                    <label>Canción *</label>
+                    <select id="addRehearsalSong" required></select>
                 </div>
-                
                 <div class="form-group">
-                    <label>📝 Notas</label>
-                    <textarea id="editNotes" rows="3" placeholder="Notas de práctica, secciones difíciles, etc..."></textarea>
+                    <label>Fecha meta (opcional)</label>
+                    <input type="date" id="addRehearsalDate">
+                </div>
+                <div class="form-group">
+                    <label>Notas (opcional)</label>
+                    <textarea id="addRehearsalNotes" rows="3" placeholder="Ej: Practicar intro, revisar puente..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeEditModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveEdit()">Guardar</button>
+                <button class="btn btn-ghost" onclick="closeAddRehearsalModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="addToRehearsals()">Agregar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Ensayo -->
+    <div class="modal-overlay" id="editRehearsalModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Editar Ensayo</h3>
+                <button class="modal-close" onclick="closeEditRehearsalModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editRehearsalId">
+                <p style="font-weight: 600; margin-bottom: 16px;" id="editRehearsalSongName"></p>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="editRehearsalStatus">
+                        <option value="pending">Pendiente</option>
+                        <option value="in_progress">En progreso</option>
+                        <option value="ready">Lista</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha meta</label>
+                    <input type="date" id="editRehearsalDate">
+                </div>
+                <div class="form-group">
+                    <label>Notas</label>
+                    <textarea id="editRehearsalNotes" rows="4" placeholder="Notas sobre el ensayo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeEditRehearsalModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveRehearsal()">Guardar</button>
             </div>
         </div>
     </div>
