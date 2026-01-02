@@ -10,15 +10,6 @@ var currentResourceSongId = null;
 var viewMode = 'table'; // DEFAULT: tabla
 var groupBy = 'none';
 
-// ========== ACTIONS MENU HELPER ==========
-function closeActionsMenu() {
-    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-    });
-    var overlay = document.querySelector('.actions-overlay');
-    if (overlay) overlay.remove();
-}
-
 async function loadSongs() {
     try {
         var results = await Promise.all([
@@ -215,7 +206,6 @@ function formatDuration(sec) {
 
 // ========== ADD TO SETLIST ==========
 function openAddToSetlistModal(songId, songName) {
-    closeActionsMenu();
     var modal = document.getElementById('addToSetlistModal');
     if (!modal) return;
     
@@ -291,7 +281,6 @@ function editCurrentSong() {
 }
 
 function editSong(id) {
-    closeActionsMenu();
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
     openSongModal(song);
@@ -416,7 +405,6 @@ async function saveSong() {
 }
 
 async function deleteSong(id) {
-    closeActionsMenu();
     if (confirm('¿Eliminar esta canción?')) {
         await apiDelete('/songs/' + id);
         closeViewSongModal();
@@ -483,7 +471,6 @@ function copyCurrentSong() {
 
 // ========== RESOURCES ==========
 async function openSongResources(songId, songName) {
-    closeActionsMenu();
     currentResourceSongId = songId;
     document.getElementById('resourcesSongName').textContent = songName;
     document.getElementById('resourcesModal').classList.add('active');
@@ -632,44 +619,16 @@ function nl2br(str) {
 // ========== ACTIONS MENU ==========
 function toggleActionsMenu(e, songId) {
     e.stopPropagation();
-    e.preventDefault();
     
     // Cerrar otros menús abiertos
-    closeActionsMenu();
+    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
     
     // Buscar el menú correspondiente
     var menu = document.getElementById('actions-menu-' + songId) || document.getElementById('actions-menu-card-' + songId);
-    if (!menu) return;
-    
-    // Agregar overlay
-    var overlay = document.createElement('div');
-    overlay.className = 'actions-overlay';
-    overlay.onclick = closeActionsMenu;
-    document.body.appendChild(overlay);
-    
-    // Mostrar menú
-    menu.classList.add('show');
-    
-    // Posicionar en desktop
-    if (window.innerWidth > 768) {
-        var btn = e.currentTarget;
-        var rect = btn.getBoundingClientRect();
-        var menuHeight = menu.offsetHeight;
-        var viewportHeight = window.innerHeight;
-        
-        // Posicionar a la derecha del botón
-        menu.style.right = (window.innerWidth - rect.right) + 'px';
-        menu.style.left = 'auto';
-        menu.style.width = '220px';
-        
-        // Si hay espacio arriba, mostrar arriba; si no, abajo
-        if (rect.top > menuHeight + 10) {
-            menu.style.top = 'auto';
-            menu.style.bottom = (viewportHeight - rect.top + 8) + 'px';
-        } else {
-            menu.style.top = (rect.bottom + 8) + 'px';
-            menu.style.bottom = 'auto';
-        }
+    if (menu) {
+        menu.classList.toggle('show');
     }
 }
 
@@ -679,24 +638,10 @@ document.addEventListener('click', function(e) {
         document.querySelectorAll('.actions-menu.show').forEach(function(m) {
             m.classList.remove('show');
         });
-        var overlay = document.querySelector('.actions-overlay');
-        if (overlay) overlay.remove();
-    }
-});
-
-// Cerrar menú con tecla Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.actions-menu.show').forEach(function(m) {
-            m.classList.remove('show');
-        });
-        var overlay = document.querySelector('.actions-overlay');
-        if (overlay) overlay.remove();
     }
 });
 
 function quickViewLyrics(id) {
-    closeActionsMenu();
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song || !song.lyrics) {
         showToast('Sin letra disponible');
@@ -706,6 +651,11 @@ function quickViewLyrics(id) {
     document.getElementById('quickLyricsTitle').textContent = song.name + ' - ' + (song.artist || 'Sin artista');
     document.getElementById('quickLyricsContent').innerHTML = '<pre style="white-space:pre-wrap;font-family:Courier New,monospace;">' + song.lyrics + '</pre>';
     document.getElementById('quickLyricsModal').classList.add('active');
+    
+    // Cerrar menú
+    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
 }
 
 function closeQuickLyricsModal() {
@@ -713,9 +663,13 @@ function closeQuickLyricsModal() {
 }
 
 function copySong(id) {
-    closeActionsMenu();
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
+    
+    // Cerrar menú
+    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
     
     document.getElementById('songModalTitle').textContent = 'Nueva Canción (Copia)';
     document.getElementById('songId').value = '';
