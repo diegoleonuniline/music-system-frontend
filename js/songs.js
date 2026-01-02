@@ -7,6 +7,7 @@ let allGenres = [];
 let currentSongResources = [];
 let currentResourceSongId = null;
 let viewMode = 'cards';
+let groupBy = 'none';
 
 async function loadSongs() {
     try {
@@ -47,22 +48,68 @@ function setViewMode(mode) {
     renderSongs();
 }
 
+function setGroupBy(value) {
+    groupBy = value;
+    document.querySelectorAll('.group-chips .filter-chip').forEach(function(chip) {
+        chip.classList.toggle('active', chip.dataset.group === value);
+    });
+    renderSongs();
+}
+
 function filterSongs() {
     renderSongs();
 }
 
-function renderSongs() {
+function getFiltered() {
     var search = (document.getElementById('searchInput')?.value || '').toLowerCase();
     var catId = document.getElementById('filterCategory')?.value || '';
     var genId = document.getElementById('filterGenre')?.value || '';
 
-    var filtered = allSongs.filter(function(s) {
+    return allSongs.filter(function(s) {
         var matchSearch = s.name.toLowerCase().indexOf(search) !== -1 || (s.artist || '').toLowerCase().indexOf(search) !== -1;
         var matchCat = !catId || s.category_id == catId;
         var matchGen = !genId || s.genre_id == genId;
         return matchSearch && matchCat && matchGen;
     });
+}
 
+function groupSongs(songs) {
+    if (groupBy === 'none') return { '': songs };
+    
+    var groups = {};
+    songs.forEach(function(s) {
+        var key = '';
+        if (groupBy === 'artist') {
+            key = s.artist || 'Sin artista';
+        } else if (groupBy === 'category') {
+            var cat = allCategories.find(function(c) { return c.id === s.category_id; });
+            key = cat ? cat.name : 'Sin categoría';
+        } else if (groupBy === 'genre') {
+            var gen = allGenres.find(function(g) { return g.id === s.genre_id; });
+            key = gen ? gen.name : 'Sin género';
+        } else if (groupBy === 'key') {
+            key = s.musical_key || 'Sin tono';
+        } else if (groupBy === 'favorite') {
+            key = s.is_favorite ? '⭐ Favoritas' : 'Otras';
+        }
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(s);
+    });
+    
+    // Ordenar grupos alfabéticamente, pero favoritas primero
+    var sortedKeys = Object.keys(groups).sort(function(a, b) {
+        if (a.indexOf('⭐') === 0) return -1;
+        if (b.indexOf('⭐') === 0) return 1;
+        return a.localeCompare(b);
+    });
+    
+    var sorted = {};
+    sortedKeys.forEach(function(k) { sorted[k] = groups[k]; });
+    return sorted;
+}
+
+function renderSongs() {
+    var filtered = getFiltered();
     var container = document.getElementById('songsContainer');
 
     if (!filtered.length) {
@@ -70,24 +117,52 @@ function renderSongs() {
         return;
     }
 
+    var grouped = groupSongs(filtered);
+
     if (viewMode === 'table') {
-        container.innerHTML = '<div class="table-container"><table><thead><tr><th>Canción</th><th>Artista</th><th>Tono</th><th>BPM</th><th>Duración</th><th></th></tr></thead><tbody>' +
-            filtered.map(function(s) {
-                return '<tr onclick="viewSong(' + s.id + ')" style="cursor:pointer;"><td><strong>' + s.name + '</strong>' + (s.is_favorite ? ' ⭐' : '') + '</td>' +
-                '<td>' + (s.artist || '-') + '</td><td>' + (s.musical_key || '-') + '</td><td>' + (s.bpm || '-') + '</td>' +
-                '<td>' + formatDuration(s.duration_seconds) + '</td>' +
-                '<td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button></td></tr>';
-            }).join('') + '</tbody></table></div>';
+        var html = '';
+        Object.keys(grouped).forEach(function(groupName) {
+            var songs = grouped[groupName];
+            if (groupName && groupBy !== 'none') {
+                html += '<div class="group-header"><span>' + groupName + '</span><span class="count">' + songs.length + '</span></div>';
+            }
+            html += '<div class="table-container"><table><thead><tr><th>Canción</th><th>Artista</th><th>Tono</th><th>BPM</th><th>Duración</th><th></th></tr></thead><tbody>' +
+                songs.map(function(s) {
+                    return '<tr onclick="viewSong(' + s.id + ')" style="cursor:pointer;"><td><strong>' + s.name + '</strong>' + (s.is_favorite ? ' ⭐' : '') + '</td>' +
+                    '<td>' + (s.artist || '-') + '</td><td>' + (s.musical_key || '-') + '</td><td>' + (s.bpm || '-') + '</td>' +
+                    '<td>' + formatDuration(s.duration_seconds) + '</td>' +
+                    '<td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">⭐</button>' +
+                    '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button></td></tr>';
+                }).join('') + '</tbody></table></div>';
+        });
+        container.innerHTML = html;
     } else {
-        container.innerHTML = '<div class="songs-grid">' + filtered.map(function(s) {
-            return '<div class="song-card" onclick="viewSong(' + s.id + ')">' +
-                '<div class="song-thumb">🎵</div>' +
-                '<div class="song-info"><h4>' + s.name + (s.is_favorite ? ' ⭐' : '') + '</h4><p>' + (s.artist || 'Sin artista') + '</p></div>' +
-                '<div class="song-meta">' + (s.musical_key ? '<span class="badge badge-neutral">' + s.musical_key + '</span>' : '') +
-                '<span class="badge badge-neutral">' + formatDuration(s.duration_seconds) + '</span></div>' +
-                '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
-            '</div>';
-        }).join('') + '</div>';
+        var html = '';
+        Object.keys(grouped).forEach(function(groupName) {
+            var songs = grouped[groupName];
+            if (groupName && groupBy !== 'none') {
+                html += '<div class="group-header"><span>' + groupName + '</span><span class="count">' + songs.length + '</span></div>';
+            }
+            html += '<div class="songs-grid">' + songs.map(function(s) {
+                return '<div class="song-card" onclick="viewSong(' + s.id + ')">' +
+                    '<div class="song-card-thumb">🎵</div>' +
+                    '<div class="song-card-body">' +
+                        '<h4>' + s.name + '</h4>' +
+                        '<p>' + (s.artist || 'Sin artista') + '</p>' +
+                        '<div class="song-card-meta">' +
+                            (s.musical_key ? '<span class="badge badge-neutral">' + s.musical_key + '</span>' : '') +
+                            (s.bpm ? '<span class="badge badge-neutral">' + s.bpm + ' BPM</span>' : '') +
+                            '<span class="badge badge-neutral">' + formatDuration(s.duration_seconds) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="song-card-actions">' +
+                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
+                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('') + '</div>';
+        });
+        container.innerHTML = html;
     }
 }
 
@@ -153,13 +228,11 @@ function openSongModal(song) {
     document.getElementById('songLyrics').value = song ? (song.lyrics || '') : '';
     document.getElementById('songFavorite').checked = song ? song.is_favorite : false;
 
-    // Categorías
     var catSelect = document.getElementById('songCategory');
     catSelect.innerHTML = '<option value="">Sin categoría</option>' +
         allCategories.map(function(c) { return '<option value="' + c.id + '"' + (song && song.category_id == c.id ? ' selected' : '') + '>' + c.name + '</option>'; }).join('') +
         '<option value="__new__">+ Crear nueva...</option>';
     
-    // Géneros
     var genSelect = document.getElementById('songGenre');
     genSelect.innerHTML = '<option value="">Sin género</option>' +
         allGenres.map(function(g) { return '<option value="' + g.id + '"' + (song && song.genre_id == g.id ? ' selected' : '') + '>' + g.name + '</option>'; }).join('') +
@@ -187,44 +260,31 @@ function onGenreChange() {
 
 async function createCategory() {
     var name = document.getElementById('newCategoryName').value.trim();
-    if (!name) {
-        showToast('Ingresa nombre de categoría', 'warning');
-        return;
-    }
+    if (!name) { showToast('Ingresa nombre de categoría', 'warning'); return; }
     try {
         var result = await apiPost('/categories', { name: name });
         var newCat = { id: result.id, name: name };
         allCategories.push(newCat);
-        
         var select = document.getElementById('songCategory');
-        // Remover opción "crear nueva" temporalmente
         var newOption = select.querySelector('option[value="__new__"]');
-        // Insertar nueva categoría antes de "crear nueva"
         var opt = document.createElement('option');
         opt.value = newCat.id;
         opt.textContent = newCat.name;
         opt.selected = true;
         select.insertBefore(opt, newOption);
-        
         document.getElementById('newCategoryName').value = '';
         document.getElementById('newCategoryGroup').style.display = 'none';
         showToast('Categoría creada');
-    } catch (e) {
-        showToast('Error al crear categoría', 'error');
-    }
+    } catch (e) { showToast('Error al crear categoría', 'error'); }
 }
 
 async function createGenre() {
     var name = document.getElementById('newGenreName').value.trim();
-    if (!name) {
-        showToast('Ingresa nombre de género', 'warning');
-        return;
-    }
+    if (!name) { showToast('Ingresa nombre de género', 'warning'); return; }
     try {
         var result = await apiPost('/genres', { name: name });
         var newGen = { id: result.id, name: name };
         allGenres.push(newGen);
-        
         var select = document.getElementById('songGenre');
         var newOption = select.querySelector('option[value="__new__"]');
         var opt = document.createElement('option');
@@ -232,13 +292,10 @@ async function createGenre() {
         opt.textContent = newGen.name;
         opt.selected = true;
         select.insertBefore(opt, newOption);
-        
         document.getElementById('newGenreName').value = '';
         document.getElementById('newGenreGroup').style.display = 'none';
         showToast('Género creado');
-    } catch (e) {
-        showToast('Error al crear género', 'error');
-    }
+    } catch (e) { showToast('Error al crear género', 'error'); }
 }
 
 async function saveSong() {
@@ -267,17 +324,12 @@ async function saveSong() {
     };
 
     try {
-        if (id) {
-            await apiPut('/songs/' + id, data);
-        } else {
-            await apiPost('/songs', data);
-        }
+        if (id) await apiPut('/songs/' + id, data);
+        else await apiPost('/songs', data);
         closeSongModal();
         loadSongs();
         showToast('Canción guardada');
-    } catch (e) {
-        showToast('Error al guardar', 'error');
-    }
+    } catch (e) { showToast('Error al guardar', 'error'); }
 }
 
 async function deleteSong(id) {
@@ -426,9 +478,7 @@ async function saveResource() {
         closeAddResourceModal();
         loadResources();
         showToast('Guardado');
-    } catch (e) {
-        showToast('Error', 'error');
-    }
+    } catch (e) { showToast('Error', 'error'); }
 }
 
 function nl2br(str) {
