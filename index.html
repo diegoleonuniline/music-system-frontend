@@ -19,11 +19,14 @@
         <form id="loginForm" class="login-form">
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" id="email" required placeholder="tu@email.com">
+                <input type="text" id="email" required placeholder="tu@email.com" autocomplete="email">
             </div>
             <div class="form-group">
                 <label>Contraseña</label>
-                <input type="password" id="password" required placeholder="••••••••">
+                <div style="position: relative;">
+                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password" style="padding-right: 45px;">
+                    <button type="button" onclick="togglePassword('password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;">👁️</button>
+                </div>
             </div>
             <div id="errorMsg" class="error-msg"></div>
             <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
@@ -31,6 +34,23 @@
     </div>
 
     <script src="js/config.js"></script>
+    <script>
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            btn.textContent = '👁️';
+        }
+    }
+    
+    // Si ya hay sesión, ir al dashboard
+    if (localStorage.getItem('token')) {
+        window.location.href = 'pages/dashboard.html';
+    }
+    </script>
     <script src="js/auth.js"></script>
 </body>
 </html>

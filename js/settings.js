@@ -31,10 +31,20 @@ if (isAdmin()) {
 }
 
 // Show super admin sections
+console.log('=== DEBUG SUPER ADMIN ===');
+console.log('Usuario:', user);
+console.log('Rol:', user.role);
+console.log('isSuperAdmin():', isSuperAdmin());
+console.log('Comparación directa:', user.role === 'super_admin');
+
 if (isSuperAdmin()) {
+    console.log('✅ Mostrando secciones de super admin');
     document.getElementById('groupsSection').style.display = 'block';
     document.getElementById('plansSection').style.display = 'block';
     loadSuperAdminData();
+} else {
+    console.log('❌ No eres super_admin. Para serlo, ejecuta en tu BD:');
+    console.log("UPDATE users SET role = 'super_admin' WHERE email = '" + user.email + "';");
 }
 
 async function loadData() {

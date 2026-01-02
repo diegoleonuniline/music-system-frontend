@@ -4,7 +4,11 @@ function getToken() {
 }
 
 function getUser() {
-    return JSON.parse(localStorage.getItem('user') || '{}');
+    try {
+        return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (e) {
+        return {};
+    }
 }
 
 function isAdmin() {
@@ -12,16 +16,36 @@ function isAdmin() {
     return user.role === 'super_admin' || user.role === 'group_admin';
 }
 
+function isSuperAdmin() {
+    const user = getUser();
+    return user.role === 'super_admin';
+}
+
 function checkAuth() {
-    if (!getToken()) {
+    const token = getToken();
+    const user = getUser();
+    if (!token || !user.id) {
         window.location.href = '../index.html';
+        return false;
     }
+    return true;
 }
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '../index.html';
+}
+
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
 }
 
 // Theme
