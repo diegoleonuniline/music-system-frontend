@@ -635,29 +635,40 @@ function toggleActionsMenu(e, songId) {
     e.preventDefault();
     
     // Cerrar otros menús abiertos
-    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-    });
-    
-    // Remover overlay existente
-    var existingOverlay = document.querySelector('.actions-overlay');
-    if (existingOverlay) existingOverlay.remove();
+    closeActionsMenu();
     
     // Buscar el menú correspondiente
     var menu = document.getElementById('actions-menu-' + songId) || document.getElementById('actions-menu-card-' + songId);
-    if (menu) {
-        menu.classList.add('show');
+    if (!menu) return;
+    
+    // Agregar overlay
+    var overlay = document.createElement('div');
+    overlay.className = 'actions-overlay';
+    overlay.onclick = closeActionsMenu;
+    document.body.appendChild(overlay);
+    
+    // Mostrar menú
+    menu.classList.add('show');
+    
+    // Posicionar en desktop
+    if (window.innerWidth > 768) {
+        var btn = e.currentTarget;
+        var rect = btn.getBoundingClientRect();
+        var menuHeight = menu.offsetHeight;
+        var viewportHeight = window.innerHeight;
         
-        // Agregar overlay en móvil
-        if (window.innerWidth <= 768) {
-            var overlay = document.createElement('div');
-            overlay.className = 'actions-overlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;';
-            overlay.onclick = function() {
-                menu.classList.remove('show');
-                overlay.remove();
-            };
-            document.body.appendChild(overlay);
+        // Posicionar a la derecha del botón
+        menu.style.right = (window.innerWidth - rect.right) + 'px';
+        menu.style.left = 'auto';
+        menu.style.width = '220px';
+        
+        // Si hay espacio arriba, mostrar arriba; si no, abajo
+        if (rect.top > menuHeight + 10) {
+            menu.style.top = 'auto';
+            menu.style.bottom = (viewportHeight - rect.top + 8) + 'px';
+        } else {
+            menu.style.top = (rect.bottom + 8) + 'px';
+            menu.style.bottom = 'auto';
         }
     }
 }
