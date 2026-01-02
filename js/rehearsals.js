@@ -60,28 +60,27 @@ function renderRehearsals() {
     var statuses = { pending: 'Pendiente', in_progress: 'En progreso', ready: 'Lista' };
     var statusColors = { pending: 'badge-warning', in_progress: 'badge-primary', ready: 'badge-success' };
 
-    container.innerHTML = '<div class="rehearsals-list">' + allRehearsals.map(function(r) {
-        var song = allSongs.find(function(s) { return s.id === r.song_id; });
-        return '<div class="song-item rehearsal-item">' +
-            '<div class="song-thumb">🎸</div>' +
-            '<div class="song-info" onclick="viewSong(' + r.song_id + ')" style="cursor:pointer;">' +
-                '<h4>' + (r.song_name || (song ? song.name : 'Canción')) + '</h4>' +
-                '<p>' + (r.artist || (song ? song.artist : '') || 'Sin artista') + (r.target_date ? ' · Meta: ' + formatDate(r.target_date) : '') + '</p>' +
-                (r.notes ? '<p style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">📝 ' + r.notes.substring(0, 50) + (r.notes.length > 50 ? '...' : '') + '</p>' : '') +
-            '</div>' +
-            '<span class="badge ' + statusColors[r.status || 'pending'] + '">' + statuses[r.status || 'pending'] + '</span>' +
-            '<div class="rehearsal-actions">' +
-                '<button class="btn btn-ghost btn-sm" onclick="openSongResources(' + r.song_id + ',\'' + (r.song_name || (song ? song.name : 'Canción')).replace(/'/g, "\\'") + '\')">📎</button>' +
-                (song && song.video_url ? '<button class="btn btn-ghost btn-sm" onclick="window.open(\'' + song.video_url + '\', \'_blank\')">🎬</button>' : '') +
-                '<button class="btn btn-ghost btn-sm" onclick="viewRehearsal(' + r.id + ')">Ver</button>' +
-                '<button class="btn btn-ghost btn-sm" onclick="editRehearsal(' + r.id + ')">✏️</button>' +
-                '<button class="btn btn-ghost btn-sm" onclick="removeFromRehearsals(' + r.id + ')" style="color:var(--danger);">✕</button>' +
-            '</div>' +
-        '</div>';
-    }).join('') + '</div>';
+    // Render as TABLE
+    container.innerHTML = '<div class="table-container"><table><thead><tr>' +
+        '<th>Canción</th><th>Artista</th><th>Estado</th><th>Fecha Meta</th><th>Notas</th><th>Acciones</th>' +
+        '</tr></thead><tbody>' +
+        allRehearsals.map(function(r) {
+            var song = allSongs.find(function(s) { return s.id === r.song_id; });
+            return '<tr onclick="viewRehearsal(' + r.id + ')" style="cursor:pointer;">' +
+                '<td><strong>🎸 ' + (r.song_name || (song ? song.name : 'Canción')) + '</strong></td>' +
+                '<td>' + (r.artist || (song ? song.artist : '') || '-') + '</td>' +
+                '<td><span class="badge ' + statusColors[r.status || 'pending'] + '">' + statuses[r.status || 'pending'] + '</span></td>' +
+                '<td>' + (r.target_date ? formatDate(r.target_date) : '-') + '</td>' +
+                '<td>' + (r.notes ? r.notes.substring(0, 30) + (r.notes.length > 30 ? '...' : '') : '-') + '</td>' +
+                '<td onclick="event.stopPropagation()">' +
+                    '<button class="btn btn-ghost btn-sm" onclick="openSongResources(' + r.song_id + ',\'' + (r.song_name || (song ? song.name : 'Canción')).replace(/'/g, "\\'") + '\')">📎</button>' +
+                    (song && song.video_url ? '<button class="btn btn-ghost btn-sm" onclick="window.open(\'' + song.video_url + '\', \'_blank\')">🎬</button>' : '') +
+                    '<button class="btn btn-ghost btn-sm" onclick="editRehearsal(' + r.id + ')">✏️</button>' +
+                    '<button class="btn btn-ghost btn-sm btn-danger-text" onclick="removeFromRehearsals(' + r.id + ')">✕</button>' +
+                '</td></tr>';
+        }).join('') + '</tbody></table></div>';
 }
 
-// ============ VER CANCIÓN ============
 function viewSong(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
@@ -133,7 +132,6 @@ async function toggleFavoriteFromModal() {
     }
 }
 
-// ============ RECURSOS ============
 async function openSongResources(songId, songName) {
     currentResourceSongId = songId;
     document.getElementById('resourcesSongName').textContent = songName;
@@ -178,16 +176,30 @@ function viewResource(id) {
     var r = currentSongResources.find(function(x) { return x.id === id; });
     if (!r) return;
     if (r.file_url) {
-        window.open(r.file_url, '_blank');
+        if (r.file_type === 'pdf' || r.type === 'pdf') {
+            openFullscreenResource(r.title || 'PDF', '<iframe src="' + r.file_url + '" style="width:100%;height:100%;border:none;"></iframe>');
+        } else if (r.type === 'image' || ['jpg','jpeg','png','webp','gif'].indexOf(r.file_type) !== -1) {
+            openFullscreenResource(r.title || 'Imagen', '<img src="' + r.file_url + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
+        } else {
+            window.open(r.file_url, '_blank');
+        }
     } else if (r.content) {
-        document.getElementById('viewResourceTitle').textContent = r.title || 'Contenido';
-        document.getElementById('viewResourceContent').innerHTML = nl2br(r.content);
-        document.getElementById('viewResourceModal').classList.add('active');
+        openFullscreenResource(r.title || 'Contenido', '<pre style="white-space:pre-wrap;font-family:monospace;padding:20px;">' + r.content + '</pre>');
     }
 }
 
+function openFullscreenResource(title, content) {
+    document.getElementById('viewResourceTitle').textContent = title;
+    document.getElementById('viewResourceContent').innerHTML = content;
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.add('modal-fullscreen');
+    modal.classList.add('active');
+}
+
 function closeViewResourceModal() {
-    document.getElementById('viewResourceModal').classList.remove('active');
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.remove('modal-fullscreen');
+    modal.classList.remove('active');
 }
 
 async function deleteResource(id) {
@@ -268,7 +280,6 @@ async function saveResource() {
     }
 }
 
-// ============ ENSAYOS ============
 function viewRehearsal(id) {
     var r = allRehearsals.find(function(x) { return x.id === id; });
     if (!r) return;
@@ -361,6 +372,7 @@ async function addToRehearsals() {
 }
 
 function editRehearsal(id) {
+    if (event) event.stopPropagation();
     var r = allRehearsals.find(function(x) { return x.id === id; });
     if (!r) return;
     
@@ -402,6 +414,7 @@ async function saveRehearsal() {
 }
 
 async function removeFromRehearsals(id) {
+    if (event) event.stopPropagation();
     if (confirm('¿Quitar de ensayos?')) {
         try {
             await apiDelete('/rehearsals/' + id);

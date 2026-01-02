@@ -39,7 +39,7 @@ async function loadDashboard() {
         document.getElementById('totalEvents').textContent = (events || []).length;
         document.getElementById('totalMusicians').textContent = (users || []).filter(function(u) { return u.role === 'musician'; }).length;
         
-        // Próximos eventos
+        // Próximos eventos - TABLA
         var today = new Date().toISOString().split('T')[0];
         var upcoming = (events || [])
             .filter(function(e) { return e.event_date && getDateValue(e.event_date) >= today; })
@@ -48,39 +48,41 @@ async function loadDashboard() {
         
         var eventsContainer = document.getElementById('upcomingEvents');
         if (upcoming.length) {
-            eventsContainer.innerHTML = upcoming.map(function(e) {
-                return '<div class="song-item" onclick="window.location.href=\'events.html\'" style="cursor:pointer;">' +
-                    '<div class="song-thumb">📅</div>' +
-                    '<div class="song-info"><h4>' + e.name + '</h4><p>' + (e.venue || 'Sin lugar') + ' · ' + formatDate(e.event_date) + '</p></div>' +
-                    '<span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
-                    (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span></div>';
-            }).join('');
+            eventsContainer.innerHTML = '<div class="table-container"><table><thead><tr>' +
+                '<th>Evento</th><th>Fecha</th><th>Lugar</th><th>Estado</th>' +
+                '</tr></thead><tbody>' +
+                upcoming.map(function(e) {
+                    return '<tr onclick="window.location.href=\'events.html\'" style="cursor:pointer;">' +
+                        '<td><strong>' + e.name + '</strong></td>' +
+                        '<td>' + formatDate(e.event_date) + '</td>' +
+                        '<td>' + (e.venue || '-') + '</td>' +
+                        '<td><span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
+                        (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span></td></tr>';
+                }).join('') + '</tbody></table></div>';
         } else {
             eventsContainer.innerHTML = '<div class="empty-state"><div class="icon">📅</div><h3>Sin eventos próximos</h3></div>';
         }
         
-        // TODAS las favoritas
+        // FAVORITAS - TABLA (no cards)
         var favorites = allSongs.filter(function(s) { return s.is_favorite; });
         var favContainer = document.getElementById('favoriteSongs');
         if (favorites.length) {
-            favContainer.innerHTML = '<div class="favorites-grid">' + favorites.map(function(s) {
-                return '<div class="song-card" onclick="viewSong(' + s.id + ')">' +
-                    '<div class="song-card-body">' +
-                        '<h4>' + s.name + '</h4>' +
-                        '<p>' + (s.artist || 'Sin artista') + '</p>' +
-                        '<div class="song-card-meta">' +
-                            (s.musical_key ? '<span class="badge badge-neutral">' + s.musical_key + '</span>' : '') +
-                            (s.bpm ? '<span class="badge badge-neutral">' + s.bpm + ' BPM</span>' : '') +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="song-card-actions">' +
-                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">⭐</button>' +
-                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
-                    '</div>' +
-                '</div>';
-            }).join('') + '</div>';
+            favContainer.innerHTML = '<div class="table-container"><table><thead><tr>' +
+                '<th>Canción</th><th>Artista</th><th>Tono</th><th>BPM</th><th>Acciones</th>' +
+                '</tr></thead><tbody>' +
+                favorites.map(function(s) {
+                    return '<tr onclick="viewSong(' + s.id + ')" style="cursor:pointer;">' +
+                        '<td><strong>⭐ ' + s.name + '</strong></td>' +
+                        '<td>' + (s.artist || '-') + '</td>' +
+                        '<td>' + (s.musical_key || '-') + '</td>' +
+                        '<td>' + (s.bpm || '-') + '</td>' +
+                        '<td onclick="event.stopPropagation()">' +
+                            '<button class="btn btn-ghost btn-sm" onclick="toggleFavorite(' + s.id + ')">⭐</button>' +
+                            '<button class="btn btn-ghost btn-sm" onclick="openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
+                        '</td></tr>';
+                }).join('') + '</tbody></table></div>';
         } else {
-            favContainer.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><h3>Sin favoritas</h3></div>';
+            favContainer.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><h3>Sin favoritas</h3><p>Marca canciones como favoritas</p></div>';
         }
     } catch (error) {
         console.error('Error:', error);
@@ -92,10 +94,6 @@ function formatDuration(sec) {
     var m = Math.floor(sec / 60);
     var s = sec % 60;
     return m + ':' + (s < 10 ? '0' : '') + s;
-}
-
-function nl2br(str) {
-    return str ? str.replace(/\n/g, '<br>') : '';
 }
 
 function viewSong(id) {
@@ -193,16 +191,31 @@ function viewResource(id) {
     var r = currentSongResources.find(function(x) { return x.id === id; });
     if (!r) return;
     if (r.file_url) {
-        window.open(r.file_url, '_blank');
+        // Fullscreen for PDFs/images
+        if (r.file_type === 'pdf' || r.type === 'pdf') {
+            openFullscreenResource(r.title || 'PDF', '<iframe src="' + r.file_url + '" style="width:100%;height:100%;border:none;"></iframe>');
+        } else if (r.type === 'image' || ['jpg','jpeg','png','webp','gif'].indexOf(r.file_type) !== -1) {
+            openFullscreenResource(r.title || 'Imagen', '<img src="' + r.file_url + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
+        } else {
+            window.open(r.file_url, '_blank');
+        }
     } else if (r.content) {
-        document.getElementById('viewResourceTitle').textContent = r.title || 'Contenido';
-        document.getElementById('viewResourceContent').innerHTML = nl2br(r.content);
-        document.getElementById('viewResourceModal').classList.add('active');
+        openFullscreenResource(r.title || 'Contenido', '<pre style="white-space:pre-wrap;font-family:monospace;padding:20px;">' + r.content + '</pre>');
     }
 }
 
+function openFullscreenResource(title, content) {
+    document.getElementById('viewResourceTitle').textContent = title;
+    document.getElementById('viewResourceContent').innerHTML = content;
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.add('modal-fullscreen');
+    modal.classList.add('active');
+}
+
 function closeViewResourceModal() {
-    document.getElementById('viewResourceModal').classList.remove('active');
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.remove('modal-fullscreen');
+    modal.classList.remove('active');
 }
 
 async function deleteResource(id) {

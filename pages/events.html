@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#4F46E5">
     <title>Eventos - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <div class="offline-indicator">📴 Sin conexión - Modo offline</div>
+    
     <header class="mobile-header">
         <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
         <span class="logo">🐊</span>
@@ -48,8 +47,9 @@
             <div class="card">
                 <div class="card-body">
                     <div class="view-toggle">
-                        <button class="active" data-mode="cards" onclick="setViewMode('cards')">Tarjetas</button>
-                        <button data-mode="table" onclick="setViewMode('table')">Tabla</button>
+                        <button class="active" data-mode="table" onclick="setViewMode('table')">📋 Tabla</button>
+                        <button data-mode="week" onclick="setViewMode('week')">📆 Semana</button>
+                        <button data-mode="month" onclick="setViewMode('month')">🗓️ Mes</button>
                     </div>
                 </div>
                 <div id="eventsContainer"><div class="loading">Cargando...</div></div>
@@ -119,76 +119,29 @@
             </div>
             <div class="modal-body modal-body-scroll">
                 <input type="hidden" id="eventId">
-                
                 <div class="form-group">
                     <label>Nombre del Evento *</label>
                     <input type="text" id="eventName" class="form-control" required placeholder="Ej: Boda García López">
                 </div>
-                
                 <div class="form-grid-3">
-                    <div class="form-group">
-                        <label>Fecha *</label>
-                        <input type="date" id="eventDate" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Hora Inicio</label>
-                        <input type="time" id="eventStartTime" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Hora Fin</label>
-                        <input type="time" id="eventEndTime" class="form-control">
-                    </div>
+                    <div class="form-group"><label>Fecha *</label><input type="date" id="eventDate" class="form-control" required></div>
+                    <div class="form-group"><label>Hora Inicio</label><input type="time" id="eventStartTime" class="form-control"></div>
+                    <div class="form-group"><label>Hora Fin</label><input type="time" id="eventEndTime" class="form-control"></div>
                 </div>
-                
                 <div class="form-section-title">📍 Ubicación</div>
-                
-                <div class="form-group">
-                    <label>Nombre del Lugar</label>
-                    <input type="text" id="eventVenue" class="form-control" placeholder="Ej: Salón Los Arcos">
-                </div>
-                
+                <div class="form-group"><label>Nombre del Lugar</label><input type="text" id="eventVenue" class="form-control" placeholder="Ej: Salón Los Arcos"></div>
                 <div class="form-grid-2">
-                    <div class="form-group">
-                        <label>Dirección</label>
-                        <input type="text" id="eventAddress" class="form-control" placeholder="Calle, número, colonia">
-                    </div>
-                    <div class="form-group">
-                        <label>Ciudad</label>
-                        <input type="text" id="eventCity" class="form-control" placeholder="Ej: Guadalajara">
-                    </div>
+                    <div class="form-group"><label>Dirección</label><input type="text" id="eventAddress" class="form-control" placeholder="Calle, número, colonia"></div>
+                    <div class="form-group"><label>Ciudad</label><input type="text" id="eventCity" class="form-control" placeholder="Ej: Guadalajara"></div>
                 </div>
-                
-                <div class="form-group">
-                    <label>Link Google Maps</label>
-                    <input type="url" id="eventGoogleMaps" class="form-control" placeholder="https://maps.google.com/...">
-                </div>
-                
+                <div class="form-group"><label>Link Google Maps</label><input type="url" id="eventGoogleMaps" class="form-control" placeholder="https://maps.google.com/..."></div>
                 <div class="form-section-title">🎵 Detalles</div>
-                
                 <div class="form-grid-2">
-                    <div class="form-group">
-                        <label>Uniforme</label>
-                        <input type="text" id="eventUniform" class="form-control" placeholder="Ej: Camisa negra">
-                    </div>
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <select id="eventStatus" class="form-control">
-                            <option value="tentative">Tentativo</option>
-                            <option value="confirmed">Confirmado</option>
-                            <option value="cancelled">Cancelado</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Uniforme</label><input type="text" id="eventUniform" class="form-control" placeholder="Ej: Camisa negra"></div>
+                    <div class="form-group"><label>Estado</label><select id="eventStatus" class="form-control"><option value="tentative">Tentativo</option><option value="confirmed">Confirmado</option><option value="cancelled">Cancelado</option></select></div>
                 </div>
-                
-                <div class="form-group">
-                    <label>Set List</label>
-                    <select id="eventSetlist" class="form-control"></select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Notas</label>
-                    <textarea id="eventNotes" class="form-control" rows="3" placeholder="Indicaciones especiales..."></textarea>
-                </div>
+                <div class="form-group"><label>Set List</label><select id="eventSetlist" class="form-control"></select></div>
+                <div class="form-group"><label>Notas</label><textarea id="eventNotes" class="form-control" rows="3" placeholder="Indicaciones especiales..."></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeEventModal()">Cancelar</button>

@@ -1,44 +1,27 @@
-async function toggleFavorite(id) {
-    var song = allSongs.find(function(s) { return s.id === id; });
-    if (!song) return;
-    
-    var newValue = song.is_favorite ? 0 : 1;
-    console.log('Song ID:', id);
-    console.log('Current is_favorite:', song.is_favorite);
-    console.log('Sending new value:', newValue);
-    
-    try {
-        var result = await apiPatch('/songs/' + id + '/favorite', {
-            is_favorite: newValue
-        });
-        console.log('Response:', result);
-        await loadSongs();
-        showToast(song.is_favorite ? 'Quitado de favoritos' : 'Agregado a favoritos');
-    } catch (e) {
-        console.error('Error:', e);
-        showToast('Error al actualizar', 'error');
-    }
-}checkAuth();
+checkAuth();
 setupUserInfo();
 
-let allSongs = [];
-let allCategories = [];
-let allGenres = [];
-let currentSongResources = [];
-let currentResourceSongId = null;
-let viewMode = 'cards';
-let groupBy = 'none';
+var allSongs = [];
+var allCategories = [];
+var allGenres = [];
+var allSetlists = [];
+var currentSongResources = [];
+var currentResourceSongId = null;
+var viewMode = 'table'; // DEFAULT: tabla
+var groupBy = 'none';
 
 async function loadSongs() {
     try {
-        [allSongs, allCategories, allGenres] = await Promise.all([
+        var results = await Promise.all([
             apiGet('/songs'),
             apiGet('/categories'),
-            apiGet('/genres')
+            apiGet('/genres'),
+            apiGet('/setlists')
         ]);
-        allSongs = Array.isArray(allSongs) ? allSongs : [];
-        allCategories = Array.isArray(allCategories) ? allCategories : [];
-        allGenres = Array.isArray(allGenres) ? allGenres : [];
+        allSongs = Array.isArray(results[0]) ? results[0] : [];
+        allCategories = Array.isArray(results[1]) ? results[1] : [];
+        allGenres = Array.isArray(results[2]) ? results[2] : [];
+        allSetlists = Array.isArray(results[3]) ? results[3] : [];
         renderSongs();
         populateFilters();
     } catch (error) {
@@ -116,7 +99,6 @@ function groupSongs(songs) {
         groups[key].push(s);
     });
     
-    // Ordenar grupos alfabéticamente, pero favoritas primero
     var sortedKeys = Object.keys(groups).sort(function(a, b) {
         if (a.indexOf('⭐') === 0) return -1;
         if (b.indexOf('⭐') === 0) return 1;
@@ -146,13 +128,16 @@ function renderSongs() {
             if (groupName && groupBy !== 'none') {
                 html += '<div class="group-header"><span>' + groupName + '</span><span class="count">' + songs.length + '</span></div>';
             }
-            html += '<div class="table-container"><table><thead><tr><th>Canción</th><th>Artista</th><th>Tono</th><th>BPM</th><th>Duración</th><th></th></tr></thead><tbody>' +
+            html += '<div class="table-container"><table><thead><tr><th>Canción</th><th>Artista</th><th>Tono</th><th>BPM</th><th>Duración</th><th>Acciones</th></tr></thead><tbody>' +
                 songs.map(function(s) {
                     return '<tr onclick="viewSong(' + s.id + ')" style="cursor:pointer;"><td><strong>' + s.name + '</strong>' + (s.is_favorite ? ' ⭐' : '') + '</td>' +
                     '<td>' + (s.artist || '-') + '</td><td>' + (s.musical_key || '-') + '</td><td>' + (s.bpm || '-') + '</td>' +
                     '<td>' + formatDuration(s.duration_seconds) + '</td>' +
-                    '<td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">⭐</button>' +
-                    '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button></td></tr>';
+                    '<td onclick="event.stopPropagation()">' +
+                        '<button class="btn btn-ghost btn-sm" onclick="toggleFavorite(' + s.id + ')" title="Favorito">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
+                        '<button class="btn btn-ghost btn-sm" onclick="openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')" title="Recursos">📎</button>' +
+                        '<button class="btn-add-setlist" onclick="openAddToSetlistModal(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')" title="Agregar a Set List">📋+</button>' +
+                    '</td></tr>';
                 }).join('') + '</tbody></table></div>';
         });
         container.innerHTML = html;
@@ -178,6 +163,7 @@ function renderSongs() {
                     '<div class="song-card-actions">' +
                         '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
                         '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
+                        '<button class="btn-add-setlist" onclick="event.stopPropagation();openAddToSetlistModal(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📋+</button>' +
                     '</div>' +
                 '</div>';
             }).join('') + '</div>';
@@ -193,7 +179,48 @@ function formatDuration(sec) {
     return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-async function viewSong(id) {
+// ========== ADD TO SETLIST ==========
+function openAddToSetlistModal(songId, songName) {
+    var modal = document.getElementById('addToSetlistModal');
+    if (!modal) return;
+    
+    document.getElementById('addToSetlistSongId').value = songId;
+    document.getElementById('addToSetlistSongName').textContent = songName;
+    
+    var list = document.getElementById('setlistSelectList');
+    if (!allSetlists.length) {
+        list.innerHTML = '<div class="empty-state"><p>No hay set lists</p><a href="setlists.html" class="btn btn-primary btn-sm">Crear Set List</a></div>';
+    } else {
+        list.innerHTML = allSetlists.map(function(s) {
+            return '<div class="setlist-select-item" onclick="addSongToSelectedSetlist(' + s.id + ')">' +
+                '<div class="info"><h4>📋 ' + s.name + '</h4><p>' + (s.total_songs || 0) + ' canciones</p></div>' +
+                '<button class="btn btn-primary btn-sm">Agregar</button>' +
+            '</div>';
+        }).join('');
+    }
+    
+    modal.classList.add('active');
+}
+
+function closeAddToSetlistModal() {
+    document.getElementById('addToSetlistModal').classList.remove('active');
+}
+
+async function addSongToSelectedSetlist(setlistId) {
+    var songId = document.getElementById('addToSetlistSongId').value;
+    try {
+        await apiPost('/setlists/' + setlistId + '/songs', { song_id: parseInt(songId) });
+        closeAddToSetlistModal();
+        showToast('Canción agregada al set list');
+        loadSongs(); // Refresh setlists
+    } catch (e) {
+        console.error('Error:', e);
+        showToast('Error al agregar', 'error');
+    }
+}
+
+// ========== VIEW SONG ==========
+function viewSong(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
 
@@ -371,15 +398,9 @@ async function toggleFavorite(id) {
     if (!song) return;
     
     var newValue = song.is_favorite ? 0 : 1;
-    console.log('Song ID:', id);
-    console.log('Current is_favorite:', song.is_favorite);
-    console.log('Sending new value:', newValue);
     
     try {
-        var result = await apiPatch('/songs/' + id + '/favorite', {
-            is_favorite: newValue
-        });
-        console.log('Response:', result);
+        await apiPatch('/songs/' + id + '/favorite', { is_favorite: newValue });
         await loadSongs();
         showToast(song.is_favorite ? 'Quitado de favoritos' : 'Agregado a favoritos');
     } catch (e) {
@@ -388,7 +409,6 @@ async function toggleFavorite(id) {
     }
 }
 
-// AGREGA esta función para copiar canción
 function copyCurrentSong() {
     var id = document.getElementById('viewSongModal').dataset.songId;
     var song = allSongs.find(function(s) { return s.id == id; });
@@ -396,7 +416,6 @@ function copyCurrentSong() {
     
     closeViewSongModal();
     
-    // Abrir modal con datos parciales
     document.getElementById('songModalTitle').textContent = 'Nueva Canción (Copia)';
     document.getElementById('songId').value = '';
     document.getElementById('songName').value = '';
@@ -425,7 +444,7 @@ function copyCurrentSong() {
     document.getElementById('songModal').classList.add('active');
 }
 
-// Recursos
+// ========== RESOURCES ==========
 async function openSongResources(songId, songName) {
     currentResourceSongId = songId;
     document.getElementById('resourcesSongName').textContent = songName;
@@ -470,16 +489,31 @@ function viewResource(id) {
     var r = currentSongResources.find(function(x) { return x.id === id; });
     if (!r) return;
     if (r.file_url) {
-        window.open(r.file_url, '_blank');
+        // Open in fullscreen for PDFs/images
+        if (r.file_type === 'pdf' || r.type === 'pdf') {
+            openFullscreenResource(r.title || 'PDF', '<iframe src="' + r.file_url + '" style="width:100%;height:100%;border:none;"></iframe>');
+        } else if (r.type === 'image' || ['jpg','jpeg','png','webp','gif'].indexOf(r.file_type) !== -1) {
+            openFullscreenResource(r.title || 'Imagen', '<img src="' + r.file_url + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
+        } else {
+            window.open(r.file_url, '_blank');
+        }
     } else if (r.content) {
-        document.getElementById('viewResourceTitle').textContent = r.title || 'Contenido';
-        document.getElementById('viewResourceContent').innerHTML = nl2br(r.content);
-        document.getElementById('viewResourceModal').classList.add('active');
+        openFullscreenResource(r.title || 'Contenido', '<pre style="white-space:pre-wrap;font-family:monospace;padding:20px;">' + r.content + '</pre>');
     }
 }
 
+function openFullscreenResource(title, content) {
+    document.getElementById('viewResourceTitle').textContent = title;
+    document.getElementById('viewResourceContent').innerHTML = content;
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.add('modal-fullscreen');
+    modal.classList.add('active');
+}
+
 function closeViewResourceModal() {
-    document.getElementById('viewResourceModal').classList.remove('active');
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.remove('modal-fullscreen');
+    modal.classList.remove('active');
 }
 
 async function deleteResource(id) {

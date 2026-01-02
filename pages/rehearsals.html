@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#4F46E5">
     <title>Ensayos - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
 </head>
 <body>
+    <div class="offline-indicator">📴 Sin conexión - Modo offline</div>
+    
     <header class="mobile-header">
         <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
         <span class="logo">🐊</span>
@@ -61,53 +60,33 @@
 
     <!-- Modal Ver Ensayo -->
     <div class="modal-overlay" id="viewRehearsalModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>🎸 Ensayo</h3>
-                <button class="modal-close" onclick="closeViewRehearsalModal()">×</button>
-            </div>
+        <div class="modal modal-md">
+            <div class="modal-header"><h3>🎸 Ensayo</h3><button class="modal-close" onclick="closeViewRehearsalModal()">×</button></div>
             <div class="modal-body">
-                <h2 id="viewRehearsalSong" style="margin-bottom: 4px;"></h2>
-                <p id="viewRehearsalArtist" style="color: var(--text-secondary); margin-bottom: 8px;"></p>
-                <p id="viewRehearsalDetails" style="color: var(--text-tertiary); font-size: 14px; margin-bottom: 16px;"></p>
-                
-                <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
-                    <span class="badge badge-primary" id="viewRehearsalStatus">Estado</span>
-                    <span class="badge badge-neutral" id="viewRehearsalDate">Fecha meta</span>
+                <h2 id="viewRehearsalSong"></h2>
+                <p id="viewRehearsalArtist" style="color:var(--text-secondary);margin-bottom:8px;"></p>
+                <p id="viewRehearsalDetails" style="font-size:14px;color:var(--text-tertiary);margin-bottom:16px;"></p>
+                <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+                    <div><strong style="font-size:12px;color:var(--text-secondary);">Estado</strong><p id="viewRehearsalStatus"></p></div>
+                    <div><strong style="font-size:12px;color:var(--text-secondary);">Fecha Meta</strong><p id="viewRehearsalDate"></p></div>
                 </div>
-                
-                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
-                    <strong style="font-size: 14px;">Notas:</strong>
-                    <div id="viewRehearsalNotes" style="margin-top: 8px;"></div>
+                <div style="background:var(--bg-secondary);border-radius:8px;padding:14px;">
+                    <strong style="font-size:12px;color:var(--text-secondary);">📝 Notas</strong>
+                    <div id="viewRehearsalNotes" style="margin-top:8px;"></div>
                 </div>
             </div>
-            <div class="modal-footer" id="viewRehearsalFooter">
-                <button class="btn btn-ghost" onclick="editCurrentRehearsal()">✏️ Editar</button>
-                <button class="btn btn-primary" onclick="markCurrentAsReady()">✓ Marcar lista</button>
-            </div>
+            <div class="modal-footer" id="viewRehearsalFooter"></div>
         </div>
     </div>
 
-    <!-- Modal Agregar a Ensayos -->
+    <!-- Modal Agregar Ensayo -->
     <div class="modal-overlay" id="addRehearsalModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Agregar a Ensayos</h3>
-                <button class="modal-close" onclick="closeAddRehearsalModal()">×</button>
-            </div>
+        <div class="modal modal-md">
+            <div class="modal-header"><h3>Agregar a Ensayos</h3><button class="modal-close" onclick="closeAddRehearsalModal()">×</button></div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Canción *</label>
-                    <select id="addRehearsalSong" class="form-control" required></select>
-                </div>
-                <div class="form-group">
-                    <label>Fecha meta (opcional)</label>
-                    <input type="date" id="addRehearsalDate" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Notas (opcional)</label>
-                    <textarea id="addRehearsalNotes" class="form-control" rows="3" placeholder="Ej: Practicar intro, revisar puente..."></textarea>
-                </div>
+                <div class="form-group"><label>Canción *</label><select id="addRehearsalSong" class="form-control"></select></div>
+                <div class="form-group"><label>Fecha Meta</label><input type="date" id="addRehearsalDate" class="form-control"></div>
+                <div class="form-group"><label>Notas</label><textarea id="addRehearsalNotes" class="form-control" rows="3" placeholder="Notas del ensayo..."></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeAddRehearsalModal()">Cancelar</button>
@@ -118,30 +97,14 @@
 
     <!-- Modal Editar Ensayo -->
     <div class="modal-overlay" id="editRehearsalModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Editar Ensayo</h3>
-                <button class="modal-close" onclick="closeEditRehearsalModal()">×</button>
-            </div>
+        <div class="modal modal-md">
+            <div class="modal-header"><h3>Editar Ensayo</h3><button class="modal-close" onclick="closeEditRehearsalModal()">×</button></div>
             <div class="modal-body">
                 <input type="hidden" id="editRehearsalId">
-                <p style="font-weight: 600; margin-bottom: 16px;" id="editRehearsalSongName"></p>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select id="editRehearsalStatus" class="form-control">
-                        <option value="pending">Pendiente</option>
-                        <option value="in_progress">En progreso</option>
-                        <option value="ready">Lista</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Fecha meta</label>
-                    <input type="date" id="editRehearsalDate" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Notas</label>
-                    <textarea id="editRehearsalNotes" class="form-control" rows="4" placeholder="Notas sobre el ensayo..."></textarea>
-                </div>
+                <p style="font-weight:600;margin-bottom:16px;" id="editRehearsalSongName"></p>
+                <div class="form-group"><label>Estado</label><select id="editRehearsalStatus" class="form-control"><option value="pending">Pendiente</option><option value="in_progress">En progreso</option><option value="ready">Lista</option></select></div>
+                <div class="form-group"><label>Fecha Meta</label><input type="date" id="editRehearsalDate" class="form-control"></div>
+                <div class="form-group"><label>Notas</label><textarea id="editRehearsalNotes" class="form-control" rows="3"></textarea></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeEditRehearsalModal()">Cancelar</button>
@@ -153,20 +116,21 @@
     <!-- Modal Ver Canción -->
     <div class="modal-overlay" id="viewSongModal">
         <div class="modal modal-lg">
-            <div class="modal-header">
-                <h3 id="viewSongTitle">Canción</h3>
-                <button class="modal-close" onclick="closeViewSongModal()">×</button>
-            </div>
+            <div class="modal-header"><h3>🎵 Canción</h3><button class="modal-close" onclick="closeViewSongModal()">×</button></div>
             <div class="modal-body">
-                <p id="viewSongArtist" style="color: var(--text-secondary); margin-bottom: 8px;"></p>
-                <p id="viewSongDetails" style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;"></p>
-                <div id="viewSongLinks" style="margin-bottom: 16px;"></div>
-                <div class="lyrics-box" id="viewSongLyrics" style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; white-space: pre-wrap; max-height: 300px; overflow-y: auto;"></div>
+                <h2 id="viewSongTitle"></h2>
+                <p id="viewSongArtist" style="color:var(--text-secondary);margin-bottom:12px;"></p>
+                <p id="viewSongDetails" style="font-size:14px;color:var(--text-tertiary);margin-bottom:20px;"></p>
+                <div id="viewSongLinks" style="margin-bottom:20px;display:flex;gap:8px;"></div>
+                <div style="background:var(--bg-secondary);border-radius:8px;padding:16px;max-height:300px;overflow-y:auto;">
+                    <h4 style="margin-bottom:12px;">📝 Letra</h4>
+                    <div id="viewSongLyrics" style="font-size:14px;line-height:1.8;"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeViewSongModal()">Cerrar</button>
-                <button class="btn btn-secondary" onclick="openSongResourcesFromModal()">📎 Recursos</button>
-                <button class="btn btn-primary" onclick="toggleFavoriteFromModal()">⭐ Favorito</button>
+                <button class="btn btn-ghost" onclick="openSongResourcesFromModal()">📎 Recursos</button>
+                <button class="btn btn-ghost" onclick="toggleFavoriteFromModal()">⭐ Favorito</button>
             </div>
         </div>
     </div>
@@ -174,22 +138,10 @@
     <!-- Modal Recursos -->
     <div class="modal-overlay" id="resourcesModal">
         <div class="modal modal-lg">
-            <div class="modal-header">
-                <h3>📎 Recursos: <span id="resourcesSongName"></span></h3>
-                <button class="modal-close" onclick="closeResourcesModal()">×</button>
-            </div>
+            <div class="modal-header"><h3>📎 Recursos: <span id="resourcesSongName"></span></h3><button class="modal-close" onclick="closeResourcesModal()">×</button></div>
             <div class="modal-body">
-                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                    <select id="resourcesFilter" class="form-control" onchange="loadResources()" style="flex:1;">
-                        <option value="all">Todos</option>
-                        <option value="lyrics">Letras</option>
-                        <option value="chords">Acordes</option>
-                        <option value="tabs">Tablaturas</option>
-                        <option value="sheet">Partituras</option>
-                        <option value="notes">Notas</option>
-                        <option value="pdf">PDFs</option>
-                        <option value="image">Imágenes</option>
-                    </select>
+                <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                    <select id="resourcesFilter" class="form-control" style="flex:1;min-width:150px;" onchange="loadResources()"><option value="all">Todos</option><option value="lyrics">Letras</option><option value="chords">Acordes</option><option value="tabs">Tablaturas</option><option value="notes">Notas</option><option value="pdf">PDFs</option><option value="image">Imágenes</option></select>
                     <button class="btn btn-primary" onclick="openAddResourceModal()">+ Agregar</button>
                 </div>
                 <div id="resourcesList"></div>
@@ -200,64 +152,24 @@
     <!-- Modal Ver Recurso -->
     <div class="modal-overlay" id="viewResourceModal">
         <div class="modal modal-lg">
-            <div class="modal-header">
-                <h3 id="viewResourceTitle">Recurso</h3>
-                <button class="modal-close" onclick="closeViewResourceModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <div id="viewResourceContent" style="white-space: pre-wrap; font-family: monospace; background: var(--bg-secondary); padding: 16px; border-radius: 8px; max-height: 400px; overflow-y: auto;"></div>
-            </div>
+            <div class="modal-header"><h3 id="viewResourceTitle">Recurso</h3><button class="modal-close" onclick="closeViewResourceModal()">×</button></div>
+            <div class="modal-body"><div id="viewResourceContent" style="max-height:60vh;overflow:auto;"></div></div>
+            <div class="modal-footer"><button class="btn btn-ghost" onclick="closeViewResourceModal()">Cerrar</button></div>
         </div>
     </div>
 
     <!-- Modal Agregar Recurso -->
     <div class="modal-overlay" id="addResourceModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Agregar Recurso</h3>
-                <button class="modal-close" onclick="closeAddResourceModal()">×</button>
-            </div>
+        <div class="modal modal-md">
+            <div class="modal-header"><h3>Agregar Recurso</h3><button class="modal-close" onclick="closeAddResourceModal()">×</button></div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Tipo</label>
-                    <select id="resourceType" class="form-control" onchange="toggleResourceContentType()">
-                        <option value="notes">Notas</option>
-                        <option value="lyrics">Letra</option>
-                        <option value="chords">Acordes</option>
-                        <option value="tabs">Tablatura</option>
-                        <option value="sheet">Partitura</option>
-                        <option value="pdf">PDF</option>
-                        <option value="image">Imagen</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Título (opcional)</label>
-                    <input type="text" id="resourceTitle" class="form-control" placeholder="Título del recurso">
-                </div>
-                <div class="form-group" id="resourceContentGroup">
-                    <label>Contenido</label>
-                    <textarea id="resourceContent" class="form-control" rows="8" placeholder="Escribe aquí..."></textarea>
-                </div>
-                <div class="form-group" id="resourceFileGroup" style="display:none;">
-                    <label>Archivo (máx 10MB)</label>
-                    <input type="file" id="resourceFileInput" class="form-control">
-                    <div id="uploadProgress" style="display:none; margin-top:8px;">
-                        <div style="background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
-                            <div id="uploadProgressBar" style="height: 4px; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="resourceShared" checked>
-                        Compartir con el grupo
-                    </label>
-                </div>
+                <div class="form-group"><label>Tipo</label><select id="resourceType" class="form-control" onchange="toggleResourceContentType()"><option value="notes">Notas</option><option value="lyrics">Letra</option><option value="chords">Acordes</option><option value="tabs">Tablatura</option><option value="pdf">PDF</option><option value="image">Imagen</option></select></div>
+                <div class="form-group"><label>Título</label><input type="text" id="resourceTitle" class="form-control"></div>
+                <div id="resourceContentGroup" class="form-group"><label>Contenido</label><textarea id="resourceContent" class="form-control" rows="8"></textarea></div>
+                <div id="resourceFileGroup" class="form-group" style="display:none;"><label>Archivo</label><input type="file" id="resourceFileInput" class="form-control"><div id="uploadProgress" style="display:none;margin-top:8px;"><div style="background:var(--bg-tertiary);border-radius:4px;height:8px;"><div id="uploadProgressBar" style="background:var(--primary);height:100%;border-radius:4px;width:0%;"></div></div></div></div>
+                <div class="form-group"><label><input type="checkbox" id="resourceShared" checked> 🌐 Compartir</label></div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeAddResourceModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveResource()">Guardar</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-ghost" onclick="closeAddResourceModal()">Cancelar</button><button class="btn btn-primary" onclick="saveResource()">Guardar</button></div>
         </div>
     </div>
 

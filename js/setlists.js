@@ -1,29 +1,29 @@
 checkAuth();
 setupUserInfo();
 
-let allSetlists = [];
-let allSongs = [];
-let currentSetlist = null;
-let currentSongResources = [];
-let currentResourceSongId = null;
-let viewMode = 'cards';
-let inStageMode = false;
+var allSetlists = [];
+var allSongs = [];
+var currentSetlist = null;
+var currentSongResources = [];
+var currentResourceSongId = null;
+var viewMode = 'table'; // DEFAULT: tabla
+var inStageMode = false;
 
 function formatDuration(seconds) {
     if (!seconds) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
     return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
 async function loadSetlists() {
     try {
-        [allSetlists, allSongs] = await Promise.all([
+        var results = await Promise.all([
             apiGet('/setlists'),
             apiGet('/songs')
         ]);
-        allSetlists = Array.isArray(allSetlists) ? allSetlists : [];
-        allSongs = Array.isArray(allSongs) ? allSongs : [];
+        allSetlists = Array.isArray(results[0]) ? results[0] : [];
+        allSongs = Array.isArray(results[1]) ? results[1] : [];
         renderSetlists();
     } catch (error) {
         console.error('Error:', error);
@@ -33,14 +33,14 @@ async function loadSetlists() {
 
 function setViewMode(mode) {
     viewMode = mode;
-    document.querySelectorAll('.view-toggle button').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(mode === 'cards' ? 'tarjeta' : 'tabla'));
+    document.querySelectorAll('.view-toggle button').forEach(function(btn) {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().indexOf(mode === 'cards' ? 'tarjeta' : 'tabla') !== -1);
     });
     renderSetlists();
 }
 
 function renderSetlists() {
-    const container = document.getElementById('setlistsContainer');
+    var container = document.getElementById('setlistsContainer');
 
     if (!allSetlists.length) {
         container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><h3>Sin set lists</h3><p>Crea tu primer set list</p></div>';
@@ -48,17 +48,28 @@ function renderSetlists() {
     }
 
     if (viewMode === 'table') {
-        container.innerHTML = '<div class="table-container"><table><thead><tr><th>Nombre</th><th>Canciones</th><th>Duración</th><th></th></tr></thead><tbody>' +
-            allSetlists.map(s => '<tr><td><strong>' + s.name + '</strong></td><td>' + (s.total_songs || 0) + '</td><td>' + formatDuration(s.total_duration_seconds) + '</td><td>' +
-                '<button class="btn btn-ghost btn-sm" onclick="viewSetlist(' + s.id + ')">Ver</button>' +
-                (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editSetlist(' + s.id + ')">✏️</button><button class="btn btn-ghost btn-sm" onclick="deleteSetlist(' + s.id + ')">🗑️</button>' : '') +
-                '</td></tr>').join('') + '</tbody></table></div>';
+        container.innerHTML = '<div class="table-container"><table><thead><tr>' +
+            '<th>Nombre</th><th>Descripción</th><th>Canciones</th><th>Duración</th><th>Acciones</th>' +
+            '</tr></thead><tbody>' +
+            allSetlists.map(function(s) {
+                return '<tr onclick="viewSetlist(' + s.id + ')" style="cursor:pointer;">' +
+                    '<td><strong>📋 ' + s.name + '</strong></td>' +
+                    '<td>' + (s.description || '-') + '</td>' +
+                    '<td>' + (s.total_songs || 0) + '</td>' +
+                    '<td>' + formatDuration(s.total_duration_seconds) + '</td>' +
+                    '<td onclick="event.stopPropagation()">' +
+                        '<button class="btn btn-ghost btn-sm" onclick="viewSetlist(' + s.id + ')">👁️</button>' +
+                        (isAdmin() ? '<button class="btn btn-ghost btn-sm" onclick="editSetlist(' + s.id + ')">✏️</button>' +
+                        '<button class="btn btn-ghost btn-sm btn-danger-text" onclick="deleteSetlist(' + s.id + ')">🗑️</button>' : '') +
+                    '</td></tr>';
+            }).join('') + '</tbody></table></div>';
     } else {
-        container.innerHTML = '<div class="setlist-grid">' + allSetlists.map(s => 
-            '<div class="setlist-card" onclick="viewSetlist(' + s.id + ')"><div class="icon">📋</div><h4>' + s.name + '</h4>' +
+        container.innerHTML = '<div class="setlist-grid">' + allSetlists.map(function(s) { 
+            return '<div class="setlist-card" onclick="viewSetlist(' + s.id + ')"><div class="icon">📋</div><h4>' + s.name + '</h4>' +
             '<div class="meta"><span>' + (s.total_songs || 0) + ' canciones</span><span>' + formatDuration(s.total_duration_seconds) + '</span></div>' +
             (isAdmin() ? '<div class="actions" onclick="event.stopPropagation();"><button class="btn btn-ghost btn-sm" onclick="editSetlist(' + s.id + ')">Editar</button><button class="btn btn-ghost btn-sm" style="color: var(--danger);" onclick="deleteSetlist(' + s.id + ')">Eliminar</button></div>' : '') +
-            '</div>').join('') + '</div>';
+            '</div>';
+        }).join('') + '</div>';
     }
 }
 
@@ -77,8 +88,8 @@ async function viewSetlist(id) {
 }
 
 function renderSetlistSongs() {
-    const container = document.getElementById('setlistSongs');
-    const songs = currentSetlist.songs || [];
+    var container = document.getElementById('setlistSongs');
+    var songs = currentSetlist.songs || [];
 
     if (!songs.length) {
         container.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><h3>Sin canciones</h3></div>';
@@ -107,9 +118,8 @@ function renderSetlistSongs() {
     }).join('');
 }
 
-// Ver letra
 function viewLyrics(idx) {
-    const song = currentSetlist.songs[idx];
+    var song = currentSetlist.songs[idx];
     if (!song || !song.lyrics) {
         showToast('Sin letra disponible');
         return;
@@ -123,7 +133,6 @@ function closeLyricsModal() {
     document.getElementById('lyricsModal').classList.remove('active');
 }
 
-// Recursos de canción
 async function openSongResources(songId, songName) {
     currentResourceSongId = songId;
     document.getElementById('resourcesSongName').textContent = songName;
@@ -137,7 +146,7 @@ function closeResourcesModal() {
 }
 
 async function loadResources() {
-    const filter = document.getElementById('resourcesFilter').value;
+    var filter = document.getElementById('resourcesFilter').value;
     try {
         currentSongResources = await apiGet('/song-resources/song/' + currentResourceSongId + '?filter=' + filter) || [];
         renderResources();
@@ -148,7 +157,7 @@ async function loadResources() {
 }
 
 function renderResources() {
-    const container = document.getElementById('resourcesList');
+    var container = document.getElementById('resourcesList');
     
     if (!currentSongResources.length) {
         container.innerHTML = '<div class="empty-state"><p>Sin recursos</p><small>Agrega letras, acordes, partituras o notas</small></div>';
@@ -175,16 +184,30 @@ function viewResource(id) {
     if (!r) return;
     
     if (r.file_url) {
-        window.open(r.file_url, '_blank');
+        if (r.file_type === 'pdf' || r.type === 'pdf') {
+            openFullscreenResource(r.title || 'PDF', '<iframe src="' + r.file_url + '" style="width:100%;height:100%;border:none;"></iframe>');
+        } else if (r.type === 'image' || ['jpg','jpeg','png','webp','gif'].indexOf(r.file_type) !== -1) {
+            openFullscreenResource(r.title || 'Imagen', '<img src="' + r.file_url + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
+        } else {
+            window.open(r.file_url, '_blank');
+        }
     } else if (r.content) {
-        document.getElementById('viewResourceTitle').textContent = r.title || 'Contenido';
-        document.getElementById('viewResourceContent').innerHTML = nl2br(r.content);
-        document.getElementById('viewResourceModal').classList.add('active');
+        openFullscreenResource(r.title || 'Contenido', '<pre style="white-space:pre-wrap;font-family:monospace;padding:20px;">' + r.content + '</pre>');
     }
 }
 
+function openFullscreenResource(title, content) {
+    document.getElementById('viewResourceTitle').textContent = title;
+    document.getElementById('viewResourceContent').innerHTML = content;
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.add('modal-fullscreen');
+    modal.classList.add('active');
+}
+
 function closeViewResourceModal() {
-    document.getElementById('viewResourceModal').classList.remove('active');
+    var modal = document.getElementById('viewResourceModal');
+    modal.querySelector('.modal').classList.remove('modal-fullscreen');
+    modal.classList.remove('active');
 }
 
 async function deleteResource(id) {
@@ -253,7 +276,8 @@ async function saveResource() {
             document.getElementById('uploadProgress').style.display = 'block';
             var result = await uploadToCloudinary(file, function(percent) {
                 document.getElementById('uploadProgressBar').style.width = percent + '%';
-                document.getElementById('uploadProgressText').textContent = percent + '%';
+                var textEl = document.getElementById('uploadProgressText');
+                if (textEl) textEl.textContent = percent + '%';
             });
             fileUrl = result.url;
             fileType = result.format;
@@ -283,7 +307,6 @@ async function saveResource() {
     }
 }
 
-// Movimiento de canciones
 async function moveSong(idx, direction) {
     var songs = currentSetlist.songs;
     var newIdx = idx + direction;
@@ -354,7 +377,7 @@ function filterAvailableSongs() {
     }).join('') : '<div class="empty-state"><p>No hay canciones disponibles</p></div>';
 }
 
-// Modo Escenario
+// Stage Mode functions (unchanged)
 function openStageMode() {
     inStageMode = true;
     document.getElementById('stageModeTitle').textContent = currentSetlist.name;
@@ -488,6 +511,7 @@ function closeSetlistModal() {
 }
 
 function editSetlist(id) {
+    if (event) event.stopPropagation();
     var setlist = allSetlists.find(function(s) { return s.id === id; });
     openSetlistModal(setlist);
 }
@@ -511,6 +535,7 @@ async function saveSetlist() {
 }
 
 async function deleteSetlist(id) {
+    if (event) event.stopPropagation();
     if (confirm('¿Eliminar este set list?')) {
         await apiDelete('/setlists/' + id);
         loadSetlists();

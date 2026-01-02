@@ -623,6 +623,27 @@ tr:hover td {
     background: var(--bg-secondary);
 }
 
+/* ========== ADD TO SETLIST BUTTON ========== */
+.btn-add-setlist {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-add-setlist:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
 /* Setlist Cards */
 .setlist-grid {
     display: grid;
@@ -670,7 +691,34 @@ tr:hover td {
     gap: 8px;
 }
 
-/* Calendar */
+/* Calendar Views */
+.calendar-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.calendar-nav button {
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.calendar-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 16px;
+}
+
 .calendar-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -698,6 +746,10 @@ tr:hover td {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg);
+}
+
+.calendar-day.other-month {
+    opacity: 0.4;
 }
 
 .calendar-day.today {
@@ -853,6 +905,35 @@ tr:hover td {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+}
+
+/* ========== FULLSCREEN RESOURCE MODAL ========== */
+.modal-fullscreen {
+    max-width: 100%;
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+}
+
+.modal-fullscreen .modal-body {
+    height: calc(100vh - 140px);
+    overflow-y: auto;
+}
+
+.modal-fullscreen #viewResourceContent {
+    max-height: none !important;
+    height: 100%;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.modal-fullscreen iframe,
+.modal-fullscreen img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 /* Stage Mode */
@@ -1106,6 +1187,30 @@ tr:hover td {
 @keyframes slideUp {
     from { transform: translateX(-50%) translateY(20px); opacity: 0; }
     to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+/* ========== OFFLINE INDICATOR ========== */
+.offline-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--warning);
+    color: #000;
+    text-align: center;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 9999;
+    display: none;
+}
+
+body.offline .offline-indicator {
+    display: block;
+}
+
+body.offline .main-content {
+    padding-top: 56px;
 }
 
 /* Mobile Styles */
@@ -1508,6 +1613,17 @@ tr:hover td {
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
     
+    /* Fullscreen modal on mobile */
+    .modal-fullscreen {
+        border-radius: 0;
+        max-height: 100vh;
+        height: 100vh;
+    }
+    
+    .modal-fullscreen .modal-body {
+        height: calc(100vh - 120px);
+    }
+    
     /* Stage Mode Mobile */
     .stage-header {
         padding: 12px 16px;
@@ -1640,6 +1756,7 @@ tr:hover td {
     align-items: center;
     justify-content: center;
 }
+
 /* ========== SONGS GRID & CARDS ========== */
 .songs-grid {
     display: grid;
@@ -1885,17 +2002,10 @@ tr:hover td {
         flex-shrink: 0;
     }
 }
-/* ============ FAVORITAS GRID ============ */
-.favorites-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-}
 
-@media (max-width: 640px) {
-    .favorites-grid {
-        grid-template-columns: 1fr;
-    }
+/* ============ FAVORITAS TABLE (no cards) ============ */
+.favorites-table {
+    width: 100%;
 }
 
 /* ============ MODAL RESPONSIVO ============ */
@@ -1906,6 +2016,10 @@ tr:hover td {
 
 .modal.modal-lg {
     max-width: 800px;
+}
+
+.modal.modal-md {
+    max-width: 550px;
 }
 
 @media (min-width: 768px) {
@@ -1947,105 +2061,13 @@ tr:hover td {
     gap: 4px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
 }
 
 .event-card-actions .btn {
     flex: 1;
     padding: 8px;
     font-size: 12px;
-}
-
-@media (max-width: 640px) {
-    .event-card-actions {
-        flex-wrap: wrap;
-    }
-    
-    .event-card-actions .btn {
-        flex: 0 0 calc(50% - 4px);
-    }
-}
-/* ============ EVENTS GRID ============ */
-.events-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-    padding: 16px;
-}
-
-.event-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    overflow: hidden;
-    transition: all 0.2s;
-}
-
-.event-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.event-card-header {
-    display: flex;
-    gap: 16px;
-    padding: 16px;
-    cursor: pointer;
-    align-items: flex-start;
-}
-
-.event-date-badge {
-    background: var(--primary);
-    color: white;
-    border-radius: 12px;
-    padding: 12px 16px;
-    text-align: center;
-    min-width: 60px;
-}
-
-.event-date-badge .day {
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.event-date-badge .month {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    margin-top: 4px;
-    text-transform: uppercase;
-}
-
-.event-info {
-    flex: 1;
-}
-
-.event-info h4 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.event-info p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin: 4px 0;
-}
-
-.event-card-actions {
-    display: flex;
-    gap: 8px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-}
-
-.event-card-actions .btn {
-    flex: 1;
-    justify-content: center;
-    font-size: 12px;
-    padding: 8px 12px;
 }
 
 .btn-danger-text {
@@ -2071,7 +2093,7 @@ tr:hover td {
     color: var(--text-secondary);
     margin: 20px 0 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
 }
 
 /* ============ EVENT DETAILS ============ */
@@ -2116,15 +2138,6 @@ tr:hover td {
     font-size: 13px;
     display: block;
     margin-bottom: 8px;
-}
-
-/* ============ MODAL SIZES ============ */
-.modal.modal-md {
-    max-width: 550px;
-}
-
-.modal.modal-lg {
-    max-width: 700px;
 }
 
 .modal-body-scroll {
@@ -2186,4 +2199,38 @@ tr:hover td {
     .event-card-actions .btn {
         flex: 1 1 100%;
     }
+}
+
+/* ============ ADD TO SETLIST MODAL ============ */
+.setlist-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.setlist-select-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.setlist-select-item:hover {
+    background: var(--bg-secondary);
+}
+
+.setlist-select-item:last-child {
+    border-bottom: none;
+}
+
+.setlist-select-item .info h4 {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.setlist-select-item .info p {
+    font-size: 13px;
+    color: var(--text-secondary);
 }
