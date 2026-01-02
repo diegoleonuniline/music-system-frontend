@@ -7,6 +7,7 @@
     <title>Configuración - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body>
     <header class="mobile-header">
@@ -47,6 +48,7 @@
                 <h1>Configuración</h1>
             </div>
 
+            <!-- Mi Perfil -->
             <div class="card">
                 <div class="card-header"><h3>👤 Mi Perfil</h3></div>
                 <div class="card-body">
@@ -61,6 +63,7 @@
                 </div>
             </div>
 
+            <!-- Apariencia -->
             <div class="card">
                 <div class="card-header"><h3>🎨 Apariencia</h3></div>
                 <div class="card-body">
@@ -74,46 +77,96 @@
                 </div>
             </div>
 
-            <div class="card" id="musiciansSection" style="display: none;">
-                <div class="card-header">
-                    <h3>👥 Músicos</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openMusicianModal()">+ Nuevo</button>
+            <!-- Notificaciones -->
+            <div class="card">
+                <div class="card-header"><h3>🔔 Notificaciones</h3></div>
+                <div class="card-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h4 style="font-size: 15px;">Notificaciones Push</h4>
+                            <p style="color: var(--text-secondary); font-size: 13px;">Recibe alertas de eventos y ensayos</p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="requestNotificationPermission()" id="notifBtn">Activar</button>
+                    </div>
                 </div>
-                <div id="musiciansList"></div>
             </div>
 
-            <div class="card" id="categoriesSection" style="display: none;">
-                <div class="card-header">
-                    <h3>📁 Categorías</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva</button>
+            <!-- ADMIN: Músicos -->
+            <div class="card collapsible-card" id="musiciansSection" style="display: none;">
+                <div class="card-header" onclick="toggleSection('musicians')">
+                    <h3>👥 Músicos <span class="badge badge-primary" id="musiciansCount">0</span></h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openMusicianModal()">+ Nuevo</button>
+                        <span class="collapse-icon" id="musiciansIcon">▼</span>
+                    </div>
                 </div>
-                <div id="categoriesList"></div>
+                <div class="card-content" id="musiciansContent">
+                    <div class="search-box">
+                        <input type="text" id="searchMusicians" placeholder="Buscar músico..." onkeyup="filterMusicians()">
+                    </div>
+                    <div id="musiciansList"></div>
+                </div>
             </div>
 
-            <div class="card" id="genresSection" style="display: none;">
-                <div class="card-header">
-                    <h3>🎸 Géneros</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openGenreModal()">+ Nuevo</button>
+            <!-- ADMIN: Categorías -->
+            <div class="card collapsible-card" id="categoriesSection" style="display: none;">
+                <div class="card-header" onclick="toggleSection('categories')">
+                    <h3>📁 Categorías <span class="badge badge-primary" id="categoriesCount">0</span></h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openCategoryModal()">+ Nueva</button>
+                        <span class="collapse-icon" id="categoriesIcon">▼</span>
+                    </div>
                 </div>
-                <div id="genresList"></div>
+                <div class="card-content" id="categoriesContent">
+                    <div id="categoriesList"></div>
+                </div>
             </div>
 
-            <!-- SUPER ADMIN ONLY -->
-            <div class="card" id="groupsSection" style="display: none;">
-                <div class="card-header">
-                    <h3>🏢 Grupos Musicales</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openGroupModal()">+ Nuevo Grupo</button>
+            <!-- ADMIN: Géneros -->
+            <div class="card collapsible-card" id="genresSection" style="display: none;">
+                <div class="card-header" onclick="toggleSection('genres')">
+                    <h3>🎸 Géneros <span class="badge badge-primary" id="genresCount">0</span></h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openGenreModal()">+ Nuevo</button>
+                        <span class="collapse-icon" id="genresIcon">▼</span>
+                    </div>
                 </div>
-                <div id="groupsList"></div>
+                <div class="card-content" id="genresContent">
+                    <div id="genresList"></div>
+                </div>
             </div>
 
-            <div class="card" id="plansSection" style="display: none;">
-                <div class="card-header">
-                    <h3>💳 Planes</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openPlanModal()">+ Nuevo Plan</button>
+            <!-- SUPER ADMIN: Grupos Musicales -->
+            <div class="card collapsible-card" id="groupsSection" style="display: none;">
+                <div class="card-header" onclick="toggleSection('groups')">
+                    <h3>🏢 Grupos Musicales <span class="badge badge-warning" id="groupsCount">0</span></h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openGroupModal()">+ Nuevo</button>
+                        <span class="collapse-icon" id="groupsIcon">▼</span>
+                    </div>
                 </div>
-                <div id="plansList"></div>
+                <div class="card-content" id="groupsContent">
+                    <div class="search-box">
+                        <input type="text" id="searchGroups" placeholder="Buscar grupo..." onkeyup="filterGroups()">
+                    </div>
+                    <div id="groupsList"></div>
+                </div>
             </div>
+
+            <!-- SUPER ADMIN: Planes -->
+            <div class="card collapsible-card" id="plansSection" style="display: none;">
+                <div class="card-header" onclick="toggleSection('plans')">
+                    <h3>💳 Planes <span class="badge badge-warning" id="plansCount">0</span></h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openPlanModal()">+ Nuevo</button>
+                        <span class="collapse-icon" id="plansIcon">▼</span>
+                    </div>
+                </div>
+                <div class="card-content" id="plansContent">
+                    <div id="plansList"></div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -125,6 +178,7 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
+    <!-- Modal Músico -->
     <div class="modal-overlay" id="musicianModal">
         <div class="modal">
             <div class="modal-header">
@@ -142,7 +196,7 @@
                     <label>Contraseña *</label>
                     <div style="position: relative;">
                         <input type="password" id="musicianPassword" style="padding-right: 45px;">
-                        <button type="button" onclick="togglePassword('musicianPassword', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;">👁️</button>
+                        <button type="button" onclick="togglePasswordVisibility('musicianPassword', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;">👁️</button>
                     </div>
                 </div>
                 <div class="form-group"><label>Teléfono</label><input type="tel" id="musicianPhone"></div>
@@ -160,6 +214,7 @@
         </div>
     </div>
 
+    <!-- Modal Categoría -->
     <div class="modal-overlay" id="categoryModal">
         <div class="modal">
             <div class="modal-header">
@@ -178,6 +233,7 @@
         </div>
     </div>
 
+    <!-- Modal Género -->
     <div class="modal-overlay" id="genreModal">
         <div class="modal">
             <div class="modal-header">
@@ -206,19 +262,34 @@
                 <input type="hidden" id="groupId">
                 <div class="form-group"><label>Nombre del Grupo *</label><input type="text" id="groupName" required placeholder="Ej: Los Caimanes"></div>
                 <div class="form-group"><label>Plan</label>
-                    <select id="groupPlan">
-                        <option value="">Sin plan</option>
-                    </select>
+                    <select id="groupPlan"><option value="">Sin plan</option></select>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Fecha Inicio</label><input type="date" id="groupStartDate"></div>
                     <div class="form-group"><label>Fecha Fin</label><input type="date" id="groupEndDate"></div>
                 </div>
-                <div class="form-group"><label>Administrador del Grupo</label>
-                    <select id="groupAdmin">
-                        <option value="">Seleccionar administrador...</option>
-                    </select>
-                    <small style="color: var(--text-tertiary); font-size: 12px;">El administrador podrá gestionar canciones, eventos y músicos del grupo</small>
+                <div class="form-group">
+                    <label>Administrador del Grupo</label>
+                    <select id="groupAdmin"><option value="">Seleccionar o crear nuevo...</option></select>
+                    <small style="color: var(--text-tertiary);">El admin podrá gestionar canciones, eventos y músicos</small>
+                </div>
+                <div id="newAdminSection" style="display: none; margin-top: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <h4 style="font-size: 14px; margin-bottom: 12px;">Crear nuevo administrador</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Nombre *</label><input type="text" id="newAdminFirstName"></div>
+                        <div class="form-group"><label>Apellido</label><input type="text" id="newAdminLastName"></div>
+                    </div>
+                    <div class="form-group"><label>Email *</label><input type="text" id="newAdminEmail" placeholder="admin@email.com"></div>
+                    <div class="form-group">
+                        <label>Contraseña *</label>
+                        <div style="position: relative;">
+                            <input type="password" id="newAdminPassword" style="padding-right: 45px;">
+                            <button type="button" onclick="togglePasswordVisibility('newAdminPassword', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;">👁️</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleNewAdminSection()">+ Crear nuevo administrador</button>
                 </div>
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -246,7 +317,7 @@
                 <div class="form-group"><label>Nombre del Plan *</label><input type="text" id="planName" required placeholder="Ej: Pro, Básico"></div>
                 <div class="form-row">
                     <div class="form-group"><label>Precio $</label><input type="number" id="planPrice" step="0.01" placeholder="0.00"></div>
-                    <div class="form-group"><label>Máx. Usuarios</label><input type="number" id="planMaxUsers" placeholder="10"></div>
+                    <div class="form-group"><label>Máx. Músicos</label><input type="number" id="planMaxMusicians" placeholder="10"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Máx. Canciones</label><input type="number" id="planMaxSongs" placeholder="100"></div>
@@ -260,6 +331,16 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .collapsible-card .card-header { cursor: pointer; user-select: none; }
+        .collapsible-card .card-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .collapsible-card.expanded .card-content { max-height: 2000px; }
+        .collapsible-card .collapse-icon { transition: transform 0.3s; font-size: 12px; color: var(--text-secondary); }
+        .collapsible-card.expanded .collapse-icon { transform: rotate(180deg); }
+        .search-box { padding: 12px; border-bottom: 1px solid var(--border); }
+        .search-box input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    </style>
 
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>

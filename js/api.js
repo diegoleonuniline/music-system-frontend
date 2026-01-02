@@ -37,7 +37,7 @@ function logout() {
     window.location.href = '../index.html';
 }
 
-function togglePassword(inputId, btn) {
+function togglePasswordVisibility(inputId, btn) {
     const input = document.getElementById(inputId);
     if (input.type === 'password') {
         input.type = 'text';
@@ -63,16 +63,23 @@ function toggleTheme() {
 
 initTheme();
 
-// API calls
+// ============ API calls ============
 async function apiGet(endpoint) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
+            headers: { 
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            }
         });
-        if (response.status === 401) { logout(); return null; }
+        if (response.status === 401) {
+            logout();
+            return null;
+        }
+        if (!response.ok) throw new Error('Error en la petición');
         return await response.json();
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('API GET Error:', error);
         return null;
     }
 }
@@ -81,17 +88,20 @@ async function apiPost(endpoint, data) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getToken()}`
+            headers: { 
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
         });
-        if (response.status === 401) { logout(); return null; }
+        if (response.status === 401) {
+            logout();
+            return null;
+        }
         return await response.json();
     } catch (error) {
-        console.error('API Error:', error);
-        return null;
+        console.error('API POST Error:', error);
+        throw error;
     }
 }
 
@@ -99,35 +109,20 @@ async function apiPut(endpoint, data) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getToken()}`
+            headers: { 
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
         });
-        if (response.status === 401) { logout(); return null; }
+        if (response.status === 401) {
+            logout();
+            return null;
+        }
         return await response.json();
     } catch (error) {
-        console.error('API Error:', error);
-        return null;
-    }
-}
-
-async function apiPatch(endpoint, data) {
-    try {
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getToken()}`
-            },
-            body: JSON.stringify(data)
-        });
-        if (response.status === 401) { logout(); return null; }
-        return await response.json();
-    } catch (error) {
-        console.error('API Error:', error);
-        return null;
+        console.error('API PUT Error:', error);
+        throw error;
     }
 }
 
@@ -135,131 +130,181 @@ async function apiDelete(endpoint) {
     try {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${getToken()}` }
+            headers: { 
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            }
         });
-        if (response.status === 401) { logout(); return null; }
+        if (response.status === 401) {
+            logout();
+            return null;
+        }
         return await response.json();
     } catch (error) {
-        console.error('API Error:', error);
-        return null;
+        console.error('API DELETE Error:', error);
+        throw error;
     }
 }
 
-// Date formatting - CORREGIDO para evitar Invalid Date
-function formatDate(dateString) {
-    if (!dateString) return '-';
-    try {
-        // Handle ISO string with timezone
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '-';
-        
-        // Adjust for timezone offset to get correct local date
-        const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-        
-        return utcDate.toLocaleDateString('es-MX', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
-    } catch (e) {
-        return '-';
-    }
+// ============ Cloudinary Upload ============
+const CLOUDINARY_CLOUD_NAME = 'dnodzj8fz';
+const CLOUDINARY_UPLOAD_PRESET = 'caiman_uploads';
+
+async function uploadToCloudinary(file, onProgress) {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        formData.append('folder', 'caiman');
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable && onProgress) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                onProgress(percent);
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                resolve({
+                    url: response.secure_url,
+                    type: response.resource_type,
+                    format: response.format,
+                    size: response.bytes
+                });
+            } else {
+                reject(new Error('Error al subir archivo'));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error('Error de conexión'));
+        xhr.send(formData);
+    });
 }
 
-function formatDateShort(dateString) {
-    if (!dateString) return '-';
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '-';
-        
-        return date.toLocaleDateString('es-MX', {
-            day: 'numeric',
-            month: 'short'
-        });
-    } catch (e) {
-        return '-';
-    }
-}
-
-function getDateValue(dateString) {
-    if (!dateString) return '';
-    try {
-        // Extract just the date part YYYY-MM-DD
-        if (dateString.includes('T')) {
-            return dateString.split('T')[0];
+// ============ OneSignal Notifications ============
+async function initOneSignal() {
+    if (typeof OneSignal !== 'undefined') {
+        try {
+            const permission = await OneSignal.Notifications.permission;
+            if (!permission) {
+                await OneSignal.Notifications.requestPermission();
+            }
+            
+            // Registrar usuario con su ID
+            const user = getUser();
+            if (user.id) {
+                await OneSignal.login(user.id.toString());
+                await OneSignal.User.addTags({
+                    user_id: user.id.toString(),
+                    group_id: user.group_id?.toString() || '',
+                    role: user.role || 'musician'
+                });
+            }
+        } catch (e) {
+            console.log('OneSignal init error:', e);
         }
-        // If already in YYYY-MM-DD format
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-            return dateString;
-        }
-        // Try to parse and format
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
-        return date.toISOString().split('T')[0];
-    } catch (e) {
-        return '';
     }
 }
 
-function formatDuration(seconds) {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+async function sendPushNotification(title, message, userIds = []) {
+    // Las notificaciones se envían desde el backend
+    // Esta función es para referencia
+    console.log('Push notification:', { title, message, userIds });
 }
 
-// UI helpers
-function showToast(message) {
+// ============ Toast ============
+function showToast(message, type = 'success') {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
-    
+
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = `toast toast-${type}`;
     toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'error' ? '#EF4444' : type === 'warning' ? '#F59E0B' : '#10B981'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideUp 0.3s ease;
+    `;
     document.body.appendChild(toast);
-    
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Mobile Menu
+// ============ User Info Setup ============
+function setupUserInfo() {
+    const user = getUser();
+    const avatar = document.getElementById('userAvatar');
+    const name = document.getElementById('userName');
+    const role = document.getElementById('userRole');
+
+    if (avatar) avatar.textContent = (user.first_name || 'U').charAt(0).toUpperCase();
+    if (name) name.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
+    if (role) {
+        role.textContent = user.role === 'super_admin' ? 'Super Admin' : 
+                          user.role === 'group_admin' ? 'Administrador' : 'Músico';
+    }
+
+    // Init OneSignal después de login
+    initOneSignal();
+}
+
+// ============ Mobile Menu ============
 function toggleMobileMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('active');
 }
 
 function closeMobileMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
+    document.querySelector('.sidebar').classList.remove('open');
+    document.querySelector('.sidebar-overlay').classList.remove('active');
 }
 
-function setupUserInfo() {
-    const user = getUser();
-    
-    // Desktop sidebar
-    const userName = document.getElementById('userName');
-    const userRole = document.getElementById('userRole');
-    const userAvatar = document.getElementById('userAvatar');
-    
-    if (userName) userName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
-    if (userRole) {
-        const roles = { super_admin: 'Super Admin', group_admin: 'Admin', musician: 'Músico' };
-        userRole.textContent = roles[user.role] || 'Usuario';
-    }
-    if (userAvatar) userAvatar.textContent = (user.first_name || 'U').charAt(0).toUpperCase();
-    
-    // Mobile
-    const mobileUserName = document.getElementById('mobileUserName');
-    const mobileUserRole = document.getElementById('mobileUserRole');
-    const mobileUserAvatar = document.getElementById('mobileUserAvatar');
-    
-    if (mobileUserName) mobileUserName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario';
-    if (mobileUserRole) {
-        const roles = { super_admin: 'Super Admin', group_admin: 'Admin', musician: 'Músico' };
-        mobileUserRole.textContent = roles[user.role] || 'Usuario';
-    }
-    if (mobileUserAvatar) mobileUserAvatar.textContent = (user.first_name || 'U').charAt(0).toUpperCase();
+// ============ Format Helpers ============
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('es-MX', { 
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+}
+
+// ============ Text with line breaks ============
+function formatTextWithBreaks(text) {
+    if (!text) return '';
+    return text.replace(/\n/g, '<br>');
+}
+
+function nl2br(str) {
+    if (!str) return '';
+    return str.replace(/(?:\r\n|\r|\n)/g, '<br>');
+}
+
+// CSS Animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+`;
+document.head.appendChild(style);

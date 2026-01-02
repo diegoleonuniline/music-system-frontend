@@ -7,6 +7,8 @@
     <title>Caimán - Login</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
+    <!-- OneSignal -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body class="login-page">
     <div class="login-container">
@@ -25,7 +27,7 @@
                 <label>Contraseña</label>
                 <div style="position: relative;">
                     <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password" style="padding-right: 45px;">
-                    <button type="button" onclick="togglePassword('password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;">👁️</button>
+                    <button type="button" onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;">👁️</button>
                 </div>
             </div>
             <div id="errorMsg" class="error-msg"></div>
@@ -35,7 +37,15 @@
 
     <script src="js/config.js"></script>
     <script>
-    function togglePassword(inputId, btn) {
+    // OneSignal Init
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+            appId: "9c406d11-293e-4344-bbbc-5f7ae8c997be",
+        });
+    });
+
+    function togglePasswordVisibility(inputId, btn) {
         const input = document.getElementById(inputId);
         if (input.type === 'password') {
             input.type = 'text';
@@ -47,7 +57,7 @@
     }
     
     // Si ya hay sesión, ir al dashboard
-    if (localStorage.getItem('token')) {
+    if (localStorage.getItem('token') && localStorage.getItem('user')) {
         window.location.href = 'pages/dashboard.html';
     }
     </script>
