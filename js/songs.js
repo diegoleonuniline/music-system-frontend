@@ -10,19 +10,6 @@ var currentResourceSongId = null;
 var viewMode = 'table'; // DEFAULT: tabla
 var groupBy = 'none';
 
-// ========== ACTIONS MENU HELPER ==========
-function closeActionsMenu() {
-    document.querySelectorAll('.actions-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-        m.style.left = '';
-        m.style.top = '';
-        m.style.right = '';
-        m.style.bottom = '';
-    });
-    var overlay = document.querySelector('.actions-overlay');
-    if (overlay) overlay.remove();
-}
-
 async function loadSongs() {
     try {
         var results = await Promise.all([
@@ -148,21 +135,11 @@ function renderSongs() {
                     '<td onclick="viewSong(' + s.id + ')">' + (s.artist || '-') + '</td><td onclick="viewSong(' + s.id + ')">' + (s.musical_key || '-') + '</td><td onclick="viewSong(' + s.id + ')">' + (s.bpm || '-') + '</td>' +
                     '<td onclick="viewSong(' + s.id + ')">' + formatDuration(s.duration_seconds) + '</td>' +
                     '<td class="actions-cell">' +
-                        '<button class="btn btn-ghost btn-sm" onclick="toggleFavorite(' + s.id + ')" title="Favorito">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
-                        '<div class="actions-dropdown">' +
-                            '<button class="btn btn-ghost btn-sm" onclick="toggleActionsMenu(event, ' + s.id + ')">⋮</button>' +
-                            '<div class="actions-menu" id="actions-menu-' + s.id + '">' +
-                                (s.lyrics ? '<button onclick="quickViewLyrics(' + s.id + ')">📝 Ver Letra</button>' : '') +
-                                '<button onclick="openSongResources(' + s.id + ',\'' + songName + '\')">📎 Recursos</button>' +
-                                '<button onclick="openAddToSetlistModal(' + s.id + ',\'' + songName + '\')">📋 Agregar a Set List</button>' +
-                                (s.video_url ? '<button onclick="window.open(\'' + s.video_url + '\', \'_blank\')">🎬 Ver Video</button>' : '') +
-                                (s.audio_url ? '<button onclick="window.open(\'' + s.audio_url + '\', \'_blank\')">🎧 Escuchar</button>' : '') +
-                                '<div class="actions-divider"></div>' +
-                                '<button onclick="editSong(' + s.id + ')">✏️ Editar</button>' +
-                                '<button onclick="copySong(' + s.id + ')">📄 Copiar</button>' +
-                                '<button onclick="deleteSong(' + s.id + ')" class="danger">🗑️ Eliminar</button>' +
-                            '</div>' +
-                        '</div>' +
+                        '<button class="btn-icon" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')" title="Favorito">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
+                        '<button class="btn-icon" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + songName + '\')" title="Recursos">📎</button>' +
+                        '<button class="btn-icon" onclick="event.stopPropagation();openAddToSetlistModal(' + s.id + ',\'' + songName + '\')" title="Agregar a Set List">📋</button>' +
+                        '<button class="btn-icon" onclick="event.stopPropagation();editSong(' + s.id + ')" title="Editar">✏️</button>' +
+                        '<button class="btn-icon btn-danger" onclick="event.stopPropagation();deleteSong(' + s.id + ')" title="Eliminar">🗑️</button>' +
                     '</td></tr>';
                 }).join('') + '</tbody></table></div>';
         });
@@ -187,21 +164,11 @@ function renderSongs() {
                         '</div>' +
                     '</div>' +
                     '<div class="song-card-actions">' +
-                        '<button class="btn btn-icon btn-ghost" onclick="toggleFavorite(' + s.id + ')">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
-                        '<div class="actions-dropdown">' +
-                            '<button class="btn btn-icon btn-ghost" onclick="toggleActionsMenu(event, ' + s.id + ')">⋮</button>' +
-                            '<div class="actions-menu" id="actions-menu-card-' + s.id + '">' +
-                                (s.lyrics ? '<button onclick="quickViewLyrics(' + s.id + ')">📝 Ver Letra</button>' : '') +
-                                '<button onclick="openSongResources(' + s.id + ',\'' + songName + '\')">📎 Recursos</button>' +
-                                '<button onclick="openAddToSetlistModal(' + s.id + ',\'' + songName + '\')">📋 Agregar a Set List</button>' +
-                                (s.video_url ? '<button onclick="window.open(\'' + s.video_url + '\', \'_blank\')">🎬 Ver Video</button>' : '') +
-                                (s.audio_url ? '<button onclick="window.open(\'' + s.audio_url + '\', \'_blank\')">🎧 Escuchar</button>' : '') +
-                                '<div class="actions-divider"></div>' +
-                                '<button onclick="editSong(' + s.id + ')">✏️ Editar</button>' +
-                                '<button onclick="copySong(' + s.id + ')">📄 Copiar</button>' +
-                                '<button onclick="deleteSong(' + s.id + ')" class="danger">🗑️ Eliminar</button>' +
-                            '</div>' +
-                        '</div>' +
+                        '<button class="btn-icon" onclick="toggleFavorite(' + s.id + ')" title="Favorito">' + (s.is_favorite ? '⭐' : '☆') + '</button>' +
+                        '<button class="btn-icon" onclick="openSongResources(' + s.id + ',\'' + songName + '\')" title="Recursos">📎</button>' +
+                        '<button class="btn-icon" onclick="openAddToSetlistModal(' + s.id + ',\'' + songName + '\')" title="Set List">📋</button>' +
+                        '<button class="btn-icon" onclick="editSong(' + s.id + ')" title="Editar">✏️</button>' +
+                        '<button class="btn-icon btn-danger" onclick="deleteSong(' + s.id + ')" title="Eliminar">🗑️</button>' +
                     '</div>' +
                 '</div>';
             }).join('') + '</div>';
@@ -633,69 +600,10 @@ function nl2br(str) {
     return str ? str.replace(/\n/g, '<br>') : '';
 }
 
-// ========== ACTIONS MENU ==========
-function toggleActionsMenu(e, songId) {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    // Cerrar otros menús abiertos
-    closeActionsMenu();
-    
-    // Buscar el menú
-    var menu = document.getElementById('actions-menu-' + songId) || document.getElementById('actions-menu-card-' + songId);
-    if (!menu) return;
-    
-    // Mostrar menú
-    menu.classList.add('show');
-    
-    // Posicionar en desktop
-    if (window.innerWidth > 768) {
-        var btn = e.currentTarget;
-        var rect = btn.getBoundingClientRect();
-        
-        // Calcular posición - alinear a la derecha del botón
-        var menuWidth = 200;
-        var left = rect.right - menuWidth;
-        var top = rect.bottom + 4;
-        
-        // Si se sale por la izquierda, ajustar
-        if (left < 10) left = 10;
-        
-        // Si se sale por abajo, mostrar arriba
-        if (top + 300 > window.innerHeight) {
-            top = rect.top - 300;
-            if (top < 10) top = 10;
-        }
-        
-        menu.style.left = left + 'px';
-        menu.style.top = top + 'px';
-        menu.style.right = 'auto';
-        menu.style.bottom = 'auto';
-    } else {
-        // Móvil: overlay
-        var overlay = document.createElement('div');
-        overlay.className = 'actions-overlay';
-        overlay.onclick = closeActionsMenu;
-        document.body.appendChild(overlay);
-    }
-}
-
-// Cerrar menús al hacer clic afuera
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.actions-dropdown') && !e.target.closest('.actions-menu')) {
-        closeActionsMenu();
-    }
-});
-
-// Cerrar menú con tecla Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeActionsMenu();
-    }
-});
+// Función vacía para compatibilidad
+function closeActionsMenu() {}
 
 function quickViewLyrics(id) {
-    closeActionsMenu();
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song || !song.lyrics) {
         showToast('Sin letra disponible');

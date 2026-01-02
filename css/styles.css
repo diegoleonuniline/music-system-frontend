@@ -2751,103 +2751,49 @@ body.offline .main-content {
     color: var(--text-secondary);
 }
 
-/* ============ ACTIONS DROPDOWN MENU ============ */
-.actions-dropdown {
-    position: static;
-}
-
-.actions-cell {
-    position: relative;
-    overflow: visible;
-}
-
-.actions-menu {
-    position: fixed;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    min-width: 200px;
-    z-index: 9999;
-    display: none;
-}
-
-.actions-menu.show {
-    display: block;
-    animation: menuFadeIn 0.15s ease;
-}
-
-@keyframes menuFadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.actions-menu button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
+/* ============ ACTION BUTTONS ============ */
+.btn-icon {
     background: transparent;
-    text-align: left;
-    font-size: 14px;
-    color: var(--text);
+    border: none;
+    padding: 8px;
+    font-size: 16px;
     cursor: pointer;
+    border-radius: 6px;
     transition: background 0.15s;
+    line-height: 1;
 }
 
-.actions-menu button:hover {
-    background: var(--bg-secondary);
+.btn-icon:hover {
+    background: var(--bg-tertiary);
 }
 
-.actions-menu button.danger {
-    color: var(--danger);
-}
-
-.actions-menu button.danger:hover {
+.btn-icon.btn-danger:hover {
     background: rgba(239, 68, 68, 0.1);
 }
 
-.actions-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 4px 0;
+.actions-cell {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 2px;
 }
 
-/* Mobile: Bottom Sheet */
+.song-card-actions {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px;
+    border-top: 1px solid var(--border);
+}
+
+/* Mobile: Botones más grandes */
 @media (max-width: 768px) {
-    .actions-menu {
-        left: 12px !important;
-        right: 12px !important;
-        bottom: 80px !important;
-        top: auto !important;
-        border-radius: 16px;
-        min-width: unset;
-        max-height: 60vh;
-        overflow-y: auto;
+    .btn-icon {
+        padding: 10px;
+        font-size: 18px;
     }
     
-    .actions-menu::before {
-        content: '';
-        display: block;
-        width: 40px;
-        height: 4px;
-        background: var(--border);
-        border-radius: 2px;
-        margin: 10px auto 6px;
+    .actions-cell {
+        gap: 0;
     }
-    
-    .actions-menu button {
-        padding: 16px 20px;
-        font-size: 16px;
-    }
-}
-
-/* Overlay para cerrar */
-.actions-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 9998;
 }
