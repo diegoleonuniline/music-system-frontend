@@ -22,18 +22,84 @@ function updateThemeBtn() {
 }
 updateThemeBtn();
 
-// Notification permission
-async function requestNotificationPermission() {
-    if (typeof OneSignal !== 'undefined') {
-        try {
-            await OneSignal.Notifications.requestPermission();
+// OneSignal Init
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+        appId: "9c406d11-293e-4344-bbbc-5f7ae8c997be",
+        allowLocalhostAsSecureOrigin: true
+    });
+    
+    // Actualizar botón según estado actual
+    updateNotifButton();
+});
+
+async function updateNotifButton() {
+    const btn = document.getElementById('notifBtn');
+    if (!btn) return;
+    
+    try {
+        if (typeof OneSignal !== 'undefined' && OneSignal.Notifications) {
             const permission = await OneSignal.Notifications.permission;
-            document.getElementById('notifBtn').textContent = permission ? '✓ Activadas' : 'Activar';
-            showToast(permission ? 'Notificaciones activadas' : 'Permiso denegado');
-        } catch (e) {
-            showToast('Error al activar notificaciones', 'error');
+            btn.textContent = permission ? '✓ Activadas' : 'Activar';
+            btn.disabled = false;
         }
+    } catch (e) {
+        console.log('OneSignal check error:', e);
     }
+}
+
+async function requestNotificationPermission() {
+    const btn = document.getElementById('notifBtn');
+    btn.textContent = 'Activando...';
+    btn.disabled = true;
+    
+    try {
+        if (typeof OneSignal === 'undefined') {
+            // Esperar a que cargue OneSignal
+            await new Promise((resolve, reject) => {
+                let attempts = 0;
+                const check = setInterval(() => {
+                    attempts++;
+                    if (typeof OneSignal !== 'undefined') {
+                        clearInterval(check);
+                        resolve();
+                    } else if (attempts > 50) {
+                        clearInterval(check);
+                        reject(new Error('OneSignal no cargó'));
+                    }
+                }, 100);
+            });
+        }
+        
+        // Solicitar permiso
+        await OneSignal.Notifications.requestPermission();
+        const permission = await OneSignal.Notifications.permission;
+        
+        if (permission) {
+            // Registrar usuario
+            const user = getUser();
+            if (user.id) {
+                await OneSignal.login(user.id.toString());
+                await OneSignal.User.addTags({
+                    user_id: user.id.toString(),
+                    group_id: user.group_id?.toString() || '',
+                    role: user.role || 'musician'
+                });
+            }
+            btn.textContent = '✓ Activadas';
+            showToast('Notificaciones activadas');
+        } else {
+            btn.textContent = 'Denegado';
+            showToast('Permiso de notificaciones denegado', 'warning');
+        }
+    } catch (e) {
+        console.error('Notif error:', e);
+        btn.textContent = 'Error';
+        showToast('Error al activar notificaciones: ' + e.message, 'error');
+    }
+    
+    btn.disabled = false;
 }
 
 // Collapsible sections
@@ -357,7 +423,6 @@ async function saveGroup() {
     const id = document.getElementById('groupId').value;
     let adminUserId = document.getElementById('groupAdmin').value || null;
     
-    // Crear nuevo admin si se llenó el formulario
     const newAdminSection = document.getElementById('newAdminSection');
     if (newAdminSection.style.display === 'block') {
         const newAdminEmail = document.getElementById('newAdminEmail').value.trim();
