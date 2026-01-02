@@ -396,7 +396,8 @@ function renderStageMode() {
         return;
     }
 
-    container.innerHTML = songs.map(function(s, idx) {
+    var html = '<div style="max-width:900px;margin:0 auto;">';
+    html += songs.map(function(s, idx) {
         return '<div class="stage-song" id="stage-song-' + idx + '">' +
             '<div class="stage-song-header">' +
                 '<div class="stage-song-left">' +
@@ -419,7 +420,10 @@ function renderStageMode() {
             '</div>' +
             '<div class="stage-lyrics" id="stage-lyrics-' + idx + '" style="display: none;"><pre>' + (s.lyrics || '') + '</pre></div>' +
         '</div>';
-    }).join('') + '<div style="text-align: center; padding: 20px;"><button class="btn btn-primary" onclick="openAddSongFromStage()">+ Agregar canción</button></div>';
+    }).join('');
+    html += '<div style="text-align: center; padding: 20px;"><button class="btn btn-primary" onclick="openAddSongFromStage()">+ Agregar canción</button></div>';
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 function toggleStageLyrics(idx) {
