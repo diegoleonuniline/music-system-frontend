@@ -346,27 +346,31 @@ function deleteCurrentSong() {
     deleteSong(parseInt(id));
 }
 
-// REEMPLAZA la función toggleFavorite
 async function toggleFavorite(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
     
-    // Enviar TODOS los datos para no perderlos
-    await apiPut('/songs/' + id, {
-        name: song.name,
-        artist: song.artist,
-        musical_key: song.musical_key,
-        bpm: song.bpm,
-        time_signature: song.time_signature,
-        duration_seconds: song.duration_seconds,
-        video_url: song.video_url,
-        audio_url: song.audio_url,
-        lyrics: song.lyrics,
-        category_id: song.category_id,
-        genre_id: song.genre_id,
-        is_favorite: song.is_favorite ? 0 : 1
-    });
-    loadSongs();
+    try {
+        await apiPut('/songs/' + id, {
+            name: song.name,
+            artist: song.artist,
+            musical_key: song.musical_key,
+            bpm: song.bpm,
+            time_signature: song.time_signature,
+            duration_seconds: song.duration_seconds,
+            video_url: song.video_url,
+            audio_url: song.audio_url,
+            lyrics: song.lyrics,
+            category_id: song.category_id,
+            genre_id: song.genre_id,
+            is_favorite: song.is_favorite ? 0 : 1
+        });
+        await loadSongs();
+        showToast(song.is_favorite ? 'Quitado de favoritos' : 'Agregado a favoritos');
+    } catch (e) {
+        console.error('Error:', e);
+        showToast('Error al actualizar', 'error');
+    }
 }
 
 // AGREGA esta función para copiar canción
