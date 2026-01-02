@@ -1,11 +1,11 @@
 checkAuth();
 setupUserInfo();
 
-let allSongs = [];
-let allCategories = [];
-let allGenres = [];
-let currentSongResources = [];
-let currentResourceSongId = null;
+var allSongs = [];
+var allCategories = [];
+var allGenres = [];
+var currentSongResources = [];
+var currentResourceSongId = null;
 
 function getDateValue(dateStr) {
     if (!dateStr) return '';
@@ -14,7 +14,7 @@ function getDateValue(dateStr) {
 
 async function loadDashboard() {
     try {
-        const [songs, setlists, events, users, categories, genres] = await Promise.all([
+        var results = await Promise.all([
             apiGet('/songs'),
             apiGet('/setlists'),
             apiGet('/events'),
@@ -23,6 +23,13 @@ async function loadDashboard() {
             apiGet('/genres')
         ]);
         
+        var songs = results[0];
+        var setlists = results[1];
+        var events = results[2];
+        var users = results[3];
+        var categories = results[4];
+        var genres = results[5];
+        
         allSongs = songs || [];
         allCategories = categories || [];
         allGenres = genres || [];
@@ -30,62 +37,50 @@ async function loadDashboard() {
         document.getElementById('totalSongs').textContent = allSongs.length;
         document.getElementById('totalSetlists').textContent = (setlists || []).length;
         document.getElementById('totalEvents').textContent = (events || []).length;
-        document.getElementById('totalMusicians').textContent = (users || []).filter(u => u.role === 'musician').length;
+        document.getElementById('totalMusicians').textContent = (users || []).filter(function(u) { return u.role === 'musician'; }).length;
         
         // Próximos eventos
-        const today = new Date().toISOString().split('T')[0];
-        const upcoming = (events || [])
-            .filter(e => e.event_date && getDateValue(e.event_date) >= today)
-            .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
+        var today = new Date().toISOString().split('T')[0];
+        var upcoming = (events || [])
+            .filter(function(e) { return e.event_date && getDateValue(e.event_date) >= today; })
+            .sort(function(a, b) { return new Date(a.event_date) - new Date(b.event_date); })
             .slice(0, 5);
         
-        const eventsContainer = document.getElementById('upcomingEvents');
+        var eventsContainer = document.getElementById('upcomingEvents');
         if (upcoming.length) {
-            eventsContainer.innerHTML = upcoming.map(e => `
-                <div class="song-item" onclick="window.location.href='events.html'">
-                    <div class="song-thumb">📅</div>
-                    <div class="song-info">
-                        <h4>${e.name}</h4>
-                        <p>${e.venue || 'Sin lugar'} · ${formatDate(e.event_date)}</p>
-                    </div>
-                    <span class="badge ${e.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">
-                        ${e.status === 'confirmed' ? 'Confirmado' : 'Tentativo'}
-                    </span>
-                </div>
-            `).join('');
+            eventsContainer.innerHTML = upcoming.map(function(e) {
+                return '<div class="song-item" onclick="window.location.href=\'events.html\'" style="cursor:pointer;">' +
+                    '<div class="song-thumb">📅</div>' +
+                    '<div class="song-info"><h4>' + e.name + '</h4><p>' + (e.venue || 'Sin lugar') + ' · ' + formatDate(e.event_date) + '</p></div>' +
+                    '<span class="badge ' + (e.status === 'confirmed' ? 'badge-success' : 'badge-warning') + '">' +
+                    (e.status === 'confirmed' ? 'Confirmado' : 'Tentativo') + '</span></div>';
+            }).join('');
         } else {
-            eventsContainer.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📅</div>
-                    <h3>Sin eventos próximos</h3>
-                </div>
-            `;
+            eventsContainer.innerHTML = '<div class="empty-state"><div class="icon">📅</div><h3>Sin eventos próximos</h3></div>';
         }
         
-        // Favoritas
-        const favorites = allSongs.filter(s => s.is_favorite).slice(0, 5);
-        const favContainer = document.getElementById('favoriteSongs');
+        // TODAS las favoritas
+        var favorites = allSongs.filter(function(s) { return s.is_favorite; });
+        var favContainer = document.getElementById('favoriteSongs');
         if (favorites.length) {
-            favContainer.innerHTML = favorites.map(s => `
-                <div class="song-item" onclick="viewSong(${s.id})" style="cursor:pointer;">
-                    <div class="song-thumb">🎵</div>
-                    <div class="song-info">
-                        <h4>${s.name}</h4>
-                        <p>${s.artist || 'Sin artista'}</p>
-                    </div>
-                    <div class="song-actions">
-                        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleFavorite(${s.id})">⭐</button>
-                        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSongResources(${s.id},'${s.name.replace(/'/g, "\\'")}')">📎</button>
-                    </div>
-                </div>
-            `).join('');
+            favContainer.innerHTML = '<div class="favorites-grid">' + favorites.map(function(s) {
+                return '<div class="song-card" onclick="viewSong(' + s.id + ')">' +
+                    '<div class="song-card-body">' +
+                        '<h4>' + s.name + '</h4>' +
+                        '<p>' + (s.artist || 'Sin artista') + '</p>' +
+                        '<div class="song-card-meta">' +
+                            (s.musical_key ? '<span class="badge badge-neutral">' + s.musical_key + '</span>' : '') +
+                            (s.bpm ? '<span class="badge badge-neutral">' + s.bpm + ' BPM</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="song-card-actions">' +
+                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();toggleFavorite(' + s.id + ')">⭐</button>' +
+                        '<button class="btn btn-icon btn-ghost" onclick="event.stopPropagation();openSongResources(' + s.id + ',\'' + s.name.replace(/'/g, "\\'") + '\')">📎</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('') + '</div>';
         } else {
-            favContainer.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">⭐</div>
-                    <h3>Sin favoritas</h3>
-                </div>
-            `;
+            favContainer.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><h3>Sin favoritas</h3></div>';
         }
     } catch (error) {
         console.error('Error:', error);
@@ -103,7 +98,6 @@ function nl2br(str) {
     return str ? str.replace(/\n/g, '<br>') : '';
 }
 
-// ============ VER CANCIÓN ============
 function viewSong(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
@@ -133,12 +127,12 @@ function closeViewSongModal() {
     document.getElementById('viewSongModal').classList.remove('active');
 }
 
-function goToEditSong() {
+function openSongResourcesFromModal() {
     var id = document.getElementById('viewSongModal').dataset.songId;
-    window.location.href = 'songs.html?edit=' + id;
+    var title = document.getElementById('viewSongTitle').textContent;
+    openSongResources(id, title);
 }
 
-// ============ FAVORITOS ============
 async function toggleFavorite(id) {
     var song = allSongs.find(function(s) { return s.id === id; });
     if (!song) return;
@@ -155,7 +149,6 @@ async function toggleFavorite(id) {
     }
 }
 
-// ============ RECURSOS ============
 async function openSongResources(songId, songName) {
     currentResourceSongId = songId;
     document.getElementById('resourcesSongName').textContent = songName;
@@ -274,13 +267,20 @@ async function saveResource() {
     
     try {
         await apiPost('/song-resources', {
-            song_id: currentResourceSongId, type: type, title: title || null,
-            content: content, file_url: fileUrl, file_type: fileType, is_shared: isShared ? 1 : 0
+            song_id: currentResourceSongId,
+            type: type,
+            title: title || null,
+            content: content,
+            file_url: fileUrl,
+            file_type: fileType,
+            is_shared: isShared ? 1 : 0
         });
         closeAddResourceModal();
         loadResources();
         showToast('Guardado');
-    } catch (e) { showToast('Error', 'error'); }
+    } catch (e) {
+        showToast('Error', 'error');
+    }
 }
 
 loadDashboard();
