@@ -7,6 +7,209 @@
     <title>Set Lists - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
+    <style>
+        /* Estilos para el nuevo modal de setlist */
+        .modal-setlist-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 70vh;
+        }
+        
+        .setlist-songs-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .section-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .section-header span {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+        
+        .songs-list-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+        }
+        
+        .songs-list-container.selected-list {
+            min-height: 80px;
+            background: var(--bg);
+        }
+        
+        .modal-song-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        
+        .modal-song-item:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-song-item.available {
+            cursor: pointer;
+        }
+        
+        .modal-song-item.available:hover {
+            background: var(--bg-tertiary);
+        }
+        
+        .modal-song-item .song-order {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: 28px;
+        }
+        
+        .modal-song-item .song-order span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .btn-mini {
+            width: 20px;
+            height: 16px;
+            padding: 0;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.15s;
+        }
+        
+        .btn-mini:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-mini:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .modal-song-item .song-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .modal-song-item .song-info strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .modal-song-item .song-info span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .modal-song-item .song-duration {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        .btn-remove {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            color: var(--danger);
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+        
+        .btn-remove:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .btn-add {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .empty-hint {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+        
+        .search-in-modal {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            width: 100%;
+        }
+        
+        .search-in-modal:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .modal-setlist-body {
+                max-height: 60vh;
+            }
+            
+            .songs-list-container {
+                max-height: 150px;
+            }
+            
+            .modal-song-item {
+                padding: 8px 10px;
+                gap: 8px;
+            }
+            
+            .modal-song-item .song-info strong {
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Splash Screen Caimán -->
@@ -98,26 +301,57 @@
         </div>
     </div>
 
-    <!-- Modal Crear/Editar Set List -->
+    <!-- Modal Crear/Editar Set List (MEJORADO) -->
     <div class="modal-overlay" id="setlistModal">
-        <div class="modal modal-md">
+        <div class="modal modal-lg">
             <div class="modal-header">
                 <h3 id="setlistModalTitle">Nuevo Set List</h3>
                 <button class="modal-close" onclick="closeSetlistModal()">×</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body modal-setlist-body">
                 <input type="hidden" id="setlistId">
-                <div class="form-group"><label>Nombre *</label><input type="text" id="setlistName" class="form-control" required></div>
-                <div class="form-group"><label>Descripción</label><textarea id="setlistDescription" class="form-control" rows="3"></textarea></div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>Nombre *</label>
+                        <input type="text" id="setlistName" class="form-control" placeholder="Ej: Show Viernes" required>
+                    </div>
+                    <div class="form-group" style="flex:3;">
+                        <label>Descripción</label>
+                        <input type="text" id="setlistDescription" class="form-control" placeholder="Opcional">
+                    </div>
+                </div>
+                
+                <!-- Canciones Seleccionadas -->
+                <div class="setlist-songs-section">
+                    <div class="section-header">
+                        <h4>🎵 Canciones en el Set List</h4>
+                        <span id="modalTotalInfo">0 canciones · 0:00</span>
+                    </div>
+                    <div class="songs-list-container selected-list" id="modalSelectedSongs">
+                        <div class="empty-hint">Agrega canciones de la lista de abajo</div>
+                    </div>
+                </div>
+                
+                <!-- Canciones Disponibles -->
+                <div class="setlist-songs-section">
+                    <div class="section-header">
+                        <h4>📚 Canciones Disponibles</h4>
+                    </div>
+                    <input type="text" id="modalSongSearch" class="search-in-modal" placeholder="🔍 Buscar canción..." oninput="filterModalSongs()">
+                    <div class="songs-list-container" id="modalAvailableSongs">
+                        <div class="loading">Cargando...</div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeSetlistModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveSetlist()">Guardar</button>
+                <button class="btn btn-primary" onclick="saveSetlist()">💾 Guardar Set List</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Agregar Canción -->
+    <!-- Modal Agregar Canción (para vista de setlist existente) -->
     <div class="modal-overlay" id="addSongModal">
         <div class="modal modal-md">
             <div class="modal-header">
@@ -178,7 +412,7 @@
         </div>
     </div>
 
-    <!-- Stage Mode (fuera del modal-overlay) -->
+    <!-- Stage Mode -->
     <div class="stage-mode-container" id="stageModeModal">
         <div class="stage-mode">
             <div class="stage-header">
