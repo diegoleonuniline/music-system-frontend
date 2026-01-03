@@ -217,6 +217,13 @@ async function uploadToCloudinary(file, onProgress) {
         var fileName = file.name.toLowerCase();
         var isPdf = fileName.endsWith('.pdf');
         var endpoint = isPdf ? 'raw' : 'auto';
+        
+        // DEBUG - borrar después
+        console.log('=== CLOUDINARY UPLOAD DEBUG ===');
+        console.log('File name:', fileName);
+        console.log('Is PDF:', isPdf);
+        console.log('Endpoint:', endpoint);
+        console.log('Full URL:', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + endpoint + '/upload');
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + endpoint + '/upload');
@@ -229,6 +236,7 @@ async function uploadToCloudinary(file, onProgress) {
         };
 
         xhr.onload = function() {
+            console.log('Cloudinary response:', xhr.responseText);
             if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
                 resolve({
