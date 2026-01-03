@@ -6,8 +6,11 @@ var allSongs = [];
 var currentSetlist = null;
 var currentSongResources = [];
 var currentResourceSongId = null;
-var viewMode = 'table'; // DEFAULT: tabla
+var viewMode = 'table';
 var inStageMode = false;
+
+// Para el modal de crear/editar
+var modalSelectedSongs = [];
 
 function formatDuration(seconds) {
     if (!seconds) return '0:00';
@@ -72,6 +75,259 @@ function renderSetlists() {
         }).join('') + '</div>';
     }
 }
+
+// ============ MODAL CREAR/EDITAR CON CANCIONES ============
+
+function openSetlistModal(setlist) {
+    document.getElementById('setlistModalTitle').textContent = setlist ? 'Editar Set List' : 'Nuevo Set List';
+    document.getElementById('setlistId').value = setlist ? setlist.id : '';
+    document.getElementById('setlistName').value = setlist ? setlist.name : '';
+    document.getElementById('setlistDescription').value = setlist ? (setlist.description || '') : '';
+    
+    // Reset canciones seleccionadas
+    modalSelectedSongs = [];
+    
+    // Si es edición, cargar canciones del setlist
+    if (setlist && setlist.id) {
+        loadSetlistSongsForEdit(setlist.id);
+    } else {
+        renderModalSongs();
+    }
+    
+    document.getElementById('setlistModal').classList.add('active');
+}
+
+async function loadSetlistSongsForEdit(setlistId) {
+    try {
+        var data = await apiGet('/setlists/' + setlistId);
+        if (data && data.songs) {
+            modalSelectedSongs = data.songs.map(function(s) {
+                return {
+                    id: s.song_id || s.id,
+                    setlist_song_id: s.id,
+                    name: s.name,
+                    artist: s.artist,
+                    duration_seconds: s.duration_seconds,
+                    musical_key: s.musical_key
+                };
+            });
+        }
+        renderModalSongs();
+    } catch (e) {
+        console.error('Error cargando canciones:', e);
+        renderModalSongs();
+    }
+}
+
+function renderModalSongs() {
+    var selectedIds = modalSelectedSongs.map(function(s) { return s.id; });
+    
+    // Canciones disponibles (no seleccionadas)
+    var available = allSongs.filter(function(s) {
+        return selectedIds.indexOf(s.id) === -1;
+    });
+    
+    // Filtro de búsqueda
+    var search = (document.getElementById('modalSongSearch')?.value || '').toLowerCase();
+    if (search) {
+        available = available.filter(function(s) {
+            return s.name.toLowerCase().indexOf(search) !== -1 || 
+                   (s.artist || '').toLowerCase().indexOf(search) !== -1;
+        });
+    }
+    
+    // Calcular duración total
+    var totalSeconds = modalSelectedSongs.reduce(function(sum, s) {
+        return sum + (s.duration_seconds || 0);
+    }, 0);
+    
+    document.getElementById('modalTotalInfo').textContent = modalSelectedSongs.length + ' canciones · ' + formatDuration(totalSeconds);
+    
+    // Render canciones seleccionadas
+    var selectedContainer = document.getElementById('modalSelectedSongs');
+    if (!modalSelectedSongs.length) {
+        selectedContainer.innerHTML = '<div class="empty-hint">Agrega canciones de la lista de abajo</div>';
+    } else {
+        selectedContainer.innerHTML = modalSelectedSongs.map(function(s, idx) {
+            return '<div class="modal-song-item selected" data-idx="' + idx + '">' +
+                '<div class="song-order">' +
+                    '<button class="btn-mini" onclick="moveModalSong(' + idx + ', -1)"' + (idx === 0 ? ' disabled' : '') + '>▲</button>' +
+                    '<span>' + (idx + 1) + '</span>' +
+                    '<button class="btn-mini" onclick="moveModalSong(' + idx + ', 1)"' + (idx === modalSelectedSongs.length - 1 ? ' disabled' : '') + '>▼</button>' +
+                '</div>' +
+                '<div class="song-info">' +
+                    '<strong>' + s.name + '</strong>' +
+                    '<span>' + (s.artist || '') + (s.musical_key ? ' · ' + s.musical_key : '') + '</span>' +
+                '</div>' +
+                '<span class="song-duration">' + formatDuration(s.duration_seconds) + '</span>' +
+                '<button class="btn-remove" onclick="removeModalSong(' + idx + ')">✕</button>' +
+            '</div>';
+        }).join('');
+    }
+    
+    // Render canciones disponibles
+    var availableContainer = document.getElementById('modalAvailableSongs');
+    if (!available.length) {
+        availableContainer.innerHTML = '<div class="empty-hint">' + (search ? 'Sin resultados' : 'Todas las canciones agregadas') + '</div>';
+    } else {
+        availableContainer.innerHTML = available.map(function(s) {
+            return '<div class="modal-song-item available" onclick="addModalSong(' + s.id + ')">' +
+                '<div class="song-info">' +
+                    '<strong>' + s.name + '</strong>' +
+                    '<span>' + (s.artist || '') + '</span>' +
+                '</div>' +
+                '<span class="song-duration">' + formatDuration(s.duration_seconds) + '</span>' +
+                '<span class="btn-add">+</span>' +
+            '</div>';
+        }).join('');
+    }
+}
+
+function addModalSong(songId) {
+    var song = allSongs.find(function(s) { return s.id === songId; });
+    if (!song) return;
+    
+    modalSelectedSongs.push({
+        id: song.id,
+        name: song.name,
+        artist: song.artist,
+        duration_seconds: song.duration_seconds,
+        musical_key: song.musical_key
+    });
+    
+    renderModalSongs();
+}
+
+function removeModalSong(idx) {
+    modalSelectedSongs.splice(idx, 1);
+    renderModalSongs();
+}
+
+function moveModalSong(idx, direction) {
+    var newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= modalSelectedSongs.length) return;
+    
+    var temp = modalSelectedSongs[idx];
+    modalSelectedSongs[idx] = modalSelectedSongs[newIdx];
+    modalSelectedSongs[newIdx] = temp;
+    
+    renderModalSongs();
+}
+
+function filterModalSongs() {
+    renderModalSongs();
+}
+
+function closeSetlistModal() {
+    document.getElementById('setlistModal').classList.remove('active');
+    modalSelectedSongs = [];
+}
+
+async function saveSetlist() {
+    var id = document.getElementById('setlistId').value;
+    var name = document.getElementById('setlistName').value.trim();
+    var description = document.getElementById('setlistDescription').value.trim();
+    
+    if (!name) {
+        showToast('Ingresa un nombre', 'warning');
+        return;
+    }
+    
+    try {
+        var setlistId = id;
+        
+        if (id) {
+            // Actualizar setlist existente
+            await apiPut('/setlists/' + id, { name: name, description: description });
+        } else {
+            // Crear nuevo setlist
+            var result = await apiPost('/setlists', { name: name, description: description });
+            setlistId = result.id;
+        }
+        
+        // Sincronizar canciones
+        await syncSetlistSongs(setlistId, id ? true : false);
+        
+        closeSetlistModal();
+        loadSetlists();
+        showToast('Set list guardado');
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al guardar', 'error');
+    }
+}
+
+async function syncSetlistSongs(setlistId, isEdit) {
+    if (isEdit) {
+        // Obtener canciones actuales del setlist
+        var current = await apiGet('/setlists/' + setlistId);
+        var currentSongs = current.songs || [];
+        
+        // IDs actuales en el setlist
+        var currentIds = currentSongs.map(function(s) { return s.song_id; });
+        
+        // IDs que queremos tener
+        var wantedIds = modalSelectedSongs.map(function(s) { return s.id; });
+        
+        // Eliminar las que ya no están
+        for (var i = 0; i < currentSongs.length; i++) {
+            var cs = currentSongs[i];
+            if (wantedIds.indexOf(cs.song_id) === -1) {
+                await apiDelete('/setlists/' + setlistId + '/songs/' + cs.id);
+            }
+        }
+        
+        // Agregar las nuevas
+        for (var j = 0; j < modalSelectedSongs.length; j++) {
+            var ms = modalSelectedSongs[j];
+            if (currentIds.indexOf(ms.id) === -1) {
+                await apiPost('/setlists/' + setlistId + '/songs', { song_id: ms.id });
+            }
+        }
+        
+        // Reordenar
+        if (modalSelectedSongs.length > 0) {
+            var updatedSetlist = await apiGet('/setlists/' + setlistId);
+            var songMap = {};
+            (updatedSetlist.songs || []).forEach(function(s) {
+                songMap[s.song_id] = s.id;
+            });
+            
+            var order = modalSelectedSongs.map(function(s, idx) {
+                return { id: songMap[s.id], position: idx + 1 };
+            }).filter(function(o) { return o.id; });
+            
+            if (order.length > 0) {
+                await apiPut('/setlists/' + setlistId + '/reorder', { songs: order });
+            }
+        }
+    } else {
+        // Setlist nuevo: solo agregar canciones
+        for (var k = 0; k < modalSelectedSongs.length; k++) {
+            await apiPost('/setlists/' + setlistId + '/songs', { 
+                song_id: modalSelectedSongs[k].id,
+                position: k + 1
+            });
+        }
+    }
+}
+
+async function editSetlist(id) {
+    if (event) event.stopPropagation();
+    var setlist = allSetlists.find(function(s) { return s.id === id; });
+    openSetlistModal(setlist);
+}
+
+async function deleteSetlist(id) {
+    if (event) event.stopPropagation();
+    if (confirm('¿Eliminar este set list?')) {
+        await apiDelete('/setlists/' + id);
+        loadSetlists();
+        showToast('Set list eliminado');
+    }
+}
+
+// ============ VISTA DE SETLIST (sin cambios) ============
 
 async function viewSetlist(id) {
     try {
@@ -317,8 +573,8 @@ async function moveSong(idx, direction) {
     songs[newIdx] = temp;
 
     try {
-        var order = songs.map(function(s, i) { return { song_id: s.song_id || s.id, position: i + 1 }; });
-        await apiPut('/setlists/' + currentSetlist.id + '/songs/reorder', { songs: order });
+        var order = songs.map(function(s, i) { return { id: s.id, position: i + 1 }; });
+        await apiPut('/setlists/' + currentSetlist.id + '/reorder', { songs: order });
         songs.forEach(function(s, i) { s.position = i + 1; });
         renderSetlistSongs();
         showToast('Orden actualizado');
@@ -377,7 +633,12 @@ function filterAvailableSongs() {
     }).join('') : '<div class="empty-state"><p>No hay canciones disponibles</p></div>';
 }
 
-// Stage Mode functions (unchanged)
+function closeViewModal() {
+    document.getElementById('viewSetlistModal').classList.remove('active');
+}
+
+// ============ STAGE MODE ============
+
 function openStageMode() {
     inStageMode = true;
     document.getElementById('stageModeTitle').textContent = currentSetlist.name;
@@ -407,7 +668,6 @@ function renderStageMode() {
                 '<div class="stage-song-badges">' +
                     (s.musical_key ? '<span class="stage-badge">' + s.musical_key + '</span>' : '') +
                     (s.bpm ? '<span class="stage-badge">' + s.bpm + ' BPM</span>' : '') +
-                    (s.time_signature ? '<span class="stage-badge">' + s.time_signature + '</span>' : '') +
                     '<span class="stage-badge">⏱ ' + formatDuration(s.duration_seconds) + '</span>' +
                 '</div>' +
             '</div>' +
@@ -459,8 +719,8 @@ async function moveSongStage(idx, direction) {
     songs[newIdx] = temp;
 
     try {
-        var order = songs.map(function(s, i) { return { song_id: s.song_id || s.id, position: i + 1 }; });
-        await apiPut('/setlists/' + currentSetlist.id + '/songs/reorder', { songs: order });
+        var order = songs.map(function(s, i) { return { id: s.id, position: i + 1 }; });
+        await apiPut('/setlists/' + currentSetlist.id + '/reorder', { songs: order });
         songs.forEach(function(s, i) { s.position = i + 1; });
         renderStageMode();
         showToast('Orden actualizado');
@@ -496,55 +756,6 @@ function closeStageMode() {
     inStageMode = false;
     document.getElementById('stageModeModal').classList.remove('active');
     document.body.style.overflow = '';
-}
-
-function closeViewModal() {
-    document.getElementById('viewSetlistModal').classList.remove('active');
-}
-
-function openSetlistModal(setlist) {
-    document.getElementById('setlistModalTitle').textContent = setlist ? 'Editar Set List' : 'Nuevo Set List';
-    document.getElementById('setlistId').value = setlist ? setlist.id : '';
-    document.getElementById('setlistName').value = setlist ? setlist.name : '';
-    document.getElementById('setlistDescription').value = setlist ? (setlist.description || '') : '';
-    document.getElementById('setlistModal').classList.add('active');
-}
-
-function closeSetlistModal() {
-    document.getElementById('setlistModal').classList.remove('active');
-}
-
-function editSetlist(id) {
-    if (event) event.stopPropagation();
-    var setlist = allSetlists.find(function(s) { return s.id === id; });
-    openSetlistModal(setlist);
-}
-
-async function saveSetlist() {
-    var id = document.getElementById('setlistId').value;
-    var data = {
-        name: document.getElementById('setlistName').value,
-        description: document.getElementById('setlistDescription').value
-    };
-
-    if (id) {
-        await apiPut('/setlists/' + id, data);
-    } else {
-        await apiPost('/setlists', data);
-    }
-
-    closeSetlistModal();
-    loadSetlists();
-    showToast('Set list guardado');
-}
-
-async function deleteSetlist(id) {
-    if (event) event.stopPropagation();
-    if (confirm('¿Eliminar este set list?')) {
-        await apiDelete('/setlists/' + id);
-        loadSetlists();
-        showToast('Set list eliminado');
-    }
 }
 
 function nl2br(str) {
