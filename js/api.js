@@ -209,21 +209,21 @@ var CLOUDINARY_UPLOAD_PRESET = 'caiman_uploads';
 async function uploadToCloudinary(file, onProgress) {
     return new Promise(function(resolve, reject) {
         var formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        formData.append('folder', 'caiman');
-
-        // Detectar si es PDF para usar endpoint correcto
+        
         var fileName = file.name.toLowerCase();
         var isPdf = fileName.endsWith('.pdf');
         var endpoint = isPdf ? 'raw' : 'auto';
         
-        // DEBUG - borrar después
-        console.log('=== CLOUDINARY UPLOAD DEBUG ===');
-        console.log('File name:', fileName);
-        console.log('Is PDF:', isPdf);
-        console.log('Endpoint:', endpoint);
-        console.log('Full URL:', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + endpoint + '/upload');
+        // Para PDFs, crear un nuevo Blob con el tipo correcto
+        if (isPdf) {
+            var pdfBlob = new Blob([file], { type: 'application/pdf' });
+            formData.append('file', pdfBlob, file.name);
+        } else {
+            formData.append('file', file);
+        }
+        
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        formData.append('folder', 'caiman');
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + endpoint + '/upload');
@@ -236,7 +236,6 @@ async function uploadToCloudinary(file, onProgress) {
         };
 
         xhr.onload = function() {
-            console.log('Cloudinary response:', xhr.responseText);
             if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
                 resolve({
