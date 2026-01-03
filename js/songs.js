@@ -254,6 +254,14 @@ function viewSong(id) {
 function closeViewSongModal() {
     document.getElementById('viewSongModal').classList.remove('active');
 }
+// AGREGAR ESTO:
+function openSongResourcesFromModal() {
+    var id = document.getElementById('viewSongModal').dataset.songId;
+    var song = allSongs.find(function(s) { return s.id == id; });
+    if (!song) return;
+    closeViewSongModal();
+    openSongResources(song.id, song.name);
+}
 
 function editCurrentSong() {
     var id = document.getElementById('viewSongModal').dataset.songId;
