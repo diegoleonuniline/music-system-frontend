@@ -7,6 +7,73 @@
     <title>Canciones - Caimán</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
+    <style>
+        /* Estilos para modal de proyectos */
+        .project-setting-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .project-setting-item:last-child {
+            border-bottom: none;
+        }
+        .project-setting-item.default-key {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+        .project-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        .project-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .key-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .key-input {
+            width: 70px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            text-align: center;
+        }
+        .key-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .add-project-section {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            align-items: center;
+        }
+        .add-project-section select {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
     <!-- Splash Screen Caimán -->
@@ -128,17 +195,38 @@
                 <input type="hidden" id="songId">
                 <div class="form-group"><label>Nombre *</label><input type="text" id="songName" class="form-control" required></div>
                 <div class="form-row">
-                    <div class="form-group"><label>Artista</label><input type="text" id="songArtist" class="form-control"></div>
-                   <div class="form-group"><label>Tono</label><input type="text" id="songKey" class="form-control" placeholder="Ej: Am, C#, Dm"></div>
+                    <div class="form-group">
+                        <label>Artista</label>
+                        <select id="songArtist" class="form-control" onchange="onArtistChange()"></select>
+                        <div id="newArtistGroup" style="display:none;margin-top:8px;">
+                            <input type="text" id="newArtistName" class="form-control" placeholder="Nombre del artista">
+                            <button class="btn btn-sm btn-primary" onclick="createArtist()" style="margin-top:4px;">Crear</button>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Tono</label><input type="text" id="songKey" class="form-control" placeholder="Ej: Am, C#, Dm"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>BPM</label><input type="number" id="songBpm" class="form-control"></div>
-                   <div class="form-group"><label>Compás</label><input type="text" id="songTimeSignature" class="form-control" placeholder="Ej: 4/4, 3/4, 6/8"></div>
+                    <div class="form-group"><label>Compás</label><input type="text" id="songTimeSignature" class="form-control" placeholder="Ej: 4/4, 3/4, 6/8"></div>
                     <div class="form-group"><label>Duración (seg)</label><input type="number" id="songDuration" class="form-control"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Categoría</label><select id="songCategory" class="form-control" onchange="onCategoryChange()"></select><div id="newCategoryGroup" style="display:none;margin-top:8px;"><input type="text" id="newCategoryName" class="form-control" placeholder="Nueva categoría"><button class="btn btn-sm btn-primary" onclick="createCategory()" style="margin-top:4px;">Crear</button></div></div>
-                    <div class="form-group"><label>Género</label><select id="songGenre" class="form-control" onchange="onGenreChange()"></select><div id="newGenreGroup" style="display:none;margin-top:8px;"><input type="text" id="newGenreName" class="form-control" placeholder="Nuevo género"><button class="btn btn-sm btn-primary" onclick="createGenre()" style="margin-top:4px;">Crear</button></div></div>
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="songCategory" class="form-control" onchange="onCategoryChange()"></select>
+                        <div id="newCategoryGroup" style="display:none;margin-top:8px;">
+                            <input type="text" id="newCategoryName" class="form-control" placeholder="Nueva categoría">
+                            <button class="btn btn-sm btn-primary" onclick="createCategory()" style="margin-top:4px;">Crear</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Género</label>
+                        <select id="songGenre" class="form-control" onchange="onGenreChange()"></select>
+                        <div id="newGenreGroup" style="display:none;margin-top:8px;">
+                            <input type="text" id="newGenreName" class="form-control" placeholder="Nuevo género">
+                            <button class="btn btn-sm btn-primary" onclick="createGenre()" style="margin-top:4px;">Crear</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>URL Video</label><input type="url" id="songVideoUrl" class="form-control" placeholder="YouTube, Vimeo..."></div>
@@ -170,6 +258,23 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeAddToSetlistModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configuración por Proyecto (TONOS) -->
+    <div class="modal-overlay" id="projectSettingsModal">
+        <div class="modal modal-md">
+            <div class="modal-header">
+                <h3>🎸 Tonos por Proyecto</h3>
+                <button class="modal-close" onclick="closeProjectSettingsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:16px;color:var(--text-secondary);">Canción: <strong id="projectSettingsSongName"></strong></p>
+                <div id="projectSettingsList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeProjectSettingsModal()">Cerrar</button>
             </div>
         </div>
     </div>
