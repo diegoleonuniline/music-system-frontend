@@ -213,17 +213,13 @@ async function uploadToCloudinary(file, onProgress) {
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         formData.append('folder', 'caiman');
 
-        // Determinar endpoint según tipo de archivo
-        var fileExt = file.name.split('.').pop().toLowerCase();
-        var resourceType = 'auto';
-        if (fileExt === 'pdf') {
-            resourceType = 'raw';
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(fileExt) !== -1) {
-            resourceType = 'image';
-        }
+        // Detectar si es PDF para usar endpoint correcto
+        var fileName = file.name.toLowerCase();
+        var isPdf = fileName.endsWith('.pdf');
+        var endpoint = isPdf ? 'raw' : 'auto';
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + resourceType + '/upload');
+        xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + endpoint + '/upload');
 
         xhr.upload.onprogress = function(e) {
             if (e.lengthComputable && onProgress) {
@@ -238,10 +234,11 @@ async function uploadToCloudinary(file, onProgress) {
                 resolve({
                     url: response.secure_url,
                     type: response.resource_type,
-                    format: response.format,
+                    format: response.format || (isPdf ? 'pdf' : ''),
                     size: response.bytes
                 });
             } else {
+                console.error('Cloudinary error:', xhr.responseText);
                 reject(new Error('Error al subir archivo'));
             }
         };
