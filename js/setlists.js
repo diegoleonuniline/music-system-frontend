@@ -12,6 +12,27 @@ var inStageMode = false;
 // Para el modal de crear/editar
 var modalSelectedSongs = [];
 
+// Para modal de confirmación
+var confirmCallback = null;
+
+function showConfirm(message, callback) {
+    confirmCallback = callback;
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmModal').classList.add('active');
+}
+
+function closeConfirm() {
+    document.getElementById('confirmModal').classList.remove('active');
+    confirmCallback = null;
+}
+
+function executeConfirm() {
+    if (confirmCallback) {
+        confirmCallback();
+    }
+    closeConfirm();
+}
+
 function formatDuration(seconds) {
     if (!seconds) return '0:00';
     var m = Math.floor(seconds / 60);
@@ -320,11 +341,11 @@ async function editSetlist(id) {
 
 async function deleteSetlist(id) {
     if (event) event.stopPropagation();
-    if (confirm('¿Eliminar este set list?')) {
+    showConfirm('¿Eliminar este set list?', async function() {
         await apiDelete('/setlists/' + id);
         loadSetlists();
         showToast('Set list eliminado');
-    }
+    });
 }
 
 // ============ VISTA DE SETLIST (sin cambios) ============
@@ -467,11 +488,11 @@ function closeViewResourceModal() {
 }
 
 async function deleteResource(id) {
-    if (confirm('¿Eliminar este recurso?')) {
+    showConfirm('¿Eliminar este recurso?', async function() {
         await apiDelete('/song-resources/' + id);
         loadResources();
         showToast('Recurso eliminado');
-    }
+    });
 }
 
 function openAddResourceModal() {
@@ -599,12 +620,12 @@ async function addSongToSetlist(songId) {
 }
 
 async function removeSongFromSetlist(setlistSongId) {
-    if (confirm('¿Quitar esta canción?')) {
+    showConfirm('¿Quitar esta canción?', async function() {
         await apiDelete('/setlists/' + currentSetlist.id + '/songs/' + setlistSongId);
         viewSetlist(currentSetlist.id);
         loadSetlists();
         showToast('Canción quitada');
-    }
+    });
 }
 
 function openAddSongModal() {
@@ -733,17 +754,17 @@ async function moveSongStage(idx, direction) {
 
 async function removeSongStage(idx) {
     var song = currentSetlist.songs[idx];
-    if (!confirm('¿Quitar "' + song.name + '"?')) return;
-
-    try {
-        await apiDelete('/setlists/' + currentSetlist.id + '/songs/' + song.id);
-        currentSetlist.songs.splice(idx, 1);
-        renderStageMode();
-        loadSetlists();
-        showToast('Canción quitada');
-    } catch (error) {
-        showToast('Error al quitar');
-    }
+    showConfirm('¿Quitar "' + song.name + '"?', async function() {
+        try {
+            await apiDelete('/setlists/' + currentSetlist.id + '/songs/' + song.id);
+            currentSetlist.songs.splice(idx, 1);
+            renderStageMode();
+            loadSetlists();
+            showToast('Canción quitada');
+        } catch (error) {
+            showToast('Error al quitar');
+        }
+    });
 }
 
 function openAddSongFromStage() {
