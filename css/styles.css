@@ -3007,7 +3007,6 @@ body.offline .main-content {
         font-size: 13px;
     }
 }
-/* Fix z-index para modales sobre Stage Mode */
 #resourcesModal,
 #viewResourceModal,
 #addResourceModal,
