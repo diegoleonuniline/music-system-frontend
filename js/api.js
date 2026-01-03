@@ -213,8 +213,17 @@ async function uploadToCloudinary(file, onProgress) {
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         formData.append('folder', 'caiman');
 
+        // Determinar endpoint según tipo de archivo
+        var fileExt = file.name.split('.').pop().toLowerCase();
+        var resourceType = 'auto';
+        if (fileExt === 'pdf') {
+            resourceType = 'raw';
+        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(fileExt) !== -1) {
+            resourceType = 'image';
+        }
+
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/auto/upload');
+        xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + resourceType + '/upload');
 
         xhr.upload.onprogress = function(e) {
             if (e.lengthComputable && onProgress) {
