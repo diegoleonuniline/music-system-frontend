@@ -584,6 +584,8 @@ async function saveResource() {
     }
 }
 
+// En setlists.js, busca la función moveSong y reemplázala por:
+
 async function moveSong(idx, direction) {
     var songs = currentSetlist.songs;
     var newIdx = idx + direction;
@@ -598,7 +600,6 @@ async function moveSong(idx, direction) {
         await apiPut('/setlists/' + currentSetlist.id + '/reorder', { songs: order });
         songs.forEach(function(s, i) { s.position = i + 1; });
         renderSetlistSongs();
-        showToast('Orden actualizado');
     } catch (error) {
         songs[newIdx] = songs[idx];
         songs[idx] = temp;
@@ -730,6 +731,8 @@ function initStageTheme() {
     document.getElementById('stageThemeBtn').textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
 }
 
+// Y la función moveSongStage:
+
 async function moveSongStage(idx, direction) {
     var songs = currentSetlist.songs;
     var newIdx = idx + direction;
@@ -744,7 +747,6 @@ async function moveSongStage(idx, direction) {
         await apiPut('/setlists/' + currentSetlist.id + '/reorder', { songs: order });
         songs.forEach(function(s, i) { s.position = i + 1; });
         renderStageMode();
-        showToast('Orden actualizado');
     } catch (error) {
         songs[newIdx] = songs[idx];
         songs[idx] = temp;
