@@ -105,10 +105,8 @@ function openSetlistModal(setlist) {
     document.getElementById('setlistName').value = setlist ? setlist.name : '';
     document.getElementById('setlistDescription').value = setlist ? (setlist.description || '') : '';
     
-    // Reset canciones seleccionadas
     modalSelectedSongs = [];
     
-    // Si es edición, cargar canciones del setlist
     if (setlist && setlist.id) {
         loadSetlistSongsForEdit(setlist.id);
     } else {
@@ -143,12 +141,10 @@ async function loadSetlistSongsForEdit(setlistId) {
 function renderModalSongs() {
     var selectedIds = modalSelectedSongs.map(function(s) { return s.id; });
     
-    // Canciones disponibles (no seleccionadas)
     var available = allSongs.filter(function(s) {
         return selectedIds.indexOf(s.id) === -1;
     });
     
-    // Filtro de búsqueda
     var search = (document.getElementById('modalSongSearch')?.value || '').toLowerCase();
     if (search) {
         available = available.filter(function(s) {
@@ -157,14 +153,12 @@ function renderModalSongs() {
         });
     }
     
-    // Calcular duración total
     var totalSeconds = modalSelectedSongs.reduce(function(sum, s) {
         return sum + (s.duration_seconds || 0);
     }, 0);
     
     document.getElementById('modalTotalInfo').textContent = modalSelectedSongs.length + ' canciones · ' + formatDuration(totalSeconds);
     
-    // Render canciones seleccionadas
     var selectedContainer = document.getElementById('modalSelectedSongs');
     if (!modalSelectedSongs.length) {
         selectedContainer.innerHTML = '<div class="empty-hint">Agrega canciones de la lista de abajo</div>';
@@ -186,7 +180,6 @@ function renderModalSongs() {
         }).join('');
     }
     
-    // Render canciones disponibles
     var availableContainer = document.getElementById('modalAvailableSongs');
     if (!available.length) {
         availableContainer.innerHTML = '<div class="empty-hint">' + (search ? 'Sin resultados' : 'Todas las canciones agregadas') + '</div>';
@@ -258,15 +251,12 @@ async function saveSetlist() {
         var setlistId = id;
         
         if (id) {
-            // Actualizar setlist existente
             await apiPut('/setlists/' + id, { name: name, description: description });
         } else {
-            // Crear nuevo setlist
             var result = await apiPost('/setlists', { name: name, description: description });
             setlistId = result.id;
         }
         
-        // Sincronizar canciones
         await syncSetlistSongs(setlistId, id ? true : false);
         
         closeSetlistModal();
@@ -280,17 +270,12 @@ async function saveSetlist() {
 
 async function syncSetlistSongs(setlistId, isEdit) {
     if (isEdit) {
-        // Obtener canciones actuales del setlist
         var current = await apiGet('/setlists/' + setlistId);
         var currentSongs = current.songs || [];
         
-        // IDs actuales en el setlist
         var currentIds = currentSongs.map(function(s) { return s.song_id; });
-        
-        // IDs que queremos tener
         var wantedIds = modalSelectedSongs.map(function(s) { return s.id; });
         
-        // Eliminar las que ya no están
         for (var i = 0; i < currentSongs.length; i++) {
             var cs = currentSongs[i];
             if (wantedIds.indexOf(cs.song_id) === -1) {
@@ -298,7 +283,6 @@ async function syncSetlistSongs(setlistId, isEdit) {
             }
         }
         
-        // Agregar las nuevas
         for (var j = 0; j < modalSelectedSongs.length; j++) {
             var ms = modalSelectedSongs[j];
             if (currentIds.indexOf(ms.id) === -1) {
@@ -306,7 +290,6 @@ async function syncSetlistSongs(setlistId, isEdit) {
             }
         }
         
-        // Reordenar
         if (modalSelectedSongs.length > 0) {
             var updatedSetlist = await apiGet('/setlists/' + setlistId);
             var songMap = {};
@@ -323,7 +306,6 @@ async function syncSetlistSongs(setlistId, isEdit) {
             }
         }
     } else {
-        // Setlist nuevo: solo agregar canciones
         for (var k = 0; k < modalSelectedSongs.length; k++) {
             await apiPost('/setlists/' + setlistId + '/songs', { 
                 song_id: modalSelectedSongs[k].id,
@@ -348,7 +330,7 @@ async function deleteSetlist(id) {
     });
 }
 
-// ============ VISTA DE SETLIST (sin cambios) ============
+// ============ VISTA DE SETLIST ============
 
 async function viewSetlist(id) {
     try {
@@ -584,8 +566,6 @@ async function saveResource() {
     }
 }
 
-// En setlists.js, busca la función moveSong y reemplázala por:
-
 async function moveSong(idx, direction) {
     var songs = currentSetlist.songs;
     var newIdx = idx + direction;
@@ -595,15 +575,22 @@ async function moveSong(idx, direction) {
     songs[idx] = songs[newIdx];
     songs[newIdx] = temp;
 
+    // Actualizar UI inmediatamente
+    songs.forEach(function(s, i) { s.position = i + 1; });
+    renderSetlistSongs();
+
     try {
-        var order = songs.map(function(s, i) { return { id: s.id, position: i + 1 }; });
+        var order = songs.map(function(s, i) { 
+            return { id: s.id, position: i + 1 }; 
+        });
         await apiPut('/setlists/' + currentSetlist.id + '/reorder', { songs: order });
-        songs.forEach(function(s, i) { s.position = i + 1; });
-        renderSetlistSongs();
     } catch (error) {
+        // Revertir si falla
         songs[newIdx] = songs[idx];
         songs[idx] = temp;
-        showToast('Error al mover');
+        songs.forEach(function(s, i) { s.position = i + 1; });
+        renderSetlistSongs();
+        showToast('Error al mover', 'error');
     }
 }
 
@@ -731,8 +718,6 @@ function initStageTheme() {
     document.getElementById('stageThemeBtn').textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
 }
 
-// Y la función moveSongStage:
-
 async function moveSongStage(idx, direction) {
     var songs = currentSetlist.songs;
     var newIdx = idx + direction;
@@ -742,15 +727,22 @@ async function moveSongStage(idx, direction) {
     songs[idx] = songs[newIdx];
     songs[newIdx] = temp;
 
+    // Actualizar UI inmediatamente
+    songs.forEach(function(s, i) { s.position = i + 1; });
+    renderStageMode();
+
     try {
-        var order = songs.map(function(s, i) { return { id: s.id, position: i + 1 }; });
+        var order = songs.map(function(s, i) { 
+            return { id: s.id, position: i + 1 }; 
+        });
         await apiPut('/setlists/' + currentSetlist.id + '/reorder', { songs: order });
-        songs.forEach(function(s, i) { s.position = i + 1; });
-        renderStageMode();
     } catch (error) {
+        // Revertir si falla
         songs[newIdx] = songs[idx];
         songs[idx] = temp;
-        showToast('Error al mover');
+        songs.forEach(function(s, i) { s.position = i + 1; });
+        renderStageMode();
+        showToast('Error al mover', 'error');
     }
 }
 
