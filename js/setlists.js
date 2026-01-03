@@ -443,19 +443,12 @@ function viewResource(id) {
     if (!r) return;
     
     if (r.file_url) {
-        var url = r.file_url;
-        
-        // Fix para PDFs de Cloudinary
-        if (r.type === 'pdf' || r.file_type === 'pdf' || url.indexOf('.pdf') !== -1) {
-            url = url.replace('/image/upload/', '/raw/upload/');
-            window.open(url, '_blank');
-            return;
-        }
-        
-        if (r.type === 'image' || ['jpg','jpeg','png','webp','gif'].indexOf(r.file_type) !== -1) {
-            openFullscreenResource(r.title || 'Imagen', '<img src="' + url + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
+        if (r.type === 'pdf' || r.file_type === 'pdf' || r.file_url.indexOf('.pdf') !== -1) {
+            window.open(r.file_url, '_blank');
+        } else if (r.type === 'image' || ['jpg','jpeg','png','webp','gif'].indexOf(r.file_type) !== -1) {
+            openFullscreenResource(r.title || 'Imagen', '<img src="' + r.file_url + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
         } else {
-            window.open(url, '_blank');
+            window.open(r.file_url, '_blank');
         }
     } else if (r.content) {
         openFullscreenResource(r.title || 'Contenido', '<pre style="white-space:pre-wrap;font-family:monospace;padding:20px;">' + r.content + '</pre>');
