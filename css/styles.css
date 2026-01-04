@@ -3013,3 +3013,16 @@ body.offline .main-content {
 #confirmModal {
     z-index: 2100;
 }
+
+/* Z-INDEX HIERARCHY */
+.stage-mode-container {
+    z-index: 9000;
+}
+
+#addSongModal {
+    z-index: 9500;
+}
+
+#confirmModal {
+    z-index: 10000;
+}
