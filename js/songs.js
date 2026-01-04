@@ -11,6 +11,27 @@ var currentSongResources = [];
 var currentResourceSongId = null;
 var viewMode = 'table';
 var groupBy = 'none';
+var confirmCallback = null;
+
+// ========== CONFIRM MODAL ==========
+function showConfirm(title, message, callback, btnText, icon) {
+    document.getElementById('confirmTitle').textContent = title || '¿Estás seguro?';
+    document.getElementById('confirmMessage').textContent = message || 'Esta acción no se puede deshacer.';
+    document.getElementById('confirmIcon').textContent = icon || '⚠️';
+    document.getElementById('confirmBtn').textContent = btnText || 'Eliminar';
+    confirmCallback = callback;
+    document.getElementById('confirmModal').classList.add('active');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+    confirmCallback = null;
+}
+
+function executeConfirmAction() {
+    if (confirmCallback) confirmCallback();
+    closeConfirmModal();
+}
 
 async function loadSongs() {
     try {
@@ -274,13 +295,11 @@ function renderProjectSettings() {
     var song = allSongs.find(function(s) { return s.id === currentProjectSongId; });
     var defaultKey = song ? song.musical_key : '';
     
-    // Mostrar tono default
     var html = '<div class="project-setting-item default-key">' +
         '<div class="project-info"><span class="project-badge" style="background:#6B7280;">🎵</span><strong>Tono Original</strong></div>' +
         '<span class="key-badge">' + (defaultKey || 'Sin definir') + '</span>' +
     '</div>';
     
-    // Settings por proyecto
     if (currentProjectSettings.length) {
         html += currentProjectSettings.map(function(ps) {
             return '<div class="project-setting-item">' +
@@ -291,7 +310,6 @@ function renderProjectSettings() {
         }).join('');
     }
     
-    // Proyectos sin asignar
     var assignedIds = currentProjectSettings.map(function(ps) { return ps.project_id; });
     var availableProjects = allProjects.filter(function(p) { return assignedIds.indexOf(p.id) === -1; });
     
@@ -350,13 +368,15 @@ async function updateProjectSetting(settingId, newKey) {
 }
 
 async function deleteProjectSetting(settingId) {
-    try {
-        await apiDelete('/song-settings/' + settingId);
-        await loadProjectSettings();
-        showToast('Eliminado');
-    } catch (e) {
-        showToast('Error al eliminar', 'error');
-    }
+    showConfirm('¿Eliminar configuración?', 'Se eliminará el tono de este proyecto.', async function() {
+        try {
+            await apiDelete('/song-settings/' + settingId);
+            await loadProjectSettings();
+            showToast('Eliminado');
+        } catch (e) {
+            showToast('Error al eliminar', 'error');
+        }
+    }, 'Eliminar', '🗑️');
 }
 
 // ========== VIEW SONG ==========
@@ -423,7 +443,6 @@ function openSongModal(song) {
     document.getElementById('songLyrics').value = song ? (song.lyrics || '') : '';
     document.getElementById('songFavorite').checked = song ? song.is_favorite : false;
 
-    // Artista select
     var artistSelect = document.getElementById('songArtist');
     artistSelect.innerHTML = '<option value="">Sin artista</option>' +
         allArtists.map(function(a) { 
@@ -432,13 +451,11 @@ function openSongModal(song) {
         }).join('') +
         '<option value="__new__">+ Crear nuevo...</option>';
     
-    // Categoría select
     var catSelect = document.getElementById('songCategory');
     catSelect.innerHTML = '<option value="">Sin categoría</option>' +
         allCategories.map(function(c) { return '<option value="' + c.id + '"' + (song && song.category_id == c.id ? ' selected' : '') + '>' + c.name + '</option>'; }).join('') +
         '<option value="__new__">+ Crear nueva...</option>';
     
-    // Género select
     var genSelect = document.getElementById('songGenre');
     genSelect.innerHTML = '<option value="">Sin género</option>' +
         allGenres.map(function(g) { return '<option value="' + g.id + '"' + (song && song.genre_id == g.id ? ' selected' : '') + '>' + g.name + '</option>'; }).join('') +
@@ -565,14 +582,21 @@ async function saveSong() {
     } catch (e) { showToast('Error al guardar', 'error'); }
 }
 
-async function deleteSong(id) {
+function deleteSong(id) {
     closeActionsMenu();
-    if (confirm('¿Eliminar esta canción?')) {
-        await apiDelete('/songs/' + id);
-        closeViewSongModal();
-        loadSongs();
-        showToast('Canción eliminada');
-    }
+    var song = allSongs.find(function(s) { return s.id === id; });
+    var songName = song ? song.name : 'esta canción';
+    
+    showConfirm('¿Eliminar canción?', 'Se eliminará "' + songName + '" permanentemente.', async function() {
+        try {
+            await apiDelete('/songs/' + id);
+            closeViewSongModal();
+            loadSongs();
+            showToast('Canción eliminada');
+        } catch (e) {
+            showToast('Error al eliminar', 'error');
+        }
+    }, 'Eliminar', '🗑️');
 }
 
 function deleteCurrentSong() {
@@ -604,7 +628,6 @@ function copyCurrentSong() {
     closeViewSongModal();
     openSongModal(null);
     
-    // Copiar datos excepto nombre
     document.getElementById('songArtist').value = song.artist_id || '';
     document.getElementById('songKey').value = song.musical_key || '';
     document.getElementById('songCategory').value = song.category_id || '';
@@ -616,6 +639,7 @@ async function openSongResources(songId, songName) {
     closeActionsMenu();
     currentResourceSongId = songId;
     document.getElementById('resourcesSongName').textContent = songName;
+    document.getElementById('resourcesFilter').value = 'all';
     document.getElementById('resourcesModal').classList.add('active');
     await loadResources();
 }
@@ -649,7 +673,7 @@ function renderResources() {
             '<div class="song-info"><h4>' + (r.title || names[r.type] || 'Recurso') + '</h4><p>' + (r.user_name || '') + '</p></div>' +
             '<div class="song-actions"><button class="btn btn-ghost btn-sm" onclick="viewResource(' + r.id + ')">👁️</button>' +
             (r.file_url ? '<a href="' + r.file_url + '" target="_blank" class="btn btn-ghost btn-sm">⬇️</a>' : '') +
-            '<button class="btn btn-ghost btn-sm" onclick="deleteResource(' + r.id + ')">🗑️</button></div></div>';
+            '<button class="btn btn-ghost btn-sm" onclick="confirmDeleteResource(' + r.id + ')">🗑️</button></div></div>';
     }).join('');
 }
 
@@ -684,22 +708,51 @@ function closeViewResourceModal() {
     modal.classList.remove('active');
 }
 
-async function deleteResource(id) {
-    if (confirm('¿Eliminar recurso?')) {
-        await apiDelete('/song-resources/' + id);
-        loadResources();
-        showToast('Eliminado');
-    }
+function confirmDeleteResource(id) {
+    var r = currentSongResources.find(function(x) { return x.id === id; });
+    var resourceName = r ? (r.title || 'este recurso') : 'este recurso';
+    
+    showConfirm('¿Eliminar recurso?', 'Se eliminará "' + resourceName + '" permanentemente.', async function() {
+        try {
+            await apiDelete('/song-resources/' + id);
+            loadResources();
+            showToast('Recurso eliminado');
+        } catch (e) {
+            showToast('Error al eliminar', 'error');
+        }
+    }, 'Eliminar', '🗑️');
 }
 
-function openAddResourceModal() {
-    document.getElementById('resourceType').value = 'notes';
+// Abrir formulario con tipo preseleccionado
+function openResourceForm(type) {
+    var titles = {
+        notes: '📒 Agregar Notas',
+        lyrics: '📝 Agregar Letra',
+        chords: '🎸 Agregar Acordes',
+        tabs: '🎼 Agregar Tablatura',
+        sheet: '📄 Agregar Partitura',
+        pdf: '📕 Agregar PDF',
+        image: '🖼️ Agregar Imagen'
+    };
+    
+    document.getElementById('addResourceTitle').textContent = titles[type] || 'Agregar Recurso';
+    document.getElementById('resourceType').value = type;
     document.getElementById('resourceTitle').value = '';
     document.getElementById('resourceContent').value = '';
     document.getElementById('resourceShared').checked = true;
     document.getElementById('resourceFileInput').value = '';
     document.getElementById('uploadProgress').style.display = 'none';
-    toggleResourceContentType();
+    
+    var isFile = ['pdf', 'image', 'sheet'].indexOf(type) !== -1;
+    document.getElementById('resourceContentGroup').style.display = isFile ? 'none' : 'block';
+    document.getElementById('resourceFileGroup').style.display = isFile ? 'block' : 'none';
+    
+    if (type === 'pdf') {
+        document.getElementById('resourceFileInput').accept = '.pdf';
+    } else if (type === 'image' || type === 'sheet') {
+        document.getElementById('resourceFileInput').accept = '.png,.jpg,.jpeg,.gif,.webp,.pdf';
+    }
+    
     document.getElementById('addResourceModal').classList.add('active');
 }
 
@@ -707,25 +760,15 @@ function closeAddResourceModal() {
     document.getElementById('addResourceModal').classList.remove('active');
 }
 
-function toggleResourceContentType() {
-    var type = document.getElementById('resourceType').value;
-    var isText = ['lyrics', 'chords', 'tabs', 'notes'].indexOf(type) !== -1;
-    document.getElementById('resourceContentGroup').style.display = isText ? 'block' : 'none';
-    document.getElementById('resourceFileGroup').style.display = isText ? 'none' : 'block';
-}
-
 async function saveResource() {
     var type = document.getElementById('resourceType').value;
     var title = document.getElementById('resourceTitle').value.trim();
     var isShared = document.getElementById('resourceShared').checked;
-    var isText = ['lyrics', 'chords', 'tabs', 'notes'].indexOf(type) !== -1;
+    var isFile = ['pdf', 'image', 'sheet'].indexOf(type) !== -1;
     
     var fileUrl = null, fileType = null, content = null;
     
-    if (isText) {
-        content = document.getElementById('resourceContent').value;
-        if (!content.trim()) { showToast('Ingresa contenido', 'warning'); return; }
-    } else {
+    if (isFile) {
         var fileInput = document.getElementById('resourceFileInput');
         if (!fileInput.files.length) { showToast('Selecciona archivo', 'warning'); return; }
         var file = fileInput.files[0];
@@ -742,6 +785,9 @@ async function saveResource() {
             document.getElementById('uploadProgress').style.display = 'none';
             return;
         }
+    } else {
+        content = document.getElementById('resourceContent').value;
+        if (!content.trim()) { showToast('Ingresa contenido', 'warning'); return; }
     }
     
     try {
@@ -751,8 +797,8 @@ async function saveResource() {
         });
         closeAddResourceModal();
         loadResources();
-        showToast('Guardado');
-    } catch (e) { showToast('Error', 'error'); }
+        showToast('Recurso guardado');
+    } catch (e) { showToast('Error al guardar', 'error'); }
 }
 
 function nl2br(str) {
