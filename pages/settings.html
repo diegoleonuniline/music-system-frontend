@@ -139,6 +139,41 @@
                 </div>
             </div>
 
+<!-- ADMIN: Artistas -->
+<div class="card collapsible-card" id="artistsSection" style="display: none;">
+    <div class="card-header" onclick="toggleSection('artists')">
+        <h3>🎤 Artistas <span class="badge badge-primary" id="artistsCount">0</span></h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openArtistModal()">+ Nuevo</button>
+            <span class="collapse-icon" id="artistsIcon">▼</span>
+        </div>
+    </div>
+    <div class="card-content" id="artistsContent">
+        <div class="search-box">
+            <input type="text" id="searchArtists" placeholder="Buscar artista..." onkeyup="filterArtists()">
+        </div>
+        <div id="artistsList"></div>
+    </div>
+</div>
+
+<!-- ADMIN: Proyectos Musicales -->
+<div class="card collapsible-card" id="projectsSection" style="display: none;">
+    <div class="card-header" onclick="toggleSection('projects')">
+        <h3>🎸 Mis Proyectos <span class="badge badge-primary" id="projectsCount">0</span></h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openProjectModal()">+ Nuevo</button>
+            <span class="collapse-icon" id="projectsIcon">▼</span>
+        </div>
+    </div>
+    <div class="card-content" id="projectsContent">
+        <div id="projectsList"></div>
+    </div>
+</div>
+            
+            
+
+
+            
             <!-- SUPER ADMIN: Grupos Musicales -->
             <div class="card collapsible-card" id="groupsSection" style="display: none;">
                 <div class="card-header" onclick="toggleSection('groups')">
@@ -348,5 +383,44 @@
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/settings.js"></script>
+
+    <!-- Modal Artista -->
+<div class="modal-overlay" id="artistModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="artistModalTitle">Nuevo Artista</h3>
+            <button class="modal-close" onclick="closeArtistModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="artistId">
+            <div class="form-group"><label>Nombre *</label><input type="text" id="artistName" required placeholder="Ej: Vicente Fernández"></div>
+            <div class="form-group"><label>Imagen URL</label><input type="url" id="artistImage" placeholder="https://..."></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeArtistModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveArtist()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Proyecto -->
+<div class="modal-overlay" id="projectModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="projectModalTitle">Nuevo Proyecto</h3>
+            <button class="modal-close" onclick="closeProjectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="projectId">
+            <div class="form-group"><label>Nombre *</label><input type="text" id="projectName" required placeholder="Ej: Trío Romántico"></div>
+            <div class="form-group"><label>Descripción</label><textarea id="projectDescription" rows="2" placeholder="Descripción del proyecto..."></textarea></div>
+            <div class="form-group"><label>Color</label><input type="color" id="projectColor" value="#4F46E5" style="width: 60px; height: 40px;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeProjectModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveProject()">Guardar</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
