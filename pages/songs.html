@@ -8,61 +8,105 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐊</text></svg>">
     <style>
-        .resource-types-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
+        .resource-types-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
             margin-bottom: 16px;
         }
-        .resource-type-btn {
-            display: flex;
-            flex-direction: column;
+        .resource-chip {
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 16px 12px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            gap: 6px;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
             background: var(--bg);
             cursor: pointer;
             transition: all 0.2s;
-        }
-        .resource-type-btn:hover {
-            border-color: var(--primary);
-            background: var(--bg-secondary);
-        }
-        .resource-type-btn .icon {
-            font-size: 28px;
-        }
-        .resource-type-btn .label {
             font-size: 13px;
             font-weight: 500;
-            color: var(--text);
         }
-        .confirm-modal-body {
-            text-align: center;
-            padding: 20px 0;
+        .resource-chip:hover {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
         }
-        .confirm-modal-body .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+        .resource-chip .icon {
+            font-size: 16px;
         }
-        .confirm-modal-body h3 {
+        #confirmModal {
+            z-index: 10000;
+        }
+        .project-setting-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .project-setting-item:last-child { border-bottom: none; }
+        .project-setting-item.default-key {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
             margin-bottom: 8px;
         }
-        .confirm-modal-body p {
-            color: var(--text-secondary);
+        .project-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
         }
+        .project-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .key-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .key-input {
+            width: 70px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            text-align: center;
+        }
+        .key-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .add-project-section {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            align-items: center;
+        }
+        .add-project-section select { flex: 1; }
     </style>
 </head>
 <body>
-    <!-- Splash Screen Caimán -->
     <div class="splash-screen" id="splashScreen">
         <div class="splash-logo">🐊</div>
         <div class="splash-title">Caimán</div>
         <div class="splash-tagline">Tu música, organizada</div>
         <div class="splash-loader"><span></span><span></span><span></span></div>
     </div>
-
     <div class="offline-indicator">📴 Sin conexión - Modo offline</div>
     
     <header class="mobile-header">
@@ -84,10 +128,7 @@
                 <a href="settings.html"><span class="icon">⚙️</span> Configuración</a>
             </nav>
             <div class="sidebar-footer">
-                <div class="theme-toggle-wrapper">
-                    <span>Tema</span>
-                    <div class="theme-toggle" onclick="toggleTheme()"></div>
-                </div>
+                <div class="theme-toggle-wrapper"><span>Tema</span><div class="theme-toggle" onclick="toggleTheme()"></div></div>
                 <div class="user-profile">
                     <div class="user-avatar" id="userAvatar">U</div>
                     <div class="user-info"><h4 id="userName">Usuario</h4><span id="userRole">Rol</span></div>
@@ -101,7 +142,6 @@
                 <h1>Canciones</h1>
                 <button class="btn btn-primary" onclick="openSongModal()">+ Nueva</button>
             </div>
-
             <div class="card">
                 <div class="card-body">
                     <div class="search-filters">
@@ -136,15 +176,13 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Confirmación -->
+    <!-- Modal Confirmación (z-index alto) -->
     <div class="modal-overlay" id="confirmModal">
         <div class="modal modal-sm">
-            <div class="modal-body">
-                <div class="confirm-modal-body">
-                    <div class="icon" id="confirmIcon">⚠️</div>
-                    <h3 id="confirmTitle">¿Estás seguro?</h3>
-                    <p id="confirmMessage">Esta acción no se puede deshacer.</p>
-                </div>
+            <div class="modal-body" style="text-align:center;padding:24px;">
+                <div style="font-size:48px;margin-bottom:12px;" id="confirmIcon">🗑️</div>
+                <h3 id="confirmTitle" style="margin-bottom:8px;">¿Estás seguro?</h3>
+                <p id="confirmMessage" style="color:var(--text-secondary);">Esta acción no se puede deshacer.</p>
             </div>
             <div class="modal-footer" style="justify-content:center;gap:12px;">
                 <button class="btn btn-ghost" onclick="closeConfirmModal()">Cancelar</button>
@@ -275,7 +313,7 @@
         </div>
     </div>
 
-    <!-- Modal Recursos - Selección de Tipo -->
+    <!-- Modal Recursos -->
     <div class="modal-overlay" id="resourcesModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -283,41 +321,20 @@
                 <button class="modal-close" onclick="closeResourcesModal()">×</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom:12px;color:var(--text-secondary);">Agregar nuevo recurso:</p>
-                <div class="resource-types-grid">
-                    <div class="resource-type-btn" onclick="openResourceForm('notes')">
-                        <span class="icon">📒</span>
-                        <span class="label">Notas</span>
-                    </div>
-                    <div class="resource-type-btn" onclick="openResourceForm('lyrics')">
-                        <span class="icon">📝</span>
-                        <span class="label">Letra</span>
-                    </div>
-                    <div class="resource-type-btn" onclick="openResourceForm('chords')">
-                        <span class="icon">🎸</span>
-                        <span class="label">Acordes</span>
-                    </div>
-                    <div class="resource-type-btn" onclick="openResourceForm('tabs')">
-                        <span class="icon">🎼</span>
-                        <span class="label">Tablatura</span>
-                    </div>
-                    <div class="resource-type-btn" onclick="openResourceForm('sheet')">
-                        <span class="icon">📄</span>
-                        <span class="label">Partitura</span>
-                    </div>
-                    <div class="resource-type-btn" onclick="openResourceForm('pdf')">
-                        <span class="icon">📕</span>
-                        <span class="label">PDF</span>
-                    </div>
-                    <div class="resource-type-btn" onclick="openResourceForm('image')">
-                        <span class="icon">🖼️</span>
-                        <span class="label">Imagen</span>
-                    </div>
+                <p style="margin-bottom:10px;color:var(--text-secondary);font-size:13px;">Agregar:</p>
+                <div class="resource-types-row">
+                    <span class="resource-chip" onclick="openResourceForm('notes')"><span class="icon">📒</span> Notas</span>
+                    <span class="resource-chip" onclick="openResourceForm('lyrics')"><span class="icon">📝</span> Letra</span>
+                    <span class="resource-chip" onclick="openResourceForm('chords')"><span class="icon">🎸</span> Acordes</span>
+                    <span class="resource-chip" onclick="openResourceForm('tabs')"><span class="icon">🎼</span> Tablatura</span>
+                    <span class="resource-chip" onclick="openResourceForm('sheet')"><span class="icon">📄</span> Partitura</span>
+                    <span class="resource-chip" onclick="openResourceForm('pdf')"><span class="icon">📕</span> PDF</span>
+                    <span class="resource-chip" onclick="openResourceForm('image')"><span class="icon">🖼️</span> Imagen</span>
                 </div>
-                <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+                <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <p style="color:var(--text-secondary);margin:0;">Recursos existentes:</p>
-                    <select id="resourcesFilter" class="form-control" style="width:auto;min-width:120px;" onchange="loadResources()">
+                    <p style="color:var(--text-secondary);margin:0;font-size:13px;">Existentes:</p>
+                    <select id="resourcesFilter" class="form-control" style="width:auto;min-width:100px;font-size:13px;padding:6px 10px;" onchange="loadResources()">
                         <option value="all">Todos</option>
                         <option value="notes">Notas</option>
                         <option value="lyrics">Letras</option>
@@ -349,7 +366,7 @@
         </div>
     </div>
 
-    <!-- Modal Agregar Recurso (Formulario) -->
+    <!-- Modal Agregar Recurso -->
     <div class="modal-overlay" id="addResourceModal">
         <div class="modal modal-md">
             <div class="modal-header">
@@ -362,7 +379,7 @@
                 <div id="resourceContentGroup" class="form-group"><label>Contenido</label><textarea id="resourceContent" class="form-control" rows="10"></textarea></div>
                 <div id="resourceFileGroup" class="form-group" style="display:none;">
                     <label>Archivo</label>
-                    <input type="file" id="resourceFileInput" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp">
+                    <input type="file" id="resourceFileInput" class="form-control">
                     <div id="uploadProgress" style="display:none;margin-top:8px;">
                         <div style="background:var(--bg-tertiary);border-radius:4px;height:8px;">
                             <div id="uploadProgressBar" style="background:var(--primary);height:100%;border-radius:4px;width:0%;transition:width 0.3s;"></div>
