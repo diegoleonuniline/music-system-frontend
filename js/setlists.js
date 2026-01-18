@@ -19,7 +19,8 @@ var confirmCallback = null;
 var tpInterval = null;
 var tpSpeed = 25;
 var tpRunning = false;
-var tpFontSizeVal = 32;
+// Teleprompter - cambiar la variable inicial
+var tpFontSizeVal = window.innerWidth <= 768 ? 20 : 32;
 var tpAlign = 'left';
 var tpThemes = ['dark', 'light', 'sepia', 'green'];
 var tpThemeIndex = 0;
@@ -793,6 +794,11 @@ function openTeleprompter(idx) {
     
     tpCurrentSong = song;
     
+    // Tamaño adaptable al dispositivo
+    if (tpFontSizeVal === 32 && window.innerWidth <= 768) {
+        tpFontSizeVal = 20;
+    }
+    
     document.getElementById('tpTitle').textContent = song.name;
     document.getElementById('tpArtist').textContent = song.artist || '';
     
@@ -919,7 +925,9 @@ function tpUpdateSpeedDisplay() {
 }
 
 function tpFontSize(delta) {
-    tpFontSizeVal = Math.max(16, Math.min(80, tpFontSizeVal + delta));
+    var minSize = window.innerWidth <= 768 ? 12 : 16;
+    var maxSize = window.innerWidth <= 768 ? 48 : 80;
+    tpFontSizeVal = Math.max(minSize, Math.min(maxSize, tpFontSizeVal + delta));
     document.getElementById('tpText').style.fontSize = tpFontSizeVal + 'px';
 }
 
