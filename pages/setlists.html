@@ -624,12 +624,14 @@
             <div class="tp-row">
                 <button class="tp-btn" onclick="tpRestart()" title="Reiniciar">⏮</button>
                 <button class="tp-btn tp-play" id="tpPlayBtn" onclick="tpToggle()">▶</button>
-                <div class="tp-speed-control">
-                    <span>🐢</span>
-                    <input type="range" id="tpSpeedRange" min="5" max="80" value="25" oninput="tpSetSpeed(this.value)">
-                    <span>🐇</span>
-                    <span id="tpSpeedVal">25</span>
-                </div>
+              <div class="tp-speed-control">
+    <button class="tp-btn" onclick="tpSpeedDown()" style="min-width:36px;padding:0;">−</button>
+    <span>🐢</span>
+    <input type="range" id="tpSpeedRange" min="1" max="100" value="25" oninput="tpSetSpeed(this.value)">
+    <span>🐇</span>
+    <button class="tp-btn" onclick="tpSpeedUp()" style="min-width:36px;padding:0;">+</button>
+    <span id="tpSpeedVal">25</span>
+</div>
             </div>
             <div class="tp-row">
                 <button class="tp-btn" onclick="tpFontSize(-4)">A−</button>
