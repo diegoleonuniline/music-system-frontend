@@ -782,6 +782,8 @@ function closeStageMode() {
 
 // ============ TELEPROMPTER ============
 
+// ============ TELEPROMPTER ============
+
 function openTeleprompter(idx) {
     var song = currentSetlist.songs[idx];
     if (!song || !song.lyrics) {
@@ -818,9 +820,7 @@ function openTeleprompter(idx) {
     
     tpApplyTheme();
     tpUpdateAlignBtn();
-    
-    document.getElementById('tpSpeedRange').value = tpSpeed;
-    document.getElementById('tpSpeedVal').textContent = tpSpeed;
+    tpUpdateSpeedDisplay();
     
     document.getElementById('tpControls').classList.remove('tp-hidden');
     document.getElementById('tpShowBtn').classList.remove('visible');
@@ -850,23 +850,39 @@ function tpStart() {
     var body = document.getElementById('tpBody');
     body.classList.add('no-smooth');
     
-    var fps = 60;
-    var pxPerFrame = tpSpeed / fps;
+    var scrollAccum = 0;
+    var lastTime = performance.now();
     
-    tpInterval = setInterval(function() {
+    function scrollStep(currentTime) {
+        if (!tpRunning) return;
+        
+        var deltaTime = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+        
+        scrollAccum += tpSpeed * deltaTime;
+        
+        if (scrollAccum >= 0.5) {
+            var scrollAmount = Math.floor(scrollAccum);
+            scrollAccum -= scrollAmount;
+            body.scrollTop += scrollAmount;
+        }
+        
         if (body.scrollTop + body.clientHeight >= body.scrollHeight - 5) {
             tpStop();
             return;
         }
-        body.scrollTop += pxPerFrame;
-    }, 1000 / fps);
+        
+        tpInterval = requestAnimationFrame(scrollStep);
+    }
+    
+    tpInterval = requestAnimationFrame(scrollStep);
 }
 
 function tpStop() {
     tpRunning = false;
     
     if (tpInterval) {
-        clearInterval(tpInterval);
+        cancelAnimationFrame(tpInterval);
         tpInterval = null;
     }
     
@@ -884,12 +900,22 @@ function tpRestart() {
 
 function tpSetSpeed(val) {
     tpSpeed = parseInt(val);
+    tpUpdateSpeedDisplay();
+}
+
+function tpSpeedDown() {
+    tpSpeed = Math.max(1, tpSpeed - 1);
+    tpUpdateSpeedDisplay();
+}
+
+function tpSpeedUp() {
+    tpSpeed = Math.min(100, tpSpeed + 1);
+    tpUpdateSpeedDisplay();
+}
+
+function tpUpdateSpeedDisplay() {
+    document.getElementById('tpSpeedRange').value = tpSpeed;
     document.getElementById('tpSpeedVal').textContent = tpSpeed;
-    
-    if (tpRunning) {
-        tpStop();
-        tpStart();
-    }
 }
 
 function tpFontSize(delta) {
@@ -936,7 +962,6 @@ function tpShowControls() {
     document.getElementById('tpControls').classList.remove('tp-hidden');
     document.getElementById('tpShowBtn').classList.remove('visible');
 }
-
 function nl2br(str) {
     if (!str) return '';
     return str.replace(/\n/g, '<br>');
