@@ -19,7 +19,6 @@ var confirmCallback = null;
 var tpInterval = null;
 var tpSpeed = 25;
 var tpRunning = false;
-// Teleprompter - cambiar la variable inicial
 var tpFontSizeVal = window.innerWidth <= 768 ? 20 : 32;
 var tpAlign = 'left';
 var tpThemes = ['dark', 'light', 'sepia', 'green'];
