@@ -368,7 +368,7 @@
         .tp-show-btn.visible { display: flex; }
 
         @media (max-width: 768px) {
-            .tp-text { font-size: 24px; padding: 0 10px; }
+            .tp-text { padding: 0 10px; }
             .tp-header { padding: 10px 16px; gap: 12px; }
             .tp-song-title { font-size: 16px; }
             .tp-badges { display: none; }
@@ -467,7 +467,7 @@
         </div>
     </div>
 
-    <!-- Modal Crear/Editar Set List (MEJORADO) -->
+    <!-- Modal Crear/Editar Set List -->
     <div class="modal-overlay" id="setlistModal">
         <div class="modal modal-lg">
             <div class="modal-header">
@@ -517,7 +517,7 @@
         </div>
     </div>
 
-    <!-- Modal Agregar Canción (para vista de setlist existente) -->
+    <!-- Modal Agregar Canción -->
     <div class="modal-overlay" id="addSongModal">
         <div class="modal modal-md">
             <div class="modal-header">
@@ -624,14 +624,14 @@
             <div class="tp-row">
                 <button class="tp-btn" onclick="tpRestart()" title="Reiniciar">⏮</button>
                 <button class="tp-btn tp-play" id="tpPlayBtn" onclick="tpToggle()">▶</button>
-              <div class="tp-speed-control">
-    <button class="tp-btn" onclick="tpSpeedDown()" style="min-width:36px;padding:0;">−</button>
-    <span>🐢</span>
-    <input type="range" id="tpSpeedRange" min="1" max="100" value="25" oninput="tpSetSpeed(this.value)">
-    <span>🐇</span>
-    <button class="tp-btn" onclick="tpSpeedUp()" style="min-width:36px;padding:0;">+</button>
-    <span id="tpSpeedVal">25</span>
-</div>
+                <div class="tp-speed-control">
+                    <button class="tp-btn" onclick="tpSpeedDown()" style="min-width:36px;padding:0;">−</button>
+                    <span>🐢</span>
+                    <input type="range" id="tpSpeedRange" min="1" max="100" value="25" oninput="tpSetSpeed(this.value)">
+                    <span>🐇</span>
+                    <button class="tp-btn" onclick="tpSpeedUp()" style="min-width:36px;padding:0;">+</button>
+                    <span id="tpSpeedVal">25</span>
+                </div>
             </div>
             <div class="tp-row">
                 <button class="tp-btn" onclick="tpFontSize(-4)">A−</button>
@@ -647,5 +647,14 @@
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/setlists.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('../sw.js')
+            .then(function(reg) { console.log('SW registrado'); })
+            .catch(function(err) { console.log('SW error:', err); });
+    }
+    </script>
 </body>
 </html>
