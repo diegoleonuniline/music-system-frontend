@@ -60,7 +60,7 @@ function executeConfirmAction() {
     closeConfirmModal();
 }
 
-// ========== BUSCAR LETRA ==========
+// ========== BUSCAR LETRA (con proxy CORS) ==========
 async function searchLyrics() {
     var songName = document.getElementById('songName').value.trim();
     var artistSelect = document.getElementById('songArtist');
@@ -87,8 +87,15 @@ async function searchLyrics() {
     btn.textContent = '⏳ Buscando...';
     
     try {
-        var url = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName);
-        var response = await fetch(url);
+        var apiUrl = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName);
+        var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+        
+        var response = await fetch(proxyUrl);
+        
+        if (!response.ok) {
+            throw new Error('No disponible');
+        }
+        
         var data = await response.json();
         
         if (data.lyrics) {
@@ -99,7 +106,7 @@ async function searchLyrics() {
         }
     } catch (e) {
         console.error('Error buscando letra:', e);
-        showToast('Error al buscar letra', 'error');
+        showToast('Letra no disponible', 'warning');
     } finally {
         btn.disabled = false;
         btn.textContent = '🔍 Buscar letra';
