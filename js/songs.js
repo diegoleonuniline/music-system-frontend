@@ -33,6 +33,47 @@ function executeConfirmAction() {
     closeConfirmModal();
 }
 
+// ========== BUSCAR LETRA ==========
+async function searchLyrics() {
+    var songName = document.getElementById('songName').value.trim();
+    var artistSelect = document.getElementById('songArtist');
+    var artistId = artistSelect.value;
+    
+    if (!songName) {
+        showToast('Ingresa el nombre de la canción', 'warning');
+        return;
+    }
+    
+    var artistName = '';
+    if (artistId && artistId !== '__new__') {
+        var artist = allArtists.find(function(a) { return a.id == artistId; });
+        if (artist) artistName = artist.name;
+    }
+    
+    if (!artistName) {
+        showToast('Selecciona un artista primero', 'warning');
+        return;
+    }
+    
+    showToast('Buscando letra...', 'info');
+    
+    try {
+        var url = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName);
+        var response = await fetch(url);
+        var data = await response.json();
+        
+        if (data.lyrics) {
+            document.getElementById('songLyrics').value = data.lyrics.trim();
+            showToast('¡Letra encontrada!', 'success');
+        } else {
+            showToast('No se encontró la letra', 'warning');
+        }
+    } catch (e) {
+        console.error('Error buscando letra:', e);
+        showToast('Error al buscar letra', 'error');
+    }
+}
+
 async function loadSongs() {
     try {
         var results = await Promise.all([
