@@ -61,7 +61,10 @@ function executeConfirmAction() {
 }
 
 // ========== BUSCAR LETRA (con proxy CORS) ==========
-// ========== BUSCAR LETRA (con proxy CORS) ==========
+function removeAccents(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 async function searchLyrics() {
     var songName = document.getElementById('songName').value.trim();
     var artistSelect = document.getElementById('songArtist');
@@ -88,7 +91,11 @@ async function searchLyrics() {
     btn.textContent = '⏳ Buscando...';
     
     try {
-        var apiUrl = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName);
+        // Quitar acentos para mejor búsqueda
+        var cleanSong = removeAccents(songName);
+        var cleanArtist = removeAccents(artistName);
+        
+        var apiUrl = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(cleanArtist) + '/' + encodeURIComponent(cleanSong);
         var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
         
         var response = await fetch(proxyUrl);
@@ -113,6 +120,10 @@ async function searchLyrics() {
         btn.textContent = '🔍 Buscar letra';
     }
 }
+
+
+
+
 
 function populateFilters() {
     var catFilter = document.getElementById('filterCategory');
