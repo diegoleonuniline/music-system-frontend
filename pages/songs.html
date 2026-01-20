@@ -227,7 +227,10 @@
             </div>
             <div class="modal-body modal-body-scroll">
                 <input type="hidden" id="songId">
-                <div class="form-group"><label>Nombre *</label><input type="text" id="songName" class="form-control" required></div>
+<div class="form-group">
+    <label>Letra <button type="button" class="btn btn-ghost btn-sm" onclick="searchLyrics()" style="margin-left:8px;">🔍 Buscar letra</button></label>
+    <textarea id="songLyrics" class="form-control" rows="6" placeholder="Letra de la canción..."></textarea>
+</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Artista</label>
