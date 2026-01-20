@@ -60,7 +60,7 @@ function executeConfirmAction() {
     closeConfirmModal();
 }
 
-// ========== BUSCAR LETRA (con proxy CORS) ==========
+// ========== BUSCAR LETRA (con fallback) ==========
 function removeAccents(str) {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -90,40 +90,57 @@ async function searchLyrics() {
     btn.disabled = true;
     btn.textContent = '⏳ Buscando...';
     
+    var found = false;
+    
+    // Intento 1: lyrics.ovh con proxy
     try {
-        // Quitar acentos para mejor búsqueda
         var cleanSong = removeAccents(songName);
         var cleanArtist = removeAccents(artistName);
-        
         var apiUrl = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(cleanArtist) + '/' + encodeURIComponent(cleanSong);
         var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
         
-        var response = await fetch(proxyUrl);
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
         
-        if (!response.ok) {
-            throw new Error('No disponible');
-        }
+        var response = await fetch(proxyUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
         
-        var data = await response.json();
-        
-        if (data.lyrics) {
-            document.getElementById('songLyrics').value = data.lyrics.trim();
-            showToast('¡Letra encontrada!', 'success');
-        } else {
-            showToast('No se encontró la letra', 'warning');
+        if (response.ok) {
+            var text = await response.text();
+            if (text.startsWith('{')) {
+                var data = JSON.parse(text);
+                if (data.lyrics) {
+                    document.getElementById('songLyrics').value = data.lyrics.trim();
+                    showToast('¡Letra encontrada!', 'success');
+                    found = true;
+                }
+            }
         }
     } catch (e) {
-        console.error('Error buscando letra:', e);
-        showToast('Letra no disponible', 'warning');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '🔍 Buscar letra';
+        console.log('lyrics.ovh falló, intentando Genius...');
     }
+    
+    // Intento 2: Genius (backend)
+    if (!found) {
+        try {
+            var response = await apiGet('/lyrics/search?artist=' + encodeURIComponent(artistName) + '&song=' + encodeURIComponent(songName));
+            if (response && response.found && response.lyrics) {
+                document.getElementById('songLyrics').value = response.lyrics;
+                showToast('¡Letra encontrada!', 'success');
+                found = true;
+            }
+        } catch (e) {
+            console.log('Genius también falló');
+        }
+    }
+    
+    if (!found) {
+        showToast('Letra no disponible', 'warning');
+    }
+    
+    btn.disabled = false;
+    btn.textContent = '🔍 Buscar letra';
 }
-
-
-
-
 
 function populateFilters() {
     var catFilter = document.getElementById('filterCategory');
