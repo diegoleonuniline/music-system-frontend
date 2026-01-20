@@ -34,28 +34,24 @@ function executeConfirmAction() {
 }
 
 // ========== BUSCAR LETRA ==========
+// ========== BUSCAR LETRA ==========
 async function searchLyrics() {
     var songName = document.getElementById('songName').value.trim();
-    var artistSelect = document.getElementById('songArtist');
-    var artistId = artistSelect.value;
+    var artistName = document.getElementById('songArtist').value.trim();
     
     if (!songName) {
         showToast('Ingresa el nombre de la canción', 'warning');
         return;
     }
     
-    var artistName = '';
-    if (artistId && artistId !== '__new__') {
-        var artist = allArtists.find(function(a) { return a.id == artistId; });
-        if (artist) artistName = artist.name;
-    }
-    
     if (!artistName) {
-        showToast('Selecciona un artista primero', 'warning');
+        showToast('Ingresa el artista primero', 'warning');
         return;
     }
     
-    showToast('Buscando letra...', 'info');
+    var btn = document.getElementById('searchLyricsBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Buscando...';
     
     try {
         var url = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName);
@@ -71,31 +67,13 @@ async function searchLyrics() {
     } catch (e) {
         console.error('Error buscando letra:', e);
         showToast('Error al buscar letra', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Buscar letra';
     }
 }
 
-async function loadSongs() {
-    try {
-        var results = await Promise.all([
-            apiGet('/songs'),
-            apiGet('/categories'),
-            apiGet('/genres'),
-            apiGet('/setlists'),
-            apiGet('/artists'),
-            apiGet('/projects')
-        ]);
-        allSongs = Array.isArray(results[0]) ? results[0] : [];
-        allCategories = Array.isArray(results[1]) ? results[1] : [];
-        allGenres = Array.isArray(results[2]) ? results[2] : [];
-        allSetlists = Array.isArray(results[3]) ? results[3] : [];
-        allArtists = Array.isArray(results[4]) ? results[4] : [];
-        allProjects = Array.isArray(results[5]) ? results[5] : [];
-        renderSongs();
-        populateFilters();
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
+loadSongs();
 
 function populateFilters() {
     var catFilter = document.getElementById('filterCategory');
