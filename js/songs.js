@@ -13,6 +13,33 @@ var viewMode = 'table';
 var groupBy = 'none';
 var confirmCallback = null;
 
+// ========== LOAD SONGS ==========
+async function loadSongs() {
+    try {
+        var [songs, categories, genres, artists, setlists, projects] = await Promise.all([
+            apiGet('/songs'),
+            apiGet('/categories'),
+            apiGet('/genres'),
+            apiGet('/artists'),
+            apiGet('/setlists'),
+            apiGet('/projects')
+        ]);
+        
+        allSongs = songs || [];
+        allCategories = categories || [];
+        allGenres = genres || [];
+        allArtists = artists || [];
+        allSetlists = setlists || [];
+        allProjects = projects || [];
+        
+        populateFilters();
+        renderSongs();
+    } catch (e) {
+        console.error('Error cargando datos:', e);
+        showToast('Error al cargar canciones', 'error');
+    }
+}
+
 // ========== CONFIRM MODAL ==========
 function showConfirm(title, message, callback, btnText, icon) {
     document.getElementById('confirmTitle').textContent = title || '¿Estás seguro?';
@@ -34,10 +61,16 @@ function executeConfirmAction() {
 }
 
 // ========== BUSCAR LETRA ==========
-// ========== BUSCAR LETRA ==========
 async function searchLyrics() {
     var songName = document.getElementById('songName').value.trim();
-    var artistName = document.getElementById('songArtist').value.trim();
+    var artistSelect = document.getElementById('songArtist');
+    var artistId = artistSelect.value;
+    var artistName = '';
+    
+    if (artistId && artistId !== '__new__') {
+        var opt = artistSelect.options[artistSelect.selectedIndex];
+        artistName = opt ? opt.textContent : '';
+    }
     
     if (!songName) {
         showToast('Ingresa el nombre de la canción', 'warning');
@@ -45,11 +78,11 @@ async function searchLyrics() {
     }
     
     if (!artistName) {
-        showToast('Ingresa el artista primero', 'warning');
+        showToast('Selecciona el artista primero', 'warning');
         return;
     }
     
-    var btn = document.getElementById('searchLyricsBtn');
+    var btn = event.target;
     btn.disabled = true;
     btn.textContent = '⏳ Buscando...';
     
@@ -72,8 +105,6 @@ async function searchLyrics() {
         btn.textContent = '🔍 Buscar letra';
     }
 }
-
-loadSongs();
 
 function populateFilters() {
     var catFilter = document.getElementById('filterCategory');
@@ -742,7 +773,6 @@ function confirmDeleteResource(id) {
     }, 'Eliminar', '🗑️');
 }
 
-// Abrir formulario con tipo preseleccionado
 function openResourceForm(type) {
     var titles = {
         notes: '📒 Agregar Notas',
@@ -826,4 +856,5 @@ function nl2br(str) {
 
 function closeActionsMenu() {}
 
+// Inicializar
 loadSongs();
