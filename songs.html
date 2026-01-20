@@ -191,14 +191,10 @@
                 <input type="hidden" id="songId">
                 <div class="form-group"><label>Nombre *</label><input type="text" id="songName" class="form-control" required></div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Artista</label>
-                        <select id="songArtist" class="form-control" onchange="onArtistChange()"></select>
-                        <div id="newArtistGroup" style="display:none;margin-top:8px;">
-                            <input type="text" id="newArtistName" class="form-control" placeholder="Nombre del artista">
-                            <button class="btn btn-sm btn-primary" onclick="createArtist()" style="margin-top:4px;">Crear</button>
-                        </div>
-                    </div>
+<div class="form-group">
+    <label>Artista</label>
+    <input type="text" id="songArtist" class="form-control" placeholder="Nombre del artista">
+</div>
                     <div class="form-group"><label>Tono</label><input type="text" id="songKey" class="form-control" placeholder="Ej: Am, C#, Dm"></div>
                 </div>
                 <div class="form-row">
@@ -228,7 +224,10 @@
                     <div class="form-group"><label>URL Video</label><input type="url" id="songVideoUrl" class="form-control" placeholder="YouTube, Vimeo..."></div>
                     <div class="form-group"><label>URL Audio</label><input type="url" id="songAudioUrl" class="form-control" placeholder="Spotify, SoundCloud..."></div>
                 </div>
-                <div class="form-group"><label>Letra</label><textarea id="songLyrics" class="form-control" rows="6" placeholder="Letra de la canción..."></textarea></div>
+               <div class="form-group">
+    <label>Letra <button type="button" class="btn btn-ghost btn-sm" onclick="searchLyrics()" id="searchLyricsBtn" style="margin-left:8px;">🔍 Buscar letra</button></label>
+    <textarea id="songLyrics" class="form-control" rows="6" placeholder="Letra de la canción..."></textarea>
+</div>
                 <div class="form-group form-check">
                     <label class="checkbox-label"><input type="checkbox" id="songFavorite"> <span>⭐ Marcar como favorita</span></label>
                 </div>
