@@ -61,6 +61,7 @@ function executeConfirmAction() {
 }
 
 // ========== BUSCAR LETRA (con proxy CORS) ==========
+// ========== BUSCAR LETRA (con proxy CORS) ==========
 async function searchLyrics() {
     var songName = document.getElementById('songName').value.trim();
     var artistSelect = document.getElementById('songArtist');
@@ -88,7 +89,7 @@ async function searchLyrics() {
     
     try {
         var apiUrl = 'https://api.lyrics.ovh/v1/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName);
-        var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+        var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
         
         var response = await fetch(proxyUrl);
         
