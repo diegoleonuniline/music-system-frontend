@@ -176,7 +176,7 @@
         <a href="rehearsals.html"><span class="icon">🎸</span>Ensayos</a>
     </nav>
 
-    <!-- Modal Confirmación (z-index alto) -->
+    <!-- Modal Confirmación -->
     <div class="modal-overlay" id="confirmModal">
         <div class="modal modal-sm">
             <div class="modal-body" style="text-align:center;padding:24px;">
@@ -227,10 +227,10 @@
             </div>
             <div class="modal-body modal-body-scroll">
                 <input type="hidden" id="songId">
-<div class="form-group">
-    <label>Letra <button type="button" class="btn btn-ghost btn-sm" onclick="searchLyrics()" style="margin-left:8px;">🔍 Buscar letra</button></label>
-    <textarea id="songLyrics" class="form-control" rows="6" placeholder="Letra de la canción..."></textarea>
-</div>
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="songName" class="form-control" required placeholder="Nombre de la canción">
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Artista</label>
@@ -269,7 +269,10 @@
                     <div class="form-group"><label>URL Video</label><input type="url" id="songVideoUrl" class="form-control" placeholder="YouTube, Vimeo..."></div>
                     <div class="form-group"><label>URL Audio</label><input type="url" id="songAudioUrl" class="form-control" placeholder="Spotify, SoundCloud..."></div>
                 </div>
-                <div class="form-group"><label>Letra</label><textarea id="songLyrics" class="form-control" rows="6" placeholder="Letra de la canción..."></textarea></div>
+                <div class="form-group">
+                    <label>Letra <button type="button" class="btn btn-ghost btn-sm" onclick="searchLyrics()" style="margin-left:8px;">🔍 Buscar letra</button></label>
+                    <textarea id="songLyrics" class="form-control" rows="6" placeholder="Letra de la canción..."></textarea>
+                </div>
                 <div class="form-group form-check">
                     <label class="checkbox-label"><input type="checkbox" id="songFavorite"> <span>⭐ Marcar como favorita</span></label>
                 </div>
